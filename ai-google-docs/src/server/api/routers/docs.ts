@@ -22,5 +22,21 @@ export const docsRouter = createTRPCRouter({
                 ...docs,
                 content: !docs.content ? "" : docs.content
             }
+        }),
+
+    getUserDocs: protectedProcedure
+        .query(async ({ ctx }) => {
+            const userId = ctx.session.user.id;
+
+            const docs = await ctx.db.document.findMany({
+                where: {
+                    userId
+                },
+                orderBy: {
+                    createdAt: "desc"
+                }
+            });
+
+            return docs;
         })
 })

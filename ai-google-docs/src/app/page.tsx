@@ -1,14 +1,23 @@
 "use client"
 import { api } from "~/trpc/react"
 import { useRouter, usePathname } from "next/navigation";
-import LoadingIcon from "~/components/LoadingIcon";
+import LoadingIcon from "~/app/components/LoadingIcon";
 import { authClient } from "~/server/better-auth/client";
 import Link from "next/link";
 import { TRPCClientError } from "@trpc/client";
+import Loading from "./components/Loading";
+import ServerError from "./components/ServerError";
+import DocItem from "./components/DocItem";
 
 export default function Home() {
     const router = useRouter();
     const pathname = usePathname();
+
+    const {
+        data: docs,
+        isLoading,
+        error
+    } = api.docs.getUserDocs.useQuery();
 
     const createDocs = api.docs.createDocs.useMutation({
         onSuccess: (newData) => {
@@ -23,6 +32,10 @@ export default function Home() {
     });
 
     const { data: user } = authClient.useSession();
+
+    if (isLoading) return <Loading />
+
+    if (error || !docs) return <ServerError />
 
     return (
         <div className="min-h-screen bg-[#0B0D10]">
@@ -60,18 +73,18 @@ export default function Home() {
                         Recent
                     </h2>
 
-                    <div className="space-y-1">
-                        <button
-                            className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-3 text-left transition-colors hover:bg-[#12161C]"
-                        >
-                            <span className="font-medium">
-                                The Future of AI
-                            </span>
-                            <span className="text-sm text-[#8E96A3]">
-                                2h ago
-                            </span>
-                        </button>
-                    </div>
+                    <ul>
+                        {docs.map(({ title, id, createdAt }) => {
+                            return (
+                                <DocItem
+                                    key={id}
+                                    title={title}
+                                    id={id}
+                                    createdAt={createdAt}
+                                />
+                            )
+                        })}
+                    </ul>
                 </section>
             </div>
         </div>

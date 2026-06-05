@@ -1,12 +1,35 @@
 "use client"
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Tiptap from "~/components/Tiptap"
 import { useState } from "react";
+import { api } from "~/trpc/react";
+import { EditorContent, useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import TiptapMenuBar from "../components/Tiptap/TiptapMenuBar";
 
 export default function WritingSpace() {
     const params = useParams<{ docId: string }>();
     const [isAiOpen, setIsAiOpen] = useState(false);
+    const [instruction, setInstruction] = useState("");
+
+    const askAi = api.ai.askAi.useMutation({
+        onSuccess: (newData) => {
+            console.log(newData)
+        }
+    });
+
+    const editor = useEditor({
+        extensions: [StarterKit],
+        content: "<textarea></textarea>",
+        immediatelyRender: false,
+        editorProps: {
+            attributes: {
+                class: `min-h-[70vh] outline-none text-lg leading-9`,
+            },
+        },
+    });
+
+    if (!editor) return null;
 
     return (
         <div className="min-h-screen w-full bg-[#0B0D10] text-[#F5F5F7]">
@@ -44,7 +67,12 @@ export default function WritingSpace() {
                     <div className="h-px bg-[#1A1F26]" />
 
                     <main className="mx-auto w-full">
-                        <Tiptap />
+                        <TiptapMenuBar editor={editor} />
+                        <div className="h-px bg-[#1A1F26]" />
+                        <EditorContent
+                            editor={editor}
+                            className="py-2"
+                        />
                     </main>
 
                 </div>
@@ -57,52 +85,63 @@ export default function WritingSpace() {
                 />
             )}
 
-            {isAiOpen && (
-                <aside
-                    className={`fixed top-0 bg-black right-0 h-full w-[70%]
+            <aside
+                className={`fixed top-0 bg-black right-0 h-full w-[70%]
                                 transform transition-transform duration-500 ease-out
-                                `}
-                >
-                    <div className="flex h-16 items-center px-6">
-                        <h2 className="text-sm font-medium">
-                            AI Assistant
-                        </h2>
-                    </div>
+                                ${isAiOpen ? "translate-x-0" : "translate-x-full"}`}
+            >
+                <div className="flex h-16 items-center justify-between px-6">
+                    <h2 className="text-sm font-medium">
+                        AI Assistant
+                    </h2>
 
-                    <div className="h-px bg-[#1A1F26]" />
+                    <button
+                        onClick={() => setIsAiOpen(false)}
+                        className="h-8 w-8 cursor-pointer font-semibold hover:bg-gray-800 transition-all duration-300 rounded-full"
+                    >
+                        X
+                    </button>
+                </div>
 
-                    <div className="flex h-[calc(100vh-65px)] flex-col">
-                        <div className="flex-1 overflow-y-auto px-6 py-6">
-                            <div className="mb-6">
-                                <div
-                                    className="inline-block rounded-2xl bg-[#12161C] px-4 py-3 text-sm text-[#D0D5DD]"
-                                >
-                                    What would you like me to help with?
-                                </div>
-                            </div>
-                        </div>
+                <div className="h-px bg-[#1A1F26]" />
 
-                        <div className="border-t border-[#1A1F26] p-4">
+                <div className="flex h-[calc(100vh-65px)] flex-col">
+                    <div className="flex-1 overflow-y-auto px-6 py-6">
+                        <div className="mb-6">
                             <div
-                                className="rounded-2xl border border-[#252B36] bg-[#12161C] p-3"
+                                className="inline-block rounded-2xl bg-[#12161C] px-4 py-3 text-sm text-[#D0D5DD]"
                             >
-                                <textarea
-                                    placeholder="Ask AI..."
-                                    className="min-h-20 w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#69707C]"
-                                />
-
-                                <div className="mt-3 flex justify-end">
-                                    <button
-                                        className="cursor-pointer rounded-xl bg-[#F5F5F7] px-4 py-2 text-sm font-medium text-[#0B0D10]"
-                                    >
-                                        Send
-                                    </button>
-                                </div>
+                                What would you like me to help with?
                             </div>
                         </div>
                     </div>
-                </aside>
-            )}
+
+                    <div className="border-t border-[#1A1F26] p-4">
+                        <div
+                            className="rounded-2xl border border-[#252B36] bg-[#12161C] p-3"
+                        >
+                            <textarea
+                                placeholder="Ask AI..."
+                                value={instruction}
+                                onChange={(event) => setInstruction(event.target.value)}
+                                className="min-h-20 w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#69707C]"
+                            />
+
+                            <div className="mt-3 flex justify-end">
+                                <button
+                                    onClick={() => askAi.mutate({
+                                        instruction,
+                                        fullDocument: editor.getText(),
+                                    })}
+                                    className="cursor-pointer rounded-xl bg-[#F5F5F7] px-4 py-2 text-sm font-medium text-[#0B0D10]"
+                                >
+                                    Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
         </div>
     )
 }

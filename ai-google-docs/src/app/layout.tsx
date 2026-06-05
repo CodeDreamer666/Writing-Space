@@ -1,5 +1,6 @@
 import "~/styles/globals.css";
 import { TRPCReactProvider } from "~/trpc/react";
+import RouteLoader from "./components/LoadingRouter";
 
 export default function RootLayout({
     children,
@@ -7,7 +8,11 @@ export default function RootLayout({
     return (
         <html>
             <body>
-                <TRPCReactProvider>{children}</TRPCReactProvider>
+                <RouteLoader>
+                    <TRPCReactProvider>
+                        {children}
+                    </TRPCReactProvider>
+                </RouteLoader>
             </body>
         </html>
     );

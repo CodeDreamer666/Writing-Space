@@ -1,4 +1,4 @@
-const Button = ({
+export default function TiptapEditorButton({
     active,
     children,
     onClick,
@@ -6,7 +6,7 @@ const Button = ({
     active: boolean;
     children: React.ReactNode;
     onClick: () => void;
-}) => {
+}) {
     return (
         <button
             onClick={onClick}
@@ -29,6 +29,4 @@ const Button = ({
             {children}
         </button>
     );
-};
-
-export default Button
+}
