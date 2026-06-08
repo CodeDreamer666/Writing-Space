@@ -38,5 +38,60 @@ export const docsRouter = createTRPCRouter({
             });
 
             return docs;
+        }),
+
+    saveDocTitle: protectedProcedure
+        .input(z.object({
+            title: z.string().nonempty(),
+            docId: z.string().nonempty()
+        }))
+        .mutation(async ({ input, ctx }) => {
+            const userId = ctx.session.user.id;
+
+            await ctx.db.document.update({
+                where: {
+                    id: input.docId,
+                    userId
+                },
+                data: {
+                    title: input.title
+                }
+            });
+
+            return {
+                success: true
+            }
+        }),
+
+    getSelectedDoc: protectedProcedure
+        .input(z.object({
+            docId: z.string().nonempty()
+        }))
+        .query(async ({ input, ctx }) => {
+            const userId = ctx.session.user.id;
+
+            return await ctx.db.document.findUnique({
+                where: {
+                    id: input.docId,
+                    userId
+                }
+            })
+        }),
+
+    deleteDoc: protectedProcedure
+        .input(z.object({ docId: z.string().nonempty() }))
+        .mutation(async ({ ctx, input }) => {
+            const userId = ctx.session.user.id;
+
+            await ctx.db.document.delete({
+                where: {
+                    id: input.docId,
+                    userId
+                }
+            });
+
+            return {
+                success: true
+            }
         })
 })

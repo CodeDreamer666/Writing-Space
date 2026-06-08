@@ -1,22 +1,42 @@
 "use client"
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
 import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TiptapMenuBar from "../components/Tiptap/TiptapMenuBar";
+import Loading from "../components/Loading";
+import ServerError from "../components/ServerError";
+
+const DEFAULT_TITLE = "New Draft";
 
 export default function WritingSpace() {
     const params = useParams<{ docId: string }>();
+    const utils = api.useUtils();
+
+    const {
+        data: doc,
+        isLoading,
+        error
+    } = api.docs.getSelectedDoc.useQuery({ docId: params.docId });
+
     const [isAiOpen, setIsAiOpen] = useState(false);
     const [instruction, setInstruction] = useState("");
+    const [title, setTitle] = useState(doc?.title);
+    const [debouncedTitle, setDebouncedTitle] = useState(doc?.title);
 
     const askAi = api.ai.askAi.useMutation({
         onSuccess: (newData) => {
             console.log(newData)
         }
     });
+
+    const saveTitle = api.docs.saveDocTitle.useMutation({
+        onSettled: async () => {
+            await utils.invalidate();
+        }
+    })
 
     const editor = useEditor({
         extensions: [StarterKit],
@@ -29,7 +49,41 @@ export default function WritingSpace() {
         },
     });
 
+    useEffect(() => {
+        if (!doc) return;
+
+        setTitle(doc.title);
+    }, [doc]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedTitle(title);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [title]);
+
+    useEffect(() => {
+        if (!doc) return;
+
+        const finalTitle =
+            debouncedTitle?.trim() === ""
+                ? DEFAULT_TITLE
+                : debouncedTitle?.trim() ?? DEFAULT_TITLE
+
+        if (finalTitle === doc.title) return;
+
+        saveTitle.mutate({
+            docId: params.docId,
+            title: finalTitle,
+        });
+    }, [debouncedTitle]);
+
     if (!editor) return null;
+
+    if (isLoading) return <Loading />
+
+    if (error || !doc) return <ServerError />
 
     return (
         <div className="min-h-screen w-full bg-[#0B0D10] text-[#F5F5F7]">
@@ -45,14 +99,28 @@ export default function WritingSpace() {
                             </Link>
 
                             <input
-                                placeholder="New Draft"
+                                value={title || ""}
+                                onChange={(event) => setTitle(event.target.value)}
+                                onBlur={() => {
+                                    const finalTitle =
+                                        title?.trim() === ""
+                                            ? DEFAULT_TITLE
+                                            : title?.trim() ?? DEFAULT_TITLE;
+
+                                    setTitle(finalTitle);
+
+                                    saveTitle.mutate({
+                                        docId: params.docId,
+                                        title: finalTitle,
+                                    });
+                                }}
                                 className="bg-transparent text-sm font-medium outline-none placeholder:text-[#8E96A3]"
                             />
                         </div>
 
                         <div className="flex items-center gap-4">
                             <span className="text-xs text-[#69707C]">
-                                Saved
+                                {saveTitle.isPending ? "Saving..." : "Saved"}
                             </span>
 
                             <button

@@ -74,13 +74,12 @@ export default function Home() {
                     </h2>
 
                     <ul>
-                        {docs.map(({ title, id, createdAt }) => {
+                        {docs.map(({ title, id }) => {
                             return (
                                 <DocItem
                                     key={id}
                                     title={title}
                                     id={id}
-                                    createdAt={createdAt}
                                 />
                             )
                         })}
