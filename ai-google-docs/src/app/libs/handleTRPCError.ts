@@ -1,25 +1,22 @@
 import { TRPCClientError } from "@trpc/client";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { useStatusMessage } from "../components/StatusMessageRouter";
 
 type Parameter = {
     error: unknown,
-    setMessage: React.Dispatch<React.SetStateAction<string>>,
-    setIsSuccess?: React.Dispatch<React.SetStateAction<boolean | "IDLE">>,
-    router?: AppRouterInstance,
-    pathname?: string
+    router: AppRouterInstance,
+    pathname: string
 }
 
 export default function handleTRPCError({
     error,
-    setMessage,
-    setIsSuccess,
     router,
     pathname
 }: Parameter) {
-    setIsSuccess?.(false);
+    const { showMessage } = useStatusMessage();
 
     if (!(error instanceof TRPCClientError)) {
-        setMessage("Something went wrong. Please try again.");
+        showMessage("Something went wrong", false)
         return;
     }
 
@@ -28,43 +25,41 @@ export default function handleTRPCError({
     const zodError = error.data?.zodError;
 
     if (zodError) {
-        setMessage(zodError[0]?.message ?? "Invalid input");
+        showMessage(zodError[0]?.message ?? "Invalid input", false)
         return;
     }
 
     switch (code) {
         case "BAD_REQUEST":
-            setMessage("Invalid request.");
+            showMessage("Invalid input", false)
             return;
 
         case "UNAUTHORIZED":
-            if (router && pathname) {
-                router.replace(`/auth?redirect=${encodeURIComponent(pathname)}`);
-            }
+            router.replace(`/auth?redirect=${encodeURIComponent(pathname)}`);
             return;
 
         case "FORBIDDEN":
-            setMessage("You do not have permission to do this.");
+            showMessage("You do not have permission to do this.", false)
             return;
 
         case "NOT_FOUND":
-            setMessage("The requested resource was not found.");
+            showMessage("Not found", false)
             return;
 
         case "CONFLICT":
-            setMessage("This action conflicts with existing data.");
+            showMessage("This action conflicts with existing data", false)
             return;
 
         case "TOO_MANY_REQUESTS":
-            setMessage("Too many requests. Please try again later.");
+            showMessage("Too many requests", false)
             return;
 
         case "INTERNAL_SERVER_ERROR":
-            setMessage("Server error. Please try again later.");
+            showMessage("Server unavailable", false)
             return;
 
         default:
-            setMessage(error.message || "Something went wrong.");
+            showMessage("Something went wrong", false)
             return;
     }
 }

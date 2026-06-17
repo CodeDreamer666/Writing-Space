@@ -3,6 +3,18 @@
 @theme {
     --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --animate-blink: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
 }
 
 .ProseMirror {
@@ -49,4 +61,8 @@
     margin: 1rem 0;
     color: #8e96a3;
     font-style: italic;
+}
+
+body {
+    @apply bg-[#0B0D10] text-[#F5F5F7] 
 }

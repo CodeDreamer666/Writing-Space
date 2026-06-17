@@ -1,9 +1,9 @@
 "use client"
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "~/trpc/react";
-import { EditorContent, useEditor } from '@tiptap/react'
+import { EditorContent, useEditor, type JSONContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import TiptapMenuBar from "../components/Tiptap/TiptapMenuBar";
 import Loading from "../components/Loading";
@@ -11,206 +11,308 @@ import ServerError from "../components/ServerError";
 
 const DEFAULT_TITLE = "New Draft";
 
+type Message = {
+    role: "assistant" | "user";
+    content: string;
+};
+
+function countWords(text: string): number {
+    return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+}
+
+function readingTime(words: number): string {
+    const mins = Math.ceil(words / 200);
+    return mins === 1 ? "~1 min read" : `~${mins} min read`;
+}
+
 export default function WritingSpace() {
     const params = useParams<{ docId: string }>();
     const utils = api.useUtils();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const latestContentRef = useRef<JSONContent | null>(null);
+    const isLoadedRef = useRef(false);
 
     const {
         data: doc,
         isLoading,
         error
-    } = api.docs.getSelectedDoc.useQuery({ docId: params.docId });
+    } = api.docs.getSelectedDoc.useQuery(
+        { docId: params.docId },
+        { refetchOnMount: true }
+    );
 
     const [isAiOpen, setIsAiOpen] = useState(false);
     const [instruction, setInstruction] = useState("");
+    const [messages, setMessages] = useState<Message[]>([
+        { role: "assistant", content: "What would you like help with? I can improve your writing, suggest ideas, or help you work through a section." }
+    ]);
     const [title, setTitle] = useState(doc?.title);
-    const [debouncedTitle, setDebouncedTitle] = useState(doc?.title);
+    const [wordCount, setWordCount] = useState(0);
 
     const askAi = api.ai.askAi.useMutation({
-        onSuccess: (newData) => {
-            console.log(newData)
-        }
-    });
-
-    const saveTitle = api.docs.saveDocTitle.useMutation({
-        onSettled: async () => {
-            await utils.invalidate();
-        }
+        // onSuccess: (newData) => {
+        //     setMessages(prev => [...prev, { role: "assistant", content: newData }]);
+        // }
     })
+
+    const saveDoc = api.docs.saveDoc.useMutation();
 
     const editor = useEditor({
         extensions: [StarterKit],
-        content: "<textarea></textarea>",
+        content: (doc?.content as JSONContent) ?? "",
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                class: `min-h-[70vh] outline-none text-lg leading-9`,
+                class: "outline-none text-lg leading-[1.85] text-[#C8CBD0] focus:text-[#E0E3E8] transition-colors duration-200",
             },
+        },
+        onUpdate: ({ editor }) => {
+            setWordCount(countWords(editor.getText()));
+            latestContentRef.current = editor.getJSON();
         },
     });
 
-    useEffect(() => {
-        if (!doc) return;
-
-        setTitle(doc.title);
-    }, [doc]);
+    const latestTitleRef = useRef(title);
+    const latestEditorRef = useRef(editor);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedTitle(title);
-        }, 1000);
-
-        return () => clearTimeout(timer);
+        latestTitleRef.current = title;
     }, [title]);
 
     useEffect(() => {
-        if (!doc) return;
+        latestEditorRef.current = editor;
+    }, [editor]);
 
-        const finalTitle =
-            debouncedTitle?.trim() === ""
-                ? DEFAULT_TITLE
-                : debouncedTitle?.trim() ?? DEFAULT_TITLE
+    useEffect(() => {
+        return () => {
+            if (!isLoadedRef.current) return;
+            if (!latestContentRef.current) return;
 
-        if (finalTitle === doc.title) return;
+            saveDoc.mutate({
+                docId: params.docId,
+                title: latestTitleRef.current?.trim() || DEFAULT_TITLE,
+                content: latestContentRef.current,
+            }, {
+                onSuccess: () => console.log("[unmount] SAVE SUCCESS"),
+                onError: (err) => console.log("[unmount] SAVE ERROR", err),
+            });
+        };
+    }, []);
 
-        saveTitle.mutate({
-            docId: params.docId,
-            title: finalTitle,
-        });
-    }, [debouncedTitle]);
+    useEffect(() => {
+        if (!doc || !editor || isLoadedRef.current) return;
+        setTitle(doc.title);
+        editor.commands.setContent((doc.content as JSONContent) ?? "");
+        setWordCount(countWords(editor.getText()));
+        latestContentRef.current = editor.getJSON();
+        isLoadedRef.current = true;
+    }, [doc, editor]);
+
+    useEffect(() => {
+        if (!editor || !isLoadedRef.current) return;
+
+        const timer = setTimeout(() => {
+            saveDoc.mutate({
+                docId: params.docId,
+                title: title?.trim() || DEFAULT_TITLE,
+                content: editor.getJSON(),
+            });
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [title, wordCount]);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    useEffect(() => {
+        if (!editor) return;
+
+        const flush = () => {
+            saveDoc.mutate({
+                docId: params.docId,
+                title: title?.trim() || DEFAULT_TITLE,
+                content: editor.getJSON(),
+            });
+        };
+
+        const beaconFlush = () => {
+            const payload = JSON.stringify({
+                docId: params.docId,
+                title: title?.trim() || DEFAULT_TITLE,
+                content: editor.getJSON(),
+            });
+            navigator.sendBeacon("/api/save-doc-beacon", payload);
+        };
+
+        const onVisibility = () => {
+            if (document.visibilityState === "hidden") flush();
+        };
+
+        window.addEventListener("beforeunload", beaconFlush);
+        document.addEventListener("visibilitychange", onVisibility);
+
+        return () => {
+            window.removeEventListener("beforeunload", beaconFlush);
+            document.removeEventListener("visibilitychange", onVisibility);
+        };
+    }, [title, editor]);
+
+    const handleSendAi = () => {
+        if (!instruction.trim()) return;
+        const userMessage = instruction.trim();
+        setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+        setInstruction("");
+        askAi.mutate({ instruction: userMessage, fullDocument: editor?.getText() ?? "" });
+    };
 
     if (!editor) return null;
-
-    if (isLoading) return <Loading />
-
-    if (error || !doc) return <ServerError />
+    if (isLoading) return <Loading />;
+    if (error || !doc) return <ServerError />;
 
     return (
-        <div className="min-h-screen w-full bg-[#0B0D10] text-[#F5F5F7]">
-            <div className="flex-1">
-                <div className="mx-auto px-6">
-                    <header className="flex h-16 items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href="/"
-                                className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F5F5F7] text-sm font-semibold text-[#0B0D10]"
-                            >
-                                W
-                            </Link>
-
-                            <input
-                                value={title || ""}
-                                onChange={(event) => setTitle(event.target.value)}
-                                onBlur={() => {
-                                    const finalTitle =
-                                        title?.trim() === ""
-                                            ? DEFAULT_TITLE
-                                            : title?.trim() ?? DEFAULT_TITLE;
-
-                                    setTitle(finalTitle);
-
-                                    saveTitle.mutate({
-                                        docId: params.docId,
-                                        title: finalTitle,
-                                    });
-                                }}
-                                className="bg-transparent text-sm font-medium outline-none placeholder:text-[#8E96A3]"
-                            />
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <span className="text-xs text-[#69707C]">
-                                {saveTitle.isPending ? "Saving..." : "Saved"}
-                            </span>
-
-                            <button
-                                onClick={() => setIsAiOpen(!isAiOpen)}
-                                className="cursor-pointer rounded-xl px-3 py-1.5 text-sm text-[#8E96A3] transition-colors hover:bg-[#12161C] hover:text-[#F5F5F7]"
-                            >
-                                AI
-                            </button>
-                        </div>
-                    </header>
-
-                    <div className="h-px bg-[#1A1F26]" />
-
-                    <main className="mx-auto w-full">
-                        <TiptapMenuBar editor={editor} />
-                        <div className="h-px bg-[#1A1F26]" />
-                        <EditorContent
-                            editor={editor}
-                            className="py-2"
-                        />
-                    </main>
-
-                </div>
-            </div>
-
-            {isAiOpen && (
-                <div
-                    className="fixed inset-0 bg-black/40"
-                    onClick={() => setIsAiOpen(false)}
-                />
-            )}
-
-            <aside
-                className={`fixed top-0 bg-black right-0 h-full w-[70%]
-                                transform transition-transform duration-500 ease-out
-                                ${isAiOpen ? "translate-x-0" : "translate-x-full"}`}
-            >
-                <div className="flex h-16 items-center justify-between px-6">
-                    <h2 className="text-sm font-medium">
-                        AI Assistant
-                    </h2>
-
-                    <button
-                        onClick={() => setIsAiOpen(false)}
-                        className="h-8 w-8 cursor-pointer font-semibold hover:bg-gray-800 transition-all duration-300 rounded-full"
+        <div className="mx-auto flex h-screen w-full max-w-3xl flex-col overflow-hidden">
+            {/* ── Header ── */}
+            <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-[#1E2530] px-6">
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/"
+                        className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-[10px] bg-[#F5F5F7] text-xs font-semibold text-[#0B0D10] transition-opacity hover:opacity-80"
                     >
-                        X
+                        W
+                    </Link>
+
+                    <input
+                        value={title || ""}
+                        onChange={(e) => setTitle(e.target.value)}
+
+                        placeholder={DEFAULT_TITLE}
+                        className="w-48 bg-transparent text-sm font-medium text-[#C8CBD0] outline-none transition-colors placeholder:text-[#6B7280] hover:text-[#E5E7EA] focus:text-[#F5F5F7]"
+                    />
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <span className="text-xs text-[#6B7280]">
+                        {saveDoc.isPending ? "Saving…" : "Saved"}
+                    </span>
+
+                    {/* AI toggle */}
+                    <button
+                        onClick={() => setIsAiOpen(o => !o)}
+                        className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${isAiOpen
+                            ? "border-[#2E3643] bg-[#161B22] text-[#F5F5F7]"
+                            : "border-[#1E2530] bg-[#0F1318] text-[#8E96A3] hover:text-[#F5F5F7]"
+                            }`}
+                    >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
+                            <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
+                        </svg>
+                        AI
                     </button>
                 </div>
+            </header>
 
-                <div className="h-px bg-[#1A1F26]" />
+            <div className="flex-shrink-0 border-b border-[#1E2530]">
+                <TiptapMenuBar editor={editor} />
+            </div>
 
-                <div className="flex h-[calc(100vh-65px)] flex-col">
-                    <div className="flex-1 overflow-y-auto px-6 py-6">
-                        <div className="mb-6">
-                            <div
-                                className="inline-block rounded-2xl bg-[#12161C] px-4 py-3 text-sm text-[#D0D5DD]"
-                            >
-                                What would you like me to help with?
-                            </div>
-                        </div>
+            <div className="flex flex-1 overflow-hidden">
+                {/* Editor */}
+                <main className="flex-1 overflow-y-auto p-6">
+                    <div className="mx-auto max-w-2xl">
+                        <EditorContent editor={editor} />
+                    </div>
+                </main>
+
+                {/* AI Panel */}
+                <aside
+                    className={`flex flex-col border-l border-[#1E2530] bg-[#0B0D10] transition-all duration-300 ease-out overflow-hidden ${isAiOpen ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"}`}
+                >
+                    {/* Panel header */}
+                    <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-[#1E2530] px-4">
+                        <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#6B7280]">
+                            AI assistant
+                        </span>
+                        <button
+                            onClick={() => setIsAiOpen(false)}
+                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-[#8E96A3] transition-colors hover:bg-[#161B22] hover:text-[#F5F5F7]"
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                                <path d="M18 6 6 18M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
 
-                    <div className="border-t border-[#1A1F26] p-4">
-                        <div
-                            className="rounded-2xl border border-[#252B36] bg-[#12161C] p-3"
-                        >
-                            <textarea
-                                placeholder="Ask AI..."
-                                value={instruction}
-                                onChange={(event) => setInstruction(event.target.value)}
-                                className="min-h-20 w-full resize-none bg-transparent text-sm outline-none placeholder:text-[#69707C]"
-                            />
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                        {messages.map((msg, i) => (
+                            <div
+                                key={i}
+                                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                            >
+                                <div
+                                    className={`max-w-[90%] rounded-xl px-3.5 py-2.5 text-[13px] leading-[1.6] ${msg.role === "user"
+                                        ? "bg-[#1E2530] text-[#E5E7EA] border border-[#2E3643]"
+                                        : "bg-[#161B22] text-[#C8CBD0] border border-[#262C36]"
+                                        }`}
+                                >
+                                    {msg.content}
+                                </div>
+                            </div>
+                        ))}
 
-                            <div className="mt-3 flex justify-end">
+                        {askAi.isPending && (
+                            <div className="flex justify-start">
+                                <div className="rounded-xl bg-[#161B22] border border-[#262C36] px-3.5 py-2.5">
+                                    <div className="flex gap-1 items-center h-4">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#6B7280] animate-bounce [animation-delay:0ms]" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#6B7280] animate-bounce [animation-delay:150ms]" />
+                                        <span className="w-1.5 h-1.5 rounded-full bg-[#6B7280] animate-bounce [animation-delay:300ms]" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Input */}
+                    <div className="flex-shrink-0 border-t border-[#1E2530] p-3">
+                        <div className="rounded-xl border border-[#262C36] bg-[#161B22] px-3 py-2.5">
+                            <textarea
+                                placeholder="Ask anything about your draft…"
+                                value={instruction}
+                                onChange={(e) => setInstruction(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        handleSendAi();
+                                    }
+                                }}
+                                rows={3}
+                                className="w-full resize-none bg-transparent text-[13px] text-[#E5E7EA] outline-none placeholder:text-[#6B7280] leading-relaxed"
+                            />
+                            <div className="mt-2 flex items-center justify-between">
+                                <span className="text-[11px] text-[#6B7280]">↵ to send</span>
                                 <button
-                                    onClick={() => askAi.mutate({
-                                        instruction,
-                                        fullDocument: editor.getText(),
-                                    })}
-                                    className="cursor-pointer rounded-xl bg-[#F5F5F7] px-4 py-2 text-sm font-medium text-[#0B0D10]"
+                                    onClick={handleSendAi}
+                                    disabled={askAi.isPending || !instruction.trim()}
+                                    className="cursor-pointer rounded-lg bg-[#F5F5F7] px-3 py-1.5 text-xs font-medium text-[#0B0D10] transition-opacity hover:opacity-80 disabled:opacity-30"
                                 >
                                     Send
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            </aside>
+                </aside>
+            </div>
+            {/* ── Stats bar ── */}
+            <div className="flex flex-shrink-0 items-center gap-4 border-t border-[#1E2530] px-12 h-8">
+                <span className="text-[11px] text-[#6B7280]">{wordCount.toLocaleString()} words</span>
+                <span className="text-[11px] text-[#3A4250]">·</span>
+                <span className="text-[11px] text-[#6B7280]">{readingTime(wordCount)}</span>
+            </div>
         </div>
-    )
+    );
 }
 

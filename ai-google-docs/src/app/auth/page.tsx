@@ -8,7 +8,7 @@ export default function Auth() {
     const redirect = searchParams.get("redirect") ?? "/";
 
     return (
-        <div className="min-h-screen bg-[#0B0D10] text-[#F5F5F7]">
+        <div className="min-h-screen">
             <div className="flex min-h-screen items-center justify-center px-6">
                 <div className="w-full max-w-sm">
                     <div className="flex gap-4 items-center justify-center mb-6">
