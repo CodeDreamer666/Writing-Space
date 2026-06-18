@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import {
@@ -5,17 +6,6 @@ import {
     protectedProcedure,
     publicProcedure,
 } from "~/server/api/trpc";
-
-const jsonSchema: z.ZodType<unknown> = z.lazy(() =>
-    z.union([
-        z.string(),
-        z.number(),
-        z.boolean(),
-        z.null(),
-        z.array(jsonSchema),
-        z.record(z.string(), jsonSchema),
-    ])
-);
 
 export const docsRouter = createTRPCRouter({
     createDocs: protectedProcedure
@@ -110,13 +100,17 @@ export const docsRouter = createTRPCRouter({
         .input(z.object({
             docId: z.string().nonempty(),
             title: z.string().nonempty(),
-            content: jsonSchema
+            content: z.unknown()
         }))
         .mutation(async ({ input, ctx }) => {
             const userId = ctx.session.user.id;
 
-            console.log("Title", input.title);
-            console.log("Content", input.content)
+            if (!input.content) {
+                throw new TRPCError({
+                    code: "BAD_REQUEST",
+                    message: "Invalid input"
+                })
+            }
 
             await ctx.db.document.update({
                 where: {
@@ -125,7 +119,7 @@ export const docsRouter = createTRPCRouter({
                 },
                 data: {
                     title: input.title,
-                    content: input.content ?? undefined
+                    content: input.content
                 },
             });
 

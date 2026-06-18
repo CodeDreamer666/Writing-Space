@@ -11,10 +11,10 @@ import ServerError from "../components/ServerError";
 
 const DEFAULT_TITLE = "New Draft";
 
-type Message = {
-    role: "assistant" | "user";
-    content: string;
-};
+// type Message = {
+//     role: "assistant" | "user";
+//     content: string;
+// };
 
 function countWords(text: string): number {
     return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
@@ -28,34 +28,29 @@ function readingTime(words: number): string {
 export default function WritingSpace() {
     const params = useParams<{ docId: string }>();
     const utils = api.useUtils();
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const latestContentRef = useRef<JSONContent | null>(null);
-    const isLoadedRef = useRef(false);
-
+    // const messagesEndRef = useRef<HTMLDivElement>(null);
     const {
         data: doc,
         isLoading,
         error
     } = api.docs.getSelectedDoc.useQuery(
         { docId: params.docId },
-        { refetchOnMount: true }
     );
 
-    const [isAiOpen, setIsAiOpen] = useState(false);
-    const [instruction, setInstruction] = useState("");
-    const [messages, setMessages] = useState<Message[]>([
-        { role: "assistant", content: "What would you like help with? I can improve your writing, suggest ideas, or help you work through a section." }
-    ]);
-    const [title, setTitle] = useState(doc?.title);
+    // const [isAiOpen, setIsAiOpen] = useState(false);
+    // const [instruction, setInstruction] = useState("");
+    // const [messages, setMessages] = useState<Message[]>([
+    //     { role: "assistant", content: "What would you like help with? I can improve your writing, suggest ideas, or help you work through a section." }
+    // ]);
+
+    const [title, setTitle] = useState("");
     const [wordCount, setWordCount] = useState(0);
 
-    const askAi = api.ai.askAi.useMutation({
-        // onSuccess: (newData) => {
-        //     setMessages(prev => [...prev, { role: "assistant", content: newData }]);
-        // }
-    })
-
-    const saveDoc = api.docs.saveDoc.useMutation();
+    const saveDoc = api.docs.saveDoc.useMutation({
+        onSettled: async () => {
+            await utils.invalidate();
+        }
+    });
 
     const editor = useEditor({
         extensions: [StarterKit],
@@ -66,105 +61,30 @@ export default function WritingSpace() {
                 class: "outline-none text-lg leading-[1.85] text-[#C8CBD0] focus:text-[#E0E3E8] transition-colors duration-200",
             },
         },
-        onUpdate: ({ editor }) => {
-            setWordCount(countWords(editor.getText()));
-            latestContentRef.current = editor.getJSON();
-        },
     });
 
-    const latestTitleRef = useRef(title);
-    const latestEditorRef = useRef(editor);
+    useEffect(() => {
+        if (!doc) return;
+        setTitle(doc.title)
+    }, [doc])
 
     useEffect(() => {
-        latestTitleRef.current = title;
-    }, [title]);
-
-    useEffect(() => {
-        latestEditorRef.current = editor;
-    }, [editor]);
-
-    useEffect(() => {
-        return () => {
-            if (!isLoadedRef.current) return;
-            if (!latestContentRef.current) return;
-
-            saveDoc.mutate({
-                docId: params.docId,
-                title: latestTitleRef.current?.trim() || DEFAULT_TITLE,
-                content: latestContentRef.current,
-            }, {
-                onSuccess: () => console.log("[unmount] SAVE SUCCESS"),
-                onError: (err) => console.log("[unmount] SAVE ERROR", err),
-            });
-        };
-    }, []);
-
-    useEffect(() => {
-        if (!doc || !editor || isLoadedRef.current) return;
-        setTitle(doc.title);
-        editor.commands.setContent((doc.content as JSONContent) ?? "");
+        if (!doc || !editor) return;
+        editor.commands.setContent(doc.content as JSONContent);
         setWordCount(countWords(editor.getText()));
-        latestContentRef.current = editor.getJSON();
-        isLoadedRef.current = true;
     }, [doc, editor]);
 
-    useEffect(() => {
-        if (!editor || !isLoadedRef.current) return;
+    // useEffect(() => {
+    //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // }, [messages]);
 
-        const timer = setTimeout(() => {
-            saveDoc.mutate({
-                docId: params.docId,
-                title: title?.trim() || DEFAULT_TITLE,
-                content: editor.getJSON(),
-            });
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [title, wordCount]);
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
-
-    useEffect(() => {
-        if (!editor) return;
-
-        const flush = () => {
-            saveDoc.mutate({
-                docId: params.docId,
-                title: title?.trim() || DEFAULT_TITLE,
-                content: editor.getJSON(),
-            });
-        };
-
-        const beaconFlush = () => {
-            const payload = JSON.stringify({
-                docId: params.docId,
-                title: title?.trim() || DEFAULT_TITLE,
-                content: editor.getJSON(),
-            });
-            navigator.sendBeacon("/api/save-doc-beacon", payload);
-        };
-
-        const onVisibility = () => {
-            if (document.visibilityState === "hidden") flush();
-        };
-
-        window.addEventListener("beforeunload", beaconFlush);
-        document.addEventListener("visibilitychange", onVisibility);
-
-        return () => {
-            window.removeEventListener("beforeunload", beaconFlush);
-            document.removeEventListener("visibilitychange", onVisibility);
-        };
-    }, [title, editor]);
-
-    const handleSendAi = () => {
-        if (!instruction.trim()) return;
-        const userMessage = instruction.trim();
-        setMessages(prev => [...prev, { role: "user", content: userMessage }]);
-        setInstruction("");
-        askAi.mutate({ instruction: userMessage, fullDocument: editor?.getText() ?? "" });
-    };
+    // const handleSendAi = () => {
+    //     if (!instruction.trim()) return;
+    //     const userMessage = instruction.trim();
+    //     setMessages(prev => [...prev, { role: "user", content: userMessage }]);
+    //     setInstruction("");
+    //     askAi.mutate({ instruction: userMessage, fullDocument: editor?.getText() ?? "" });
+    // };
 
     if (!editor) return null;
     if (isLoading) return <Loading />;
@@ -192,12 +112,17 @@ export default function WritingSpace() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <span className="text-xs text-[#6B7280]">
+                    <span
+                        onClick={() => {
+                            saveDoc.mutate({
+                                docId: params.docId, title, content: editor.getJSON()
+                            })
+                        }}
+                        className="text-xs cursor-pointer text-[#6B7280]">
                         {saveDoc.isPending ? "Saving…" : "Saved"}
                     </span>
 
-                    {/* AI toggle */}
-                    <button
+                    {/* <button
                         onClick={() => setIsAiOpen(o => !o)}
                         className={`flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${isAiOpen
                             ? "border-[#2E3643] bg-[#161B22] text-[#F5F5F7]"
@@ -209,7 +134,7 @@ export default function WritingSpace() {
                             <path d="M18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
                         </svg>
                         AI
-                    </button>
+                    </button> */}
                 </div>
             </header>
 
@@ -225,11 +150,9 @@ export default function WritingSpace() {
                     </div>
                 </main>
 
-                {/* AI Panel */}
-                <aside
+                {/* <aside
                     className={`flex flex-col border-l border-[#1E2530] bg-[#0B0D10] transition-all duration-300 ease-out overflow-hidden ${isAiOpen ? "w-80 opacity-100" : "w-0 opacity-0 pointer-events-none"}`}
                 >
-                    {/* Panel header */}
                     <div className="flex h-14 flex-shrink-0 items-center justify-between border-b border-[#1E2530] px-4">
                         <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-[#6B7280]">
                             AI assistant
@@ -244,7 +167,6 @@ export default function WritingSpace() {
                         </button>
                     </div>
 
-                    {/* Messages */}
                     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                         {messages.map((msg, i) => (
                             <div
@@ -276,7 +198,6 @@ export default function WritingSpace() {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Input */}
                     <div className="flex-shrink-0 border-t border-[#1E2530] p-3">
                         <div className="rounded-xl border border-[#262C36] bg-[#161B22] px-3 py-2.5">
                             <textarea
@@ -286,7 +207,6 @@ export default function WritingSpace() {
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter" && !e.shiftKey) {
                                         e.preventDefault();
-                                        handleSendAi();
                                     }
                                 }}
                                 rows={3}
@@ -295,7 +215,6 @@ export default function WritingSpace() {
                             <div className="mt-2 flex items-center justify-between">
                                 <span className="text-[11px] text-[#6B7280]">↵ to send</span>
                                 <button
-                                    onClick={handleSendAi}
                                     disabled={askAi.isPending || !instruction.trim()}
                                     className="cursor-pointer rounded-lg bg-[#F5F5F7] px-3 py-1.5 text-xs font-medium text-[#0B0D10] transition-opacity hover:opacity-80 disabled:opacity-30"
                                 >
@@ -304,9 +223,9 @@ export default function WritingSpace() {
                             </div>
                         </div>
                     </div>
-                </aside>
+                </aside> */}
             </div>
-            {/* ── Stats bar ── */}
+
             <div className="flex flex-shrink-0 items-center gap-4 border-t border-[#1E2530] px-12 h-8">
                 <span className="text-[11px] text-[#6B7280]">{wordCount.toLocaleString()} words</span>
                 <span className="text-[11px] text-[#3A4250]">·</span>
