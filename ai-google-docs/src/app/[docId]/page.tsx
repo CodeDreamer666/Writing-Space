@@ -59,8 +59,8 @@ export default function WritingSpace() {
     });
 
     const saveDoc = api.docs.saveDoc.useMutation({
-        onSettled: async () => {
-            await utils.invalidate();
+        onSuccess: async () => {
+            await utils.docs.getUserDocs.invalidate();
         }
     });
 
@@ -89,6 +89,23 @@ export default function WritingSpace() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    useEffect(() => {
+        if (!doc || !editor) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+                e.preventDefault();
+                saveDoc.mutate({
+                    docId: params.docId,
+                    title: title?.trim() || DEFAULT_TITLE,
+                    content: editor.getJSON(),
+                })
+            }
+        };
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [title, editor]);
 
     const handleSendAi = () => {
         if (!instruction.trim()) return;

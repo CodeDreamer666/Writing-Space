@@ -27,13 +27,20 @@ export default function Home() {
         },
 
         onError: (error) => {
+            if (error instanceof TRPCClientError && error.data.code === "UNAUTHORIZED") {
+                router.replace(
+                    `/auth?redirect=${encodeURIComponent(pathname)}`
+                );
+                return;
+            }
+
             handleTRPCError({
                 error, router, pathname
             });
         },
 
         onSettled: async () => {
-            await utils.invalidate();
+            await utils.docs.getUserDocs.invalidate();
         }
     });
 
@@ -41,13 +48,21 @@ export default function Home() {
 
     if (isLoading) return <Loading />
 
-    if (error) return <ServerError />
+    if (error) {
+        const isUnauthorized =
+            error instanceof TRPCClientError &&
+            error.data?.code === "UNAUTHORIZED";
+
+        if (!isUnauthorized) {
+            return <ServerError />;
+        }
+    }
 
     return (
         <div className="min-h-screen bg-[#0B0D10] text-[#F5F5F7]">
             <div className="mx-auto max-w-3xl">
 
-                {/* <div className="flex justify-end px-6 pt-5 sm:px-8">
+                <div className="flex justify-end px-6 pt-5 sm:px-8">
                     {!user && (
                         <Link
                             href="/auth"
@@ -56,7 +71,7 @@ export default function Home() {
                             Sign in
                         </Link>
                     )}
-                </div> */}
+                </div>
 
                 <section className="px-6 pb-12 pt-10 sm:px-8 sm:pt-14">
                     <p className="mb-5 text-xs font-medium uppercase tracking-[0.12em] text-[#6B7280]">
@@ -99,7 +114,7 @@ export default function Home() {
                         Recent
                     </p>
 
-                    {docs?.length === 0 ? (
+                    {docs?.length === 0 || !docs ? (
                         <div className="rounded-xl border border-dashed border-[#1E2530] py-12 text-center">
                             <p className="text-sm text-[#6B7280]">
                                 Nothing yet — your drafts will appear here.

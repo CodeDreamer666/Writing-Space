@@ -4,8 +4,19 @@ import { z } from "zod";
 import {
     createTRPCRouter,
     protectedProcedure,
-    publicProcedure,
+    publicProcedure
 } from "~/server/api/trpc";
+
+const jsonSchema: z.ZodType<any> = z.lazy(() =>
+    z.union([
+        z.string(),
+        z.number(),
+        z.boolean(),
+        z.null(),
+        z.array(jsonSchema),
+        z.record(z.string(), jsonSchema),
+    ])
+);
 
 export const docsRouter = createTRPCRouter({
     createDocs: protectedProcedure
@@ -16,6 +27,17 @@ export const docsRouter = createTRPCRouter({
                 data: {
                     userId
                 }
+            });
+
+            const count = await ctx.db.document.count({
+                where: {
+                    userId
+                }
+            });
+
+            if (count >= 100) throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Document limit reached"
             });
 
 
@@ -34,26 +56,29 @@ export const docsRouter = createTRPCRouter({
                     userId
                 },
                 orderBy: {
-                    createdAt: "desc"
+                    updatedAt: "desc"
                 }
             });
 
             return docs;
         }),
 
-    getSelectedDoc: protectedProcedure
+    getSelectedDoc: publicProcedure
         .input(z.object({
             docId: z.string().nonempty()
         }))
         .query(async ({ input, ctx }) => {
-            const userId = ctx.session.user.id;
+            const userId = ctx.session?.user.id;
 
-            return await ctx.db.document.findUnique({
-                where: {
-                    id: input.docId,
-                    userId
-                }
-            })
+            const doc = await ctx.db.document.findUnique({
+                where: { id: input.docId, userId }
+            });
+
+            if (!doc) {
+                throw new TRPCError({ code: "NOT_FOUND", message: "Document not found" });
+            }
+
+            return doc;
         }),
 
     deleteDoc: protectedProcedure
@@ -100,17 +125,10 @@ export const docsRouter = createTRPCRouter({
         .input(z.object({
             docId: z.string().nonempty(),
             title: z.string().nonempty(),
-            content: z.unknown()
+            content: jsonSchema
         }))
         .mutation(async ({ input, ctx }) => {
             const userId = ctx.session.user.id;
-
-            if (!input.content) {
-                throw new TRPCError({
-                    code: "BAD_REQUEST",
-                    message: "Invalid input"
-                })
-            }
 
             await ctx.db.document.update({
                 where: {
