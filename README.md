@@ -149,9 +149,11 @@ npm install
 Create a `.env` file:
 
 ```env
-DATABASE_URL="postgresql://..."
-BETTER_AUTH_SECRET="..."
-GROQ_API_KEY="..."
+BETTER_AUTH_SECRET=""
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
+DATABASE_URL=""
+GROQ_API_KEY=""
 ```
 
 ### Setup
