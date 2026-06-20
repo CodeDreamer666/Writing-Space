@@ -60,7 +60,7 @@ export default function WritingSpace() {
 
     const saveDoc = api.docs.saveDoc.useMutation({
         onSuccess: async () => {
-            await utils.docs.getUserDocs.invalidate();
+            await utils.invalidate();
         }
     });
 
