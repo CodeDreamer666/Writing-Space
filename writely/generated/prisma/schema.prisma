@@ -15,26 +15,28 @@ datasource db {
 }
 
 model Document {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  content   Json?
-  title     String   @default("New Draft")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  content     Json?
+  title       String   @default("New Draft")
+  writingMode String   @default("Clear")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }
 
 model User {
-  id            String     @id
-  name          String //@db.Text
-  email         String
-  emailVerified Boolean    @default(false)
-  image         String? //@db.Text
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @default(now()) @updatedAt
-  sessions      Session[]
-  documents     Document[]
-  accounts      Account[]
+  id                    String     @id
+  name                  String //@db.Text
+  email                 String
+  emailVerified         Boolean    @default(false)
+  leaveReminderDisabled Boolean    @default(false)
+  image                 String? //@db.Text
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @default(now()) @updatedAt
+  sessions              Session[]
+  documents             Document[]
+  accounts              Account[]
 
   @@unique([email])
   @@map("user")

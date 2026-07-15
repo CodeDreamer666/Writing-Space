@@ -20,6 +20,7 @@ model Document {
     userId    String
     content   Json?
     title     String   @default("New Draft")
+    writingMode String @default("Clear")
     createdAt DateTime @default(now())
     updatedAt DateTime @default(now()) @updatedAt
 }
@@ -29,6 +30,7 @@ model User {
     name          String //@db.Text
     email         String
     emailVerified Boolean    @default(false)
+    leaveReminderDisabled Boolean @default(false)
     image         String? //@db.Text
     createdAt     DateTime   @default(now())
     updatedAt     DateTime   @default(now()) @updatedAt

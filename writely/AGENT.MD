@@ -78,3 +78,68 @@ const note = await db.note.findFirst({
   },
 });
 ```
+
+## Product Complexity Rules
+
+- Prefer the simplest reliable user experience over the smoothest technically possible experience.
+- Do not add hidden lifecycle complexity for a small convenience without explaining the tradeoff first.
+- Before implementing a UX behaviour, identify:
+  1. the user problem,
+  2. how frequently it occurs,
+  3. the simplest reliable solution,
+  4. the implementation and maintenance cost.
+- When a small UX feature requires several refs, effects, browser lifecycle events, manual cache manipulation, or custom networking, stop and propose a simpler alternative.
+- Do not implement speculative polish unless it is explicitly requested.
+- Preserving a small amount of acceptable friction when removing it would create fragile or difficult-to-maintain code.
+- Do not treat every possible edge case as a required product feature.
+- Core reliability, data protection, security, and understandable feedback take priority over invisible convenience.
+
+## Task Scope Rules
+
+- Work on one clearly defined user outcome at a time.
+- Before changing code, inspect the relevant flow and state which files are likely to change.
+- Do not modify unrelated UI, behaviour, architecture, or naming.
+- Do not add additional features while implementing the requested task.
+- When noticing an unrelated problem, report it separately instead of fixing it automatically.
+- For small tasks, prefer a small diff.
+- If the planned solution expands significantly beyond the original request, stop and explain why before continuing.
+- Define the completion conditions before implementation.
+  
+## React Complexity Rules
+
+- Effects should synchronize with external systems, not coordinate ordinary event-driven logic when a direct handler would be clearer.
+- Avoid chains where one effect updates state that triggers another effect.
+- Do not use `useCallback` or `useMemo` automatically; use them only for a clear correctness or performance reason.
+- Use refs only when a value must persist without causing a render, or when an external callback requires the latest value.
+- If one component coordinates multiple independent systems, separate them by responsibility.
+- Prefer a named custom hook when several states, refs, effects, and handlers belong to one lifecycle such as document saving.
+- Do not hide a simple operation behind a generic abstraction.
+- When refactoring, improve readability without changing user behaviour unless behaviour changes are explicitly approved.
+  
+## Verification Rules
+
+After implementation:
+- Run the relevant formatter, linter, type checker, and tests available in the project.
+- Test the primary successful path.
+- Test loading, empty, error, and repeated-action states when relevant.
+- For mutations, verify authentication, ownership, server validation, size limits, and safe errors.
+- For responsive UI changes, check mobile, tablet, and desktop layouts.
+- Summarize:
+  - what changed,
+  - which files changed,
+  - what was tested,
+  - remaining risks or limitations.
+
+## Aditional Rules
+
+Current:
+- If a file is under 150 lines and easy to read, it can stay together.
+- If a file is 200-300+ lines, consider splitting it.
+Improved:
+- File length is a warning signal, not `the main reason to split code.
+- Keep a file together when it has one understandable responsibility.
+- Split a file when it coordinates multiple independent concerns, contains difficult lifecycle logic, or cannot be explained clearly.
+- A readable 250-line component may remain together.
+- A confusing 120-line component may need separation.
+
+

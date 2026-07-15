@@ -1,19 +1,11 @@
 "use client";
-import { TRPCClientError } from "@trpc/client";
 import { usePathname, useRouter } from "next/navigation";
 import Loading from "~/components/shared/Loading";
 import LoadingIcon from "~/components/shared/LoadingIcon";
 import ServerError from "~/components/shared/ServerError";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
-import type { AppRouter } from "~/server/api/root";
 import { api } from "~/trpc/react";
 import DocItem from "./DocItem";
-
-function isTRPCClientError(
-    error: unknown,
-): error is TRPCClientError<AppRouter> {
-    return error instanceof TRPCClientError;
-}
 
 export default function DocsHome() {
     const router = useRouter();

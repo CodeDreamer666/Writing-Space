@@ -2,11 +2,13 @@ import { WRITING_MODES, type WritingMode } from "~/types/writing";
 
 type Props = {
   selectedMode: WritingMode;
+  isSaving: boolean;
   onModeChange: (mode: WritingMode) => void;
 };
 
 export default function WritingModeSelector({
   selectedMode,
+  isSaving,
   onModeChange,
 }: Props) {
   return (
@@ -21,10 +23,11 @@ export default function WritingModeSelector({
         <select
           id="writing-mode"
           value={selectedMode}
+          disabled={isSaving}
           onChange={(event) => onModeChange(event.target.value as WritingMode)}
           title="Writing mode"
           aria-describedby="writing-mode-help"
-          className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-[#1E2530] bg-[#0B0D10] px-3 pr-9 text-sm text-[#D5D9DF] transition-colors outline-none hover:border-[#2E3643] hover:text-[#F5F5F7] focus:border-[#555C6A]"
+          className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-[#1E2530] bg-[#0B0D10] px-3 pr-9 text-sm text-[#D5D9DF] transition-colors outline-none hover:border-[#2E3643] hover:text-[#F5F5F7] focus:border-[#555C6A] disabled:cursor-wait disabled:opacity-60"
         >
           {WRITING_MODES.map((mode) => (
             <option key={mode} value={mode}>

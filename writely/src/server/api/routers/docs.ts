@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import type { JsonInputValue } from "~/types/json";
+import { WRITING_MODES } from "~/types/writing";
 
 const jsonValueSchema: z.ZodType<JsonInputValue | null> = z.lazy(() =>
   z.union([
@@ -69,6 +70,39 @@ export const docsRouter = createTRPCRouter({
     return docs;
   }),
 
+  getLeaveReminderPreference: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.db.user.findUnique({
+      where: {
+        id: ctx.session.user.id,
+      },
+      select: {
+        leaveReminderDisabled: true,
+      },
+    });
+
+    return {
+      leaveReminderDisabled: user?.leaveReminderDisabled ?? false,
+    };
+  }),
+
+  setLeaveReminderDisabled: protectedProcedure
+    .input(z.object({ disabled: z.boolean() }))
+    .mutation(async ({ input, ctx }) => {
+      const user = await ctx.db.user.update({
+        where: {
+          id: ctx.session.user.id,
+        },
+        data: {
+          leaveReminderDisabled: input.disabled,
+        },
+        select: {
+          leaveReminderDisabled: true,
+        },
+      });
+
+      return user;
+    }),
+
   getSelectedDoc: protectedProcedure
     .input(
       z.object({
@@ -134,6 +168,31 @@ export const docsRouter = createTRPCRouter({
 
       return {
         success: true,
+      };
+    }),
+
+  updateWritingMode: protectedProcedure
+    .input(
+      z.object({
+        docId: z.string().nonempty(),
+        writingMode: z.enum(WRITING_MODES),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = ctx.session.user.id;
+
+      const document = await ctx.db.document.update({
+        where: {
+          userId,
+          id: input.docId,
+        },
+        data: {
+          writingMode: input.writingMode,
+        },
+      });
+
+      return {
+        writingMode: document.writingMode,
       };
     }),
 

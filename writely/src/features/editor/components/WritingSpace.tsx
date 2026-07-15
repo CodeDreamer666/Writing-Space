@@ -3,15 +3,15 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import SuperJSON from "superjson";
+import { useCallback, useEffect, useState } from "react";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { api } from "~/trpc/react";
-import type { WritingMode } from "~/types/writing";
+import { WRITING_MODES, type WritingMode } from "~/types/writing";
 import AiWritingPanel from "./AiWritingPanel";
 import EditorDocument from "./EditorDocument";
 import EditorHeader from "./EditorHeader";
-import EditorUtilityBar, { type EditorSaveStatus } from "./EditorUtilityBar";
+import EditorUtilityBar from "./EditorUtilityBar";
+import LeaveEditorModal from "./LeaveEditorModal";
 import {
     countWords,
     DEFAULT_TITLE,
@@ -24,45 +24,25 @@ import {
     replaceAiContext,
 } from "../utils/aiContext";
 
+function isWritingMode(value: string): value is WritingMode {
+    return WRITING_MODES.includes(value as WritingMode);
+}
+
 export default function WritingSpace() {
     const params = useParams<{ docId: string }>();
     const router = useRouter();
     const pathname = usePathname();
+    const docId = params.docId ?? "";
+    const utils = api.useUtils();
     const handleTRPCError = useHandleTRPCError();
-    const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const hasInitializedDocumentRef = useRef(false);
-    const isHydratingDocumentRef = useRef(false);
-    const hasHandledDocumentErrorRef = useRef(false);
-    const changeVersionRef = useRef(0);
-    const hasUnsavedChangesRef = useRef(false);
-    const pendingSaveVersionRef = useRef<number | null>(null);
-    const exitSaveSentRef = useRef(false);
-    const handleSaveRef = useRef<() => void>(() => undefined);
-    const titleRef = useRef(DEFAULT_TITLE);
     const [title, setTitle] = useState(DEFAULT_TITLE);
     const [wordCount, setWordCount] = useState(0);
     const [selectedMode, setSelectedMode] = useState<WritingMode>("Clear");
-    const [saveStatus, setSaveStatus] = useState<EditorSaveStatus>("idle");
-    const [shortcutHint, setShortcutHint] = useState("Ctrl + S to save");
     const [isAiOpen, setIsAiOpen] = useState(false);
-    const [isFocusMode, setIsFocusMode] = useState(false);
     const [selectionText, setSelectionText] = useState("");
-    const docId = params.docId ?? "";
-    const utils = api.useUtils();
-
-    const clearSaveStatusTimer = () => {
-        if (saveStatusTimerRef.current) {
-            clearTimeout(saveStatusTimerRef.current);
-            saveStatusTimerRef.current = null;
-        }
-    };
-
-    const markUnsaved = () => {
-        clearSaveStatusTimer();
-        changeVersionRef.current += 1;
-        hasUnsavedChangesRef.current = true;
-        setSaveStatus("unsaved");
-    };
+    const [isSaveReminderVisible, setIsSaveReminderVisible] = useState(true);
+    const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+    const [dontRemindAgain, setDontRemindAgain] = useState(false);
 
     const editor = useEditor({
         extensions: [
@@ -86,11 +66,8 @@ export default function WritingSpace() {
 
         onUpdate: ({ editor: updatedEditor }) => {
             setWordCount(countWords(updatedEditor.getText()));
-
-            if (!isHydratingDocumentRef.current) {
-                markUnsaved();
-            }
         },
+
         onSelectionUpdate: ({ editor: updatedEditor }) => {
             const { from, to } = updatedEditor.state.selection;
             setSelectionText(updatedEditor.state.doc.textBetween(from, to, "\n\n"));
@@ -104,46 +81,43 @@ export default function WritingSpace() {
     } = api.docs.getSelectedDoc.useQuery(
         { docId },
         {
-            enabled: Boolean(docId),
             refetchOnMount: "always",
             refetchOnWindowFocus: true,
         },
     );
+
+    const { data: leaveReminderPreference } =
+        api.docs.getLeaveReminderPreference.useQuery();
+    const isLeaveReminderDisabled =
+        leaveReminderPreference?.leaveReminderDisabled ?? false;
+
     const saveDoc = api.docs.saveDoc.useMutation({
         onSettled: async () => {
             await utils.invalidate();
         },
     });
 
-    useEffect(() => {
-        hasInitializedDocumentRef.current = false;
-        hasHandledDocumentErrorRef.current = false;
-        exitSaveSentRef.current = false;
-    }, [docId]);
+    const setLeaveReminderDisabled =
+        api.docs.setLeaveReminderDisabled.useMutation();
+
+    const updateWritingMode = api.docs.updateWritingMode.useMutation({
+        onSettled: async () => {
+            await utils.invalidate();
+        },
+    });
 
     useEffect(() => {
-        if (!documentError || hasHandledDocumentErrorRef.current) {
+        if (!document || !editor) {
             return;
         }
-
-        hasHandledDocumentErrorRef.current = true;
-
-        handleTRPCError({ error: documentError, router, pathname });
-
-    }, [documentError, handleTRPCError, pathname, router]);
-
-    useEffect(() => {
-        if (!document || !editor || hasInitializedDocumentRef.current) {
-            return;
-        }
-
-        isHydratingDocumentRef.current = true;
 
         const documentTitle = document.title || DEFAULT_TITLE;
+        const documentWritingMode = isWritingMode(document.writingMode)
+            ? document.writingMode
+            : "Clear";
 
         setTitle(documentTitle);
-
-        titleRef.current = documentTitle;
+        setSelectedMode(documentWritingMode);
 
         editor.commands.setContent(
             isEditorContent(document.content) ? document.content : "<p></p>",
@@ -151,168 +125,52 @@ export default function WritingSpace() {
 
         setWordCount(countWords(editor.getText()));
         setSelectionText("");
-        setSaveStatus("idle");
-        hasUnsavedChangesRef.current = false;
-        hasInitializedDocumentRef.current = true;
-        isHydratingDocumentRef.current = false;
     }, [document, editor]);
 
-    useEffect(() => {
-        const isMac = navigator.platform.toUpperCase().includes("MAC");
-        setShortcutHint(isMac ? "⌘ + S to save" : "Ctrl + S to save");
-    }, []);
-
-    useEffect(() => {
-        return clearSaveStatusTimer;
-    }, []);
-
-    useEffect(() => {
-        if (isFocusMode) {
-            setIsAiOpen(false);
-        }
-    }, [isFocusMode]);
-
-    const getSavePayload = useCallback(() => {
-        if (!editor || !docId) {
-            return null;
+    const handleSave = useCallback(async () => {
+        if (!editor || !docId || saveDoc.isPending) {
+            return false;
         }
 
-        return {
+        const savePayload = {
             docId,
-            title: titleRef.current.trim() || DEFAULT_TITLE,
+            title: title.trim() || DEFAULT_TITLE,
             content: editor.getJSON(),
         };
-    }, [docId, editor]);
 
-    const handleSave = useCallback(() => {
-        if (!editor || !docId || saveDoc.isPending) {
+        try {
+            await saveDoc.mutateAsync(savePayload);
+            setTitle(savePayload.title);
+            return true;
+        } catch (error) {
+            handleTRPCError({ error, router, pathname });
+            return false;
+        }
+    }, [docId, editor, handleTRPCError, pathname, router, saveDoc, title]);
+
+    const handleWritingModeChange = (nextMode: WritingMode) => {
+        if (updateWritingMode.isPending || nextMode === selectedMode) {
             return;
         }
 
-        clearSaveStatusTimer();
-        const savedChangeVersion = changeVersionRef.current;
-        const savePayload = getSavePayload();
+        const previousMode = selectedMode;
 
-        if (!savePayload) {
-            return;
-        }
+        setSelectedMode(nextMode);
 
-        const savedTitle = savePayload.title;
-        const showSaveOutcome = (status: "saved" | "failed") => {
-            setSaveStatus(status);
-            saveStatusTimerRef.current = setTimeout(() => {
-                setSaveStatus("idle");
-            }, 2200);
-        };
-
-        setSaveStatus("saving");
-        pendingSaveVersionRef.current = savedChangeVersion;
-
-        saveDoc.mutate(savePayload, {
-            onSuccess: () => {
-                setTitle(savedTitle);
-                titleRef.current = savedTitle;
-                pendingSaveVersionRef.current = null;
-
-                if (changeVersionRef.current === savedChangeVersion) {
-                    hasUnsavedChangesRef.current = false;
-                    showSaveOutcome("saved");
-                    return;
-                }
-
-                setSaveStatus("unsaved");
+        updateWritingMode.mutate(
+            {
+                docId,
+                writingMode: nextMode,
             },
-            onError: (error) => {
-                pendingSaveVersionRef.current = null;
-                handleTRPCError({ error, router, pathname });
-                showSaveOutcome("failed");
-            },
-        });
-    }, [
-        docId,
-        editor,
-        getSavePayload,
-        handleTRPCError,
-        pathname,
-        router,
-        saveDoc,
-    ]);
-
-    const sendExitSave = useCallback(() => {
-        if (exitSaveSentRef.current || !hasUnsavedChangesRef.current) {
-            return;
-        }
-
-        const savePayload = getSavePayload();
-
-        if (!savePayload) {
-            return;
-        }
-
-        exitSaveSentRef.current = true;
-
-        utils.docs.getSelectedDoc.setData(
-            { docId: savePayload.docId },
-            (previousDocument) => {
-                if (!previousDocument) {
-                    return previousDocument;
-                }
-
-                return {
-                    ...previousDocument,
-                    title: savePayload.title,
-                    content: savePayload.content,
-                };
+            {
+                onError: (error) => {
+                    setSelectedMode(previousMode);
+                    handleTRPCError({ error, router, pathname });
+                },
             },
         );
+    };
 
-        utils.invalidate();
-
-        const input = SuperJSON.serialize(savePayload);
-
-        void fetch("/api/trpc/docs.saveDoc?batch=1", {
-            method: "POST",
-            credentials: "same-origin",
-            keepalive: true,
-            headers: {
-                "content-type": "application/json",
-                "x-trpc-source": "nextjs-react",
-            },
-            body: JSON.stringify({ 0: input }),
-        });
-    }, [getSavePayload, utils]);
-
-    useEffect(() => {
-        handleSaveRef.current = handleSave;
-    }, [handleSave]);
-
-    useEffect(() => {
-        const handlePageHide = () => {
-            sendExitSave();
-        };
-
-        const handlePageShow = (event: PageTransitionEvent) => {
-            if (event.persisted) {
-                exitSaveSentRef.current = false;
-            }
-        };
-
-        window.addEventListener("pagehide", handlePageHide);
-        window.addEventListener("pageshow", handlePageShow);
-
-        return () => {
-            window.removeEventListener("pagehide", handlePageHide);
-            window.removeEventListener("pageshow", handlePageShow);
-
-            if (
-                hasUnsavedChangesRef.current &&
-                pendingSaveVersionRef.current !== changeVersionRef.current
-            ) {
-                handleSaveRef.current();
-            }
-        };
-    }, [sendExitSave]);
-    
     // Ctrl + s = save
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -325,7 +183,8 @@ export default function WritingSpace() {
             }
 
             event.preventDefault();
-            handleSave();
+
+            void handleSave();
         };
 
         window.addEventListener("keydown", handleKeyDown);
@@ -335,65 +194,143 @@ export default function WritingSpace() {
         };
     }, [handleSave]);
 
+    useEffect(() => {
+        if (isLeaveReminderDisabled) {
+            return;
+        }
+
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = "";
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [isLeaveReminderDisabled]);
+
+    const saveLeaveReminderPreference = async () => {
+        if (!dontRemindAgain) {
+            return true;
+        }
+
+        try {
+            await setLeaveReminderDisabled.mutateAsync({ disabled: true });
+            return true;
+        } catch (error) {
+            handleTRPCError({ error, router, pathname });
+            return false;
+        }
+    };
+
+    const handleBackToDrafts = () => {
+        if (isLeaveReminderDisabled) {
+            router.push("/");
+            return;
+        }
+
+        setDontRemindAgain(false);
+        setIsLeaveModalOpen(true);
+    };
+
+    const handleLeavePage = async () => {
+        if (setLeaveReminderDisabled.isPending) {
+            return;
+        }
+
+        const didSavePreference = await saveLeaveReminderPreference();
+
+        if (didSavePreference) {
+            router.push("/");
+        }
+    };
+
+    const handleSaveAndLeave = async () => {
+        if (saveDoc.isPending || setLeaveReminderDisabled.isPending) {
+            return;
+        }
+
+        const didSaveDocument = await handleSave();
+
+        if (!didSaveDocument) {
+            return;
+        }
+
+        const didSavePreference = await saveLeaveReminderPreference();
+
+        if (didSavePreference) {
+            router.push("/");
+        }
+    };
+
     if (!editor || isDocumentLoading || documentError || !document) {
         return null;
     }
 
     return (
         <div
-            className={`min-h-screen bg-[#0B0D10] text-[#F5F5F7] transition-colors duration-300 ${isFocusMode ? "bg-[#080A0D]" : ""
-                }`}
+            className={`min-h-screen bg-[#0B0D10] text-[#F5F5F7] transition-colors duration-300`}
         >
             <EditorHeader
                 isAiOpen={isAiOpen}
-                isFocusMode={isFocusMode}
+                isSaving={saveDoc.isPending}
+                onSave={() => {
+                    void handleSave();
+                }}
                 onAiToggle={() => setIsAiOpen((isOpen) => !isOpen)}
-                onFocusToggle={() => setIsFocusMode((current) => !current)}
             />
 
-            <div
-                className={`mx-auto w-full transition-all duration-300 ${isFocusMode ? "max-w-4xl" : "max-w-6xl"
-                    }`}
-            >
+            <div className={`mx-auto w-full max-w-6xl transition-all duration-300`}>
                 <EditorDocument
                     editor={editor}
-                    isFocusMode={isFocusMode}
                     selectedMode={selectedMode}
+                    isWritingModeSaving={updateWritingMode.isPending}
+                    isSaveReminderVisible={isSaveReminderVisible}
                     title={title}
-                    onModeChange={setSelectedMode}
+                    onModeChange={handleWritingModeChange}
+                    onDismissSaveReminder={() => setIsSaveReminderVisible(false)}
                     onTitleChange={(nextTitle) => {
                         setTitle(nextTitle);
-                        titleRef.current = nextTitle;
-                        markUnsaved();
                     }}
                     onAiOpen={() => setIsAiOpen(true)}
                 />
 
-                {!isFocusMode && (
-                    <EditorUtilityBar
-                        wordCount={wordCount}
-                        readingTime={readingTime(wordCount)}
-                        saveStatus={saveStatus}
-                        shortcutHint={shortcutHint}
-                    />
-                )}
+                <EditorUtilityBar
+                    wordCount={wordCount}
+                    readingTime={readingTime(wordCount)}
+                    onBackToDrafts={handleBackToDrafts}
+                />
 
-                {!isFocusMode && (
-                    <AiWritingPanel
-                        isOpen={isAiOpen}
-                        mode={selectedMode}
-                        selectionWordCount={countWords(selectionText)}
-                        hasSelection={selectionText.length > 0}
-                        hasDocumentContent={wordCount > 0}
-                        captureContext={() => captureAiContext(editor)}
-                        isContextCurrent={(context) => isAiContextCurrent(editor, context)}
-                        onReplace={(context, content) =>
-                            replaceAiContext(editor, context, content)
-                        }
-                        onClose={() => setIsAiOpen(false)}
-                    />
-                )}
+                <AiWritingPanel
+                    isOpen={isAiOpen}
+                    mode={selectedMode}
+                    selectionWordCount={countWords(selectionText)}
+                    hasSelection={selectionText.length > 0}
+                    hasDocumentContent={wordCount > 0}
+                    captureContext={() => captureAiContext(editor)}
+                    isContextCurrent={(context) => isAiContextCurrent(editor, context)}
+                    onReplace={(context, content) =>
+                        replaceAiContext(editor, context, content)
+                    }
+                    onClose={() => setIsAiOpen(false)}
+                />
             </div>
+
+            <LeaveEditorModal
+                isOpen={isLeaveModalOpen}
+                dontRemindAgain={dontRemindAgain}
+                isSaving={saveDoc.isPending}
+                isUpdatingPreference={setLeaveReminderDisabled.isPending}
+                onDontRemindAgainChange={setDontRemindAgain}
+                onLeave={() => {
+                    void handleLeavePage();
+                }}
+                onSaveAndLeave={() => {
+                    void handleSaveAndLeave();
+                }}
+            />
         </div>
     );
 }
