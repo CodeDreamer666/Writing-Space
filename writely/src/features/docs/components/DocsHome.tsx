@@ -1,19 +1,34 @@
 "use client";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import Loading from "~/components/shared/Loading";
 import LoadingIcon from "~/components/shared/LoadingIcon";
 import ServerError from "~/components/shared/ServerError";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
+import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
 import DocItem from "./DocItem";
 
 export default function DocsHome() {
     const router = useRouter();
-    const pathname = usePathname();
     const utils = api.useUtils();
     const handleTRPCError = useHandleTRPCError();
+    const { showMessage } = useStatusMessage();
 
-    const { data: docs, isLoading, error } = api.docs.getUserDocs.useQuery();
+    const [isSigningIn, setIsSigningIn] = useState(false);
+
+    const { data: session, isPending: isSessionLoading } =
+        authClient.useSession();
+
+    const isAuthenticated = Boolean(session?.user);
+
+    const { data: docs, isLoading, error } = api.docs.getUserDocs.useQuery(
+        undefined,
+        {
+            enabled: isAuthenticated,
+        },
+    );
 
     const createDoc = api.docs.createDoc.useMutation({
         onSuccess: (newData) => {
@@ -24,7 +39,6 @@ export default function DocsHome() {
             handleTRPCError({
                 error,
                 router,
-                pathname,
             });
         },
 
@@ -33,11 +47,38 @@ export default function DocsHome() {
         },
     });
 
-    if (isLoading) {
+    const handleStartWriting = async () => {
+        if (isAuthenticated) {
+            createDoc.mutate();
+            return;
+        }
+
+        setIsSigningIn(true);
+
+        try {
+            const result = await authClient.signIn.social({
+                provider: "google",
+                callbackURL: "/api/create-draft",
+            });
+
+            if (result.error) {
+                setIsSigningIn(false);
+                showMessage("Unable to start Google sign-in", false);
+            }
+        } catch {
+            setIsSigningIn(false);
+            showMessage("Unable to start Google sign-in", false);
+        }
+    };
+
+    const isStartWritingPending =
+        isSessionLoading || isSigningIn || createDoc.isPending;
+
+    if (isSessionLoading || (isAuthenticated && isLoading)) {
         return <Loading />;
     }
 
-    if (error) {
+    if (isAuthenticated && error) {
         return <ServerError />;
     }
 
@@ -45,9 +86,11 @@ export default function DocsHome() {
         <div className="min-h-screen bg-[#0B0D10] text-[#F5F5F7]">
             <div className="mx-auto max-w-3xl">
                 <section className="px-6 pt-10 pb-12 sm:px-8 sm:pt-14">
-                    <p className="mb-5 text-xs font-medium tracking-[0.12em] text-[#6B7280] uppercase">
-                        Your writing space
-                    </p>
+                    <div className="mb-5 flex items-center justify-between gap-4">
+                        <p className="text-xs font-medium tracking-[0.12em] text-[#6B7280] uppercase">
+                            Your writing space
+                        </p>
+                    </div>
 
                     <h1 className="mb-0 text-4xl leading-[1.15] font-medium tracking-[-0.02em] text-[#F5F5F7] sm:text-5xl">
                         What will you
@@ -62,14 +105,18 @@ export default function DocsHome() {
 
                     <div className="mt-8">
                         <button
-                            disabled={createDoc.isPending}
-                            onClick={() => createDoc.mutate()}
+                            disabled={isStartWritingPending}
+                            onClick={() => {
+                                void handleStartWriting();
+                            }}
                             className="cursor-pointer rounded-xl bg-[#F5F5F7] px-6 py-3 text-sm font-medium text-[#0B0D10] transition-all duration-200 hover:opacity-85 active:scale-[0.98] disabled:opacity-60"
                         >
-                            {createDoc.isPending ? (
+                            {isStartWritingPending ? (
                                 <div className="flex items-center gap-2">
                                     <LoadingIcon />
-                                    <span>Creating...</span>
+                                    <span>
+                                        Creating
+                                    </span>
                                 </div>
                             ) : (
                                 "Start writing"

@@ -43,7 +43,7 @@ export default function LeaveEditorModal({
           Your latest edits are only kept after you save this draft.
         </p>
 
-        <div className="mt-6 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 flex flex-col gap-4">
           <button
             disabled={isProcessing}
             onClick={onLeave}

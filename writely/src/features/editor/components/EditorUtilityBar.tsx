@@ -14,7 +14,7 @@ export default function EditorUtilityBar({
       <footer className="flex items-center justify-between border-t border-[#1E2530] pt-4 text-xs text-[#8E96A3]">
         <button
           onClick={onBackToDrafts}
-          className="inline-flex min-h-9 w-fit items-center gap-2 rounded-lg px-2 text-[#AEB4BE] transition-colors hover:bg-[#161B22] hover:text-[#F5F5F7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3]"
+          className="inline-flex cursor-pointer min-h-9 w-fit items-center gap-2 rounded-lg px-2 text-[#AEB4BE] transition-colors hover:bg-[#161B22] hover:text-[#F5F5F7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3]"
         >
           <svg
             width="14"

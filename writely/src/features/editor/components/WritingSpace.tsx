@@ -2,7 +2,7 @@
 import Placeholder from "@tiptap/extension-placeholder";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { api } from "~/trpc/react";
@@ -27,11 +27,9 @@ import {
 function isWritingMode(value: string): value is WritingMode {
     return WRITING_MODES.includes(value as WritingMode);
 }
-
 export default function WritingSpace() {
     const params = useParams<{ docId: string }>();
     const router = useRouter();
-    const pathname = usePathname();
     const docId = params.docId ?? "";
     const utils = api.useUtils();
     const handleTRPCError = useHandleTRPCError();
@@ -143,10 +141,10 @@ export default function WritingSpace() {
             setTitle(savePayload.title);
             return true;
         } catch (error) {
-            handleTRPCError({ error, router, pathname });
+            handleTRPCError({ error, router });
             return false;
         }
-    }, [docId, editor, handleTRPCError, pathname, router, saveDoc, title]);
+    }, [docId, editor, handleTRPCError, router, saveDoc, title]);
 
     const handleWritingModeChange = (nextMode: WritingMode) => {
         if (updateWritingMode.isPending || nextMode === selectedMode) {
@@ -165,7 +163,7 @@ export default function WritingSpace() {
             {
                 onError: (error) => {
                     setSelectedMode(previousMode);
-                    handleTRPCError({ error, router, pathname });
+                    handleTRPCError({ error, router });
                 },
             },
         );
@@ -220,7 +218,7 @@ export default function WritingSpace() {
             await setLeaveReminderDisabled.mutateAsync({ disabled: true });
             return true;
         } catch (error) {
-            handleTRPCError({ error, router, pathname });
+            handleTRPCError({ error, router });
             return false;
         }
     };

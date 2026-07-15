@@ -8,7 +8,6 @@ import type { AppRouter } from "~/server/api/root";
 type HandleTRPCErrorParams = {
   error: unknown;
   router: AppRouterInstance;
-  pathname: string;
 };
 
 function isTRPCClientError(
@@ -20,11 +19,7 @@ function isTRPCClientError(
 export function useHandleTRPCError() {
   const { showMessage } = useStatusMessage();
 
-  return function handleTRPCError({
-    error,
-    router,
-    pathname,
-  }: HandleTRPCErrorParams) {
+  return function handleTRPCError({ error, router }: HandleTRPCErrorParams) {
     if (!isTRPCClientError(error)) {
       showMessage("Something went wrong", false);
       return;
@@ -44,7 +39,7 @@ export function useHandleTRPCError() {
         return;
 
       case "UNAUTHORIZED":
-        router.replace(`/auth?redirect=${encodeURIComponent(pathname)}`);
+        router.replace("/");
         return;
 
       case "FORBIDDEN":

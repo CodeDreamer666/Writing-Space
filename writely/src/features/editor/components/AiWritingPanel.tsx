@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -96,7 +96,6 @@ export default function AiWritingPanel({
     onClose,
 }: Props) {
     const router = useRouter();
-    const pathname = usePathname();
     const handleTRPCError = useHandleTRPCError();
     const [customPrompt, setCustomPrompt] = useState("");
     const [result, setResult] = useState<AiResult | null>(null);
@@ -141,7 +140,7 @@ export default function AiWritingPanel({
                     setResult({ action, context, response });
                 },
                 onError: (error) => {
-                    handleTRPCError({ error, router, pathname });
+                    handleTRPCError({ error, router });
                 },
             },
         );
