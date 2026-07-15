@@ -1,204 +1,127 @@
 # Writely
 
-A minimalist, AI-powered writing application built for people who want to focus on writing — not on the tool.
+Writely is a calm, focused space for thinking deeply and writing with intent.
+It keeps the page quiet, gives ideas room to develop, and offers help only when
+you ask for it.
 
----
+The aim is simple: help writers spend less time managing a tool and more time
+following a thought to its clearest form.
 
-## What is Writely?
+## What it offers
 
-Writely strips away the noise of traditional document editors. No toolbars cluttered with formatting options. No collaboration panels. No folder trees. Just a clean, dark writing surface and an AI assistant that stays out of your way until you need it.
+- A distraction-light writing surface with titles, word count, reading time,
+  and essential rich-text formatting.
+- Persistent drafts backed by PostgreSQL, with clear Save and Saving states.
+- Writing modes—such as Clear, Reflective, Story, and Argumentative—that guide
+  AI suggestions and are saved with each draft.
+- An AI writing panel for improving clarity, fixing grammar, strengthening
+  language, finding weak points, exploring directions, or asking a custom
+  question about a draft or selection.
+- Google sign-in with direct draft creation: signed-out users can start writing,
+  choose a Google account, and arrive in a new draft after authentication.
+- A compact Login / Logout control on the homepage.
+- A gentle save reminder that can be dismissed for the current page visit, plus
+  a leave dialog with Save document, Leave page, and a per-account “Don’t
+  remind me again” preference.
+- Draft renaming and deletion from the homepage.
 
-The goal is not to compete with Notion or Google Docs. It is to offer something they don't: a calm, distraction-free space where writing comes first.
+## Writing with Writely
 
----
+1. Open the homepage and choose **Start writing**.
+2. If needed, select a Google account; Writely then creates and opens a draft.
+3. Give the idea a title, choose a writing mode, and write without unnecessary
+   controls competing for attention.
+4. Select text or open **AI** when you want a specific kind of feedback—not a
+   replacement for your thinking.
+5. Click **Save** or use `Ctrl/Cmd + S` before leaving.
 
-## Features
+The homepage’s Login button opens Google account selection directly. After
+sign-in, it returns to the writing space; Start writing creates a fresh draft
+and opens it automatically.
 
-### Writing
-- Instant document creation — one click, you're writing
-- Essential formatting only: **Bold**, *Italic*, H1, H2, Bullet list, Ordered list, Blockquote
-- Inline title editing directly in the header
-- Manual save via the Save button in the header (or press Enter in the title input)
-- Word count and estimated reading time in the status bar
+## Tech stack
 
-### Document Management
-- Homepage lists all your drafts, sorted by most recently updated
-- Rename or delete any document from the document list
-- Relative timestamps ("Just now", "Yesterday", "Monday")
+- Next.js 16 and React 19
+- TypeScript and Tailwind CSS
+- tRPC and TanStack Query
+- Prisma with PostgreSQL
+- Better Auth with Google OAuth
+- Tiptap editor
+- Groq-powered AI assistance
 
-### AI Assistant
-- Slide-in overlay panel, triggered from the header
-- Chat-style interface — ask questions, request rewrites, get feedback
-- AI stays passive by default and only acts when you ask
-- Sends plain document text for efficient, accurate responses
-- Powered by Groq
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Framework | Next.js (App Router) |
-| API | tRPC |
-| Database ORM | Prisma |
-| Database | PostgreSQL |
-| Auth | Better Auth |
-| Editor | Tiptap (ProseMirror) |
-| AI | Groq API |
-| Styling | Tailwind CSS |
-
----
-
-## Design
-
-Writely follows a **dark-first design system** built around a single principle: visual hierarchy without visual noise.
-
-### Color Palette
-
-| Role | Value |
-|---|---|
-| Page background | `#0B0D10` |
-| Surface / card | `#0F1318` – `#161B22` |
-| Border | `#1E2530` – `#262C36` |
-| Muted text | `#6B7280` |
-| Secondary text | `#8E96A3` – `#C8CBD0` |
-| Primary text | `#E5E7EA` – `#F5F5F7` |
-| Destructive | `#FF6B5E` |
-
-### Layout
-
-- Max content width: `max-w-3xl` (768px), centered with empty margins on wider screens
-- Editor writing column: `max-w-2xl` for comfortable line length (~65–75 chars)
-- AI panel: fixed overlay from the right (`w-80`), slides over the editor without shrinking it
-
-### Typography & Interaction
-- Tracking-tight headings, relaxed body leading (`leading-[1.85]`)
-- Subtle press feedback (`active:scale-[0.98]`) on interactive elements
-- Hover state transitions at `duration-200`
-- Rounded corners throughout (`rounded-xl`, `rounded-2xl`)
-
----
-
-## Project Structure
-
-```
-src/
-├── app/
-│   ├── page.tsx                  # Homepage — document list
-│   ├── [docId]/
-│   │   └── page.tsx              # Writing space
-│   ├── components/
-│   │   ├── DocItem.tsx           # Document list item with rename/delete
-│   │   ├── Tiptap/
-│   │   │   └── TiptapMenuBar.tsx # Formatting toolbar
-│   │   ├── Loading.tsx
-│   │   └── ServerError.tsx
-│   └── libs/
-│       └── handleTRPCError.ts
-├── server/
-│   ├── api/
-│   │   ├── routers/
-│   │   │   ├── docs.ts           # Document CRUD
-│   │   │   └── ai.ts             # Groq AI integration
-│   │   └── trpc.ts
-│   ├── better-auth/
-│   │   └── client.ts
-│   └── db.ts                     # Prisma client
-└── trpc/
-    └── react.tsx
-```
-
----
-
-## Database Schema
-
-```prisma
-model Document {
-    id        String   @id @default(uuid())
-    user      User     @relation(fields: [userId], references: [id])
-    userId    String
-    content   Json?
-    title     String   @default("New Draft")
-    createdAt DateTime @default(now())
-    updatedAt DateTime @default(now()) @updatedAt
-}
-```
-
-Document content is stored as `Json` (PostgreSQL `jsonb`) — the native Tiptap/ProseMirror document format — so formatting (headings, bold, lists, etc.) is preserved exactly without any serialization layer.
-
----
-
-## Getting Started
+## Getting started
 
 ### Prerequisites
-- Node.js 18+
-- PostgreSQL database
-- Groq API key
+
+- Node.js 20 or later
+- npm 11 or later
+- A PostgreSQL database
+- Google OAuth credentials
+- A Groq API key
 
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/writely
+git clone <your-repository-url>
 cd writely
 npm install
 ```
 
-### Environment Variables
-
-Create a `.env` file:
-
-```env
-BETTER_AUTH_SECRET=""
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-DATABASE_URL=""
-GROQ_API_KEY=""
-```
-
-### Setup
+Copy the example environment file and provide the required values:
 
 ```bash
-# Run database migrations
-npx prisma migrate dev
+Copy-Item .env.example .env
+```
 
-# Start the development server
+Configure these variables in `.env`:
+
+```env
+DATABASE_URL="postgresql://..."
+BETTER_AUTH_SECRET="a-long-random-secret"
+GOOGLE_CLIENT_ID="..."
+GOOGLE_CLIENT_SECRET="..."
+GROQ_API_KEY="..."
+```
+
+In Google Cloud, configure the OAuth callback URL used by Better Auth for your
+environment—for local development this is typically:
+
+```text
+http://localhost:3000/api/auth/callback/google
+```
+
+Apply migrations and start the app:
+
+```bash
+npx prisma migrate dev
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
----
+## Useful commands
 
-## Key Design Decisions
+```bash
+npm run dev           # Start the development server
+npm run check         # Run ESLint and TypeScript checks
+npm run format:check  # Check formatting
+npm run build         # Apply production migrations and build
+npx prisma studio     # Browse local database data
+```
 
-**Manual save by design.** Documents save when the user explicitly clicks Save or presses Enter in the title input. This is intentional — it keeps the codebase simple, avoids race conditions between the editor state and the database, and gives users clear control over when their work is committed.
+## Project structure
 
-**Content and title save together.** A single `saveDoc` mutation handles both, so there is never a state where title and content are out of sync on the server.
+```text
+src/app/                    Next.js routes
+src/features/docs/          Homepage and draft management
+src/features/editor/        Editor, writing modes, AI panel, and leave safeguards
+src/server/api/routers/     tRPC document and AI procedures
+prisma/                     Database schema and migrations
+```
 
-**Editor content is the source of truth.** After the initial load, the document query is not re-fetched on saves. The editor's internal state drives the UI; the database receives a copy only when the user saves.
+## Guiding principles
 
-**AI panel is an overlay, not a split.** Opening the AI assistant does not shrink the writing column. The panel slides over the right side of the editor, preserving the full writing width. Clicking anywhere on the editor closes it.
-
-**Tiptap headings are block-level, not inline.** H1/H2 converts the entire current paragraph block to a heading node — this is standard ProseMirror behavior. You cannot apply a heading to a partial text selection because headings are structural block nodes, not inline marks like bold or italic.
-
----
-
-## What Writely Intentionally Excludes
-
-- File uploads or image embedding
-- Tables
-- Comments or annotations
-- Real-time collaboration
-- Sharing or publishing
-- Folder or tag organization
-- Markdown import/export
-- Revision history
-
-These are excluded by design. Every missing feature is a decision to keep the writing surface clean.
-
----
-
-## License
-
-MIT
+Writely is intentionally not a feature-heavy document suite. It values a quiet
+environment, reliable saves, clear ownership of drafts, and AI that supports
+reflection rather than interrupts it. The writer remains in control of every
+decision and every change.
