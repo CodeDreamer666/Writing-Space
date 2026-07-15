@@ -38,6 +38,11 @@
   outline: none;
 }
 
+.editor-title-input:focus,
+.editor-title-input:focus-visible {
+  outline: none;
+}
+
 .ProseMirror h1 {
   font-size: 3rem;
   font-weight: 700;
@@ -88,6 +93,16 @@ body {
   @apply bg-[#0B0D10] text-[#F5F5F7];
 }
 
+::selection {
+  background: #3a4657;
+  color: #ffffff;
+}
+
+:where(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid #8e96a3;
+  outline-offset: 2px;
+}
+
 .ai-panel-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #3a4350 transparent;
@@ -113,4 +128,15 @@ body {
 .ai-panel-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #566171;
   background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

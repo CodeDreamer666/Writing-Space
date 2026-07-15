@@ -126,6 +126,8 @@ exports.Prisma.DocumentScalarFieldEnum = {
   content: 'content',
   title: 'title',
   writingMode: 'writingMode',
+  version: 'version',
+  deletedAt: 'deletedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

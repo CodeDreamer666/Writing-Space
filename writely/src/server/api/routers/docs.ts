@@ -1,226 +1,291 @@
 import { TRPCError } from "@trpc/server";
-import { z } from "zod"
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "~/server/api/trpc";
+import { z } from "zod";
+import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import type { JsonInputValue } from "~/types/json";
 import { WRITING_MODES } from "~/types/writing";
 
+export const MAX_DOCUMENT_BYTES = 1_000_000;
+export const MAX_TITLE_LENGTH = 200;
+
+const docIdSchema = z.string().uuid();
+const titleSchema = z.string().trim().min(1).max(MAX_TITLE_LENGTH);
+
 const jsonValueSchema: z.ZodType<JsonInputValue | null> = z.lazy(() =>
-    z.union([
-        z.string(),
-        z.number(),
-        z.boolean(),
-        z.null(),
-        z.array(jsonValueSchema),
-        z.record(z.string(), jsonValueSchema),
-    ]),
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
+  ]),
 );
 
 const jsonSchema: z.ZodType<JsonInputValue> = z.lazy(() =>
-    z.union([
-        z.string(),
-        z.number(),
-        z.boolean(),
-        z.array(jsonValueSchema),
-        z.record(z.string(), jsonValueSchema),
-    ]),
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.array(jsonValueSchema),
+    z.record(z.string(), jsonValueSchema),
+  ]),
 );
 
+function containsUnsafeUrl(value: JsonInputValue | null): boolean {
+  if (Array.isArray(value)) {
+    return value.some(containsUnsafeUrl);
+  }
+
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const href =
+    "attrs" in value &&
+    typeof value.attrs === "object" &&
+    value.attrs !== null &&
+    !Array.isArray(value.attrs) &&
+    "href" in value.attrs
+      ? value.attrs.href
+      : undefined;
+
+  if (
+    typeof href === "string" &&
+    /^\s*(?:data|javascript|vbscript):/i.test(href)
+  ) {
+    return true;
+  }
+
+  return Object.values(value).some((child) =>
+    child === undefined ? false : containsUnsafeUrl(child),
+  );
+}
+
+export const editorContentSchema = jsonSchema
+  .refine(
+    (content) =>
+      typeof content === "object" &&
+      content !== null &&
+      "type" in content &&
+      content.type === "doc",
+    "Invalid editor content",
+  )
+  .refine((content) => !containsUnsafeUrl(content), "Unsafe URL in document")
+  .refine(
+    (content) =>
+      new TextEncoder().encode(JSON.stringify(content)).length <=
+      MAX_DOCUMENT_BYTES,
+    `Document content must be ${MAX_DOCUMENT_BYTES} bytes or less`,
+  );
+
+const emptyDocumentContent = {
+  type: "doc",
+  content: [{ type: "paragraph" }],
+};
+
 export const docsRouter = createTRPCRouter({
-    createDoc: protectedProcedure.mutation(async ({ ctx }) => {
-        const userId = ctx.session.user.id;
+  createDoc: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+    const count = await ctx.db.document.count({
+      where: {
+        userId,
+        deletedAt: null,
+      },
+    });
 
-        const count = await ctx.db.document.count({
-            where: {
-                userId,
-            },
+    if (count >= 100) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Document limit reached",
+      });
+    }
+
+    return ctx.db.document.create({
+      data: {
+        userId,
+        content: emptyDocumentContent,
+      },
+    });
+  }),
+
+  getUserDocs: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.db.document.findMany({
+      where: {
+        userId: ctx.session.user.id,
+        deletedAt: null,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      select: {
+        id: true,
+        title: true,
+        updatedAt: true,
+      },
+    });
+  }),
+
+  getSelectedDoc: protectedProcedure
+    .input(z.object({ docId: docIdSchema }))
+    .query(async ({ input, ctx }) => {
+      const document = await ctx.db.document.findFirst({
+        where: {
+          id: input.docId,
+          userId: ctx.session.user.id,
+          deletedAt: null,
+        },
+      });
+
+      if (!document) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Document not found",
         });
+      }
 
-        if (count >= 100) {
-            throw new TRPCError({
-                code: "FORBIDDEN",
-                message: "Document limit reached",
-            });
-        }
-
-        const doc = await ctx.db.document.create({
-            data: {
-                userId,
-            },
-        });
-
-        return {
-            ...doc,
-            content: doc.content ?? "",
-        };
+      return document;
     }),
 
-    getUserDocs: publicProcedure.query(async ({ ctx }) => {
-        const userId = ctx?.session?.user.id;
+  deleteDoc: protectedProcedure
+    .input(z.object({ docId: docIdSchema }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await ctx.db.document.updateMany({
+        where: {
+          id: input.docId,
+          userId: ctx.session.user.id,
+          deletedAt: null,
+        },
+        data: {
+          deletedAt: new Date(),
+        },
+      });
 
-        if (!userId) return null;
-
-        const docs = await ctx.db.document.findMany({
-            where: {
-                userId,
-            },
-            orderBy: {
-                updatedAt: "desc",
-            },
+      if (result.count === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Document not found",
         });
+      }
 
-        return docs;
+      return { success: true };
     }),
 
-    getLeaveReminderPreference: protectedProcedure.query(async ({ ctx }) => {
-        const user = await ctx.db.user.findUnique({
-            where: {
-                id: ctx.session.user.id,
-            },
-            select: {
-                leaveReminderDisabled: true,
-            },
-        });
+  renameDocTitle: protectedProcedure
+    .input(
+      z.object({
+        docId: docIdSchema,
+        title: titleSchema,
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const result = await ctx.db.document.updateMany({
+        where: {
+          id: input.docId,
+          userId: ctx.session.user.id,
+          deletedAt: null,
+        },
+        data: {
+          title: input.title,
+        },
+      });
 
-        return {
-            leaveReminderDisabled: user?.leaveReminderDisabled ?? false,
-        };
+      if (result.count === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Document not found",
+        });
+      }
+
+      return { success: true };
     }),
 
-    setLeaveReminderDisabled: protectedProcedure
-        .input(z.object({ disabled: z.boolean() }))
-        .mutation(async ({ input, ctx }) => {
-            const user = await ctx.db.user.update({
-                where: {
-                    id: ctx.session.user.id,
-                },
-                data: {
-                    leaveReminderDisabled: input.disabled,
-                },
-                select: {
-                    leaveReminderDisabled: true,
-                },
-            });
+  updateWritingMode: protectedProcedure
+    .input(
+      z.object({
+        docId: docIdSchema,
+        writingMode: z.enum(WRITING_MODES),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const result = await ctx.db.document.updateMany({
+        where: {
+          id: input.docId,
+          userId: ctx.session.user.id,
+          deletedAt: null,
+        },
+        data: {
+          writingMode: input.writingMode,
+        },
+      });
 
-            return user;
-        }),
+      if (result.count === 0) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Document not found",
+        });
+      }
 
-    getSelectedDoc: protectedProcedure
-        .input(
-            z.object({
-                docId: z.string().nonempty(),
-            }),
-        )
-        .query(async ({ input, ctx }) => {
-            const userId = ctx.session.user.id;
+      return { writingMode: input.writingMode };
+    }),
 
-            const doc = await ctx.db.document.findUnique({
-                where: {
-                    id: input.docId,
-                    userId,
-                },
-            });
+  saveDoc: protectedProcedure
+    .input(
+      z.object({
+        docId: docIdSchema,
+        title: titleSchema,
+        content: editorContentSchema,
+        version: z.number().int().nonnegative(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const updatedDocuments = await ctx.db.document.updateManyAndReturn({
+        where: {
+          id: input.docId,
+          userId: ctx.session.user.id,
+          deletedAt: null,
+          version: input.version,
+        },
+        data: {
+          title: input.title,
+          content: input.content,
+          version: {
+            increment: 1,
+          },
+        },
+        select: {
+          title: true,
+          updatedAt: true,
+          version: true,
+        },
+      });
 
-            if (!doc) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message: "Document not found",
-                });
-            }
+      const updatedDocument = updatedDocuments[0];
 
-            return doc;
-        }),
+      if (updatedDocument) {
+        return updatedDocument;
+      }
 
-    deleteDoc: protectedProcedure
-        .input(z.object({ docId: z.string().nonempty() }))
-        .mutation(async ({ ctx, input }) => {
-            const userId = ctx.session.user.id;
+      const existingDocument = await ctx.db.document.findFirst({
+        where: {
+          id: input.docId,
+          userId: ctx.session.user.id,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+        },
+      });
 
-            await ctx.db.document.delete({
-                where: {
-                    id: input.docId,
-                    userId,
-                },
-            });
+      if (!existingDocument) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Document not found",
+        });
+      }
 
-            return {
-                success: true,
-            };
-        }),
-
-    renameDocTitle: protectedProcedure
-        .input(
-            z.object({
-                docId: z.string().nonempty(),
-                title: z.string().nonempty(),
-            }),
-        )
-        .mutation(async ({ input, ctx }) => {
-            const userId = ctx.session.user.id;
-
-            await ctx.db.document.update({
-                where: {
-                    userId,
-                    id: input.docId,
-                },
-                data: {
-                    title: input.title,
-                },
-            });
-
-            return {
-                success: true,
-            };
-        }),
-
-    updateWritingMode: protectedProcedure
-        .input(
-            z.object({
-                docId: z.string().nonempty(),
-                writingMode: z.enum(WRITING_MODES),
-            }),
-        )
-        .mutation(async ({ input, ctx }) => {
-            const userId = ctx.session.user.id;
-
-            const document = await ctx.db.document.update({
-                where: {
-                    userId,
-                    id: input.docId,
-                },
-                data: {
-                    writingMode: input.writingMode,
-                },
-            });
-
-            return {
-                writingMode: document.writingMode,
-            };
-        }),
-
-    saveDoc: protectedProcedure
-        .input(
-            z.object({
-                docId: z.string().nonempty(),
-                title: z.string().nonempty(),
-                content: jsonSchema,
-            }),
-        )
-        .mutation(async ({ input, ctx }) => {
-            const userId = ctx.session.user.id;
-
-            await ctx.db.document.update({
-                where: {
-                    userId,
-                    id: input.docId,
-                },
-                data: {
-                    title: input.title,
-                    content: input.content,
-                },
-            });
-
-            return {
-                success: true,
-            };
-        }),
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "This draft was updated elsewhere",
+      });
+    }),
 });

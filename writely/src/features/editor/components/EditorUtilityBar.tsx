@@ -11,10 +11,10 @@ export default function EditorUtilityBar({
 }: Props) {
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
-      <footer className="flex items-center justify-between border-t border-[#1E2530] pt-4 text-xs text-[#8E96A3]">
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[#1E2530] pt-4 text-xs text-[#8E96A3]">
         <button
           onClick={onBackToDrafts}
-          className="inline-flex cursor-pointer min-h-9 w-fit items-center gap-2 rounded-lg px-2 text-[#AEB4BE] transition-colors hover:bg-[#161B22] hover:text-[#F5F5F7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3]"
+          className="inline-flex min-h-9 w-fit cursor-pointer items-center gap-2 rounded-lg px-2 text-[#AEB4BE] transition-colors hover:bg-[#161B22] hover:text-[#F5F5F7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3]"
         >
           <svg
             width="14"
@@ -32,15 +32,8 @@ export default function EditorUtilityBar({
           <span>Back to drafts</span>
         </button>
 
-        <p className="px-2 text-[#6B7280] md:justify-self-center">
+        <p className="px-2 text-right text-[#6B7280]">
           {wordCount.toLocaleString()} words · {readingTime}
-        </p>
-
-        <p
-          className={`px-2 text-xs text-[#6B7280] transition-opacity duration-300 md:justify-self-end`}
-          aria-live="polite"
-        >
-          Ctrl/Cmd + S to save
         </p>
       </footer>
     </div>

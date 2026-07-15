@@ -27,7 +27,7 @@ export default function WritingModeSelector({
           onChange={(event) => onModeChange(event.target.value as WritingMode)}
           title="Writing mode"
           aria-describedby="writing-mode-help"
-          className="h-10 w-full cursor-pointer appearance-none rounded-lg border border-[#1E2530] bg-[#0B0D10] px-3 pr-9 text-sm text-[#D5D9DF] transition-colors outline-none hover:border-[#2E3643] hover:text-[#F5F5F7] focus:border-[#555C6A] disabled:cursor-wait disabled:opacity-60"
+          className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-[#1E2530] bg-[#0B0D10] px-3 pr-9 text-sm text-[#D5D9DF] transition-colors outline-none hover:border-[#2E3643] hover:text-[#F5F5F7] focus:border-[#697386] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3] disabled:cursor-wait disabled:opacity-60"
         >
           {WRITING_MODES.map((mode) => (
             <option key={mode} value={mode}>

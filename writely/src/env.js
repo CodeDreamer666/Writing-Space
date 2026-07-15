@@ -9,9 +9,12 @@ export const env = createEnv({
   server: {
     BETTER_AUTH_SECRET:
       process.env.NODE_ENV === "production"
-        ? z.string()
+        ? z.string().min(32)
         : z.string().optional(),
+    BETTER_AUTH_URL: z.string().url().optional(),
     DATABASE_URL: z.string().url(),
+    GOOGLE_CLIENT_ID: z.string().min(1),
+    GOOGLE_CLIENT_SECRET: z.string().min(1),
     GROQ_API_KEY: z.string().min(1),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -33,7 +36,10 @@ export const env = createEnv({
    */
   runtimeEnv: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     DATABASE_URL: process.env.DATABASE_URL,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     NODE_ENV: process.env.NODE_ENV,
   },

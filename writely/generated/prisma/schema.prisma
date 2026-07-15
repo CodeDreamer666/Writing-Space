@@ -15,14 +15,18 @@ datasource db {
 }
 
 model Document {
-  id          String   @id @default(uuid())
-  user        User     @relation(fields: [userId], references: [id])
+  id          String    @id @default(uuid())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   content     Json?
-  title       String   @default("New Draft")
-  writingMode String   @default("Clear")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  title       String    @default("New Draft")
+  writingMode String    @default("Clear")
+  version     Int       @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  @@index([userId, deletedAt, updatedAt])
 }
 
 model User {

@@ -1,7 +1,8 @@
 import { type Editor, EditorContent } from "@tiptap/react";
 import type { WritingMode } from "~/types/writing";
+import type { SaveStatus } from "../hooks/useDocumentAutosave";
 import { DEFAULT_TITLE } from "../utils/editorContent";
-import SaveReminderNotice from "./SaveReminderNotice";
+import SaveStatusNotice from "./SaveStatusNotice";
 import TiptapMenuBar from "./TiptapMenuBar";
 import WritingModeSelector from "./WritingModeSelector";
 
@@ -9,10 +10,11 @@ type Props = {
   editor: Editor;
   selectedMode: WritingMode;
   isWritingModeSaving: boolean;
-  isSaveReminderVisible: boolean;
+  saveStatus: SaveStatus;
   title: string;
   onModeChange: (mode: WritingMode) => void;
-  onDismissSaveReminder: () => void;
+  onRetrySave: () => void;
+  onOpenSavedVersion: () => void;
   onTitleChange: (title: string) => void;
   onAiOpen: () => void;
 };
@@ -21,10 +23,11 @@ export default function EditorDocument({
   editor,
   selectedMode,
   isWritingModeSaving,
-  isSaveReminderVisible,
+  saveStatus,
   title,
   onModeChange,
-  onDismissSaveReminder,
+  onRetrySave,
+  onOpenSavedVersion,
   onTitleChange,
   onAiOpen,
 }: Props) {
@@ -34,9 +37,11 @@ export default function EditorDocument({
         <section
           className={`relative rounded-xl border border-[#1E2530] bg-[#0F1318]/70 px-5 py-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)] transition-all duration-300 sm:px-8 sm:py-8`}
         >
-          {isSaveReminderVisible && (
-            <SaveReminderNotice onDismiss={onDismissSaveReminder} />
-          )}
+          <SaveStatusNotice
+            status={saveStatus}
+            onRetry={onRetrySave}
+            onOpenSavedVersion={onOpenSavedVersion}
+          />
 
           <div className="mb-4 flex flex-col gap-4">
             <div className="min-w-0 flex-1">
@@ -44,7 +49,10 @@ export default function EditorDocument({
                 value={title}
                 onChange={(event) => onTitleChange(event.target.value)}
                 placeholder={DEFAULT_TITLE}
-                className="w-full min-w-0 bg-transparent text-3xl leading-tight font-medium tracking-[-0.02em] text-[#F5F5F7] outline-none placeholder:text-[#4A5363] sm:text-5xl"
+                aria-label="Draft title"
+                autoComplete="off"
+                maxLength={200}
+                className="editor-title-input w-full min-w-0 bg-transparent text-3xl leading-tight font-medium tracking-[-0.02em] text-[#F5F5F7] outline-none placeholder:text-[#4A5363] sm:text-5xl"
               />
             </div>
 

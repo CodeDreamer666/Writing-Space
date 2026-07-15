@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 type StatusMessageContextType = {
   showMessage: (message: string, isSuccess: boolean) => void;
@@ -30,48 +37,56 @@ export default function StatusMessageProvider({
   const [isSuccess, setIsSuccess] = useState<boolean | "IDLE">("IDLE");
   const [message, setMessage] = useState("");
 
+  const dismiss = useCallback(() => {
+    setIsSuccess("IDLE");
+    setMessage("");
+  }, []);
+
   useEffect(() => {
     if (isSuccess === "IDLE") {
       return;
     }
 
-    const timing = isSuccess ? 3000 : 5000;
+    const timing = isSuccess ? 3_000 : 5_000;
 
-    const timer = setTimeout(() => {
-      setIsSuccess("IDLE");
-      setMessage("");
-    }, timing);
+    const timer = setTimeout(dismiss, timing);
 
     return () => clearTimeout(timer);
-  }, [isSuccess]);
+  }, [dismiss, isSuccess]);
 
-  const showMessage = (message: string, isSuccess: boolean) => {
-    setMessage(message);
-    setIsSuccess(isSuccess);
-  };
+  const showMessage = useCallback(
+    (nextMessage: string, nextIsSuccess: boolean) => {
+      setMessage(nextMessage);
+      setIsSuccess(nextIsSuccess);
+    },
+    [],
+  );
+
+  const contextValue = useMemo(() => ({ showMessage }), [showMessage]);
 
   return (
-    <StatusMessageContext.Provider value={{ showMessage }}>
+    <StatusMessageContext.Provider value={contextValue}>
       {isSuccess !== "IDLE" && (
         <div className="pointer-events-none fixed inset-x-0 top-20 z-50">
           <div className="mx-auto flex max-w-6xl justify-end px-4">
             <section
+              role={isSuccess ? "status" : "alert"}
+              aria-live={isSuccess ? "polite" : "assertive"}
               className={`pointer-events-auto flex items-center gap-4 rounded-2xl border px-5 py-4 text-white backdrop-blur transition-all duration-300 ${
                 isSuccess
                   ? "border-emerald-500/20 bg-neutral-900"
                   : "border-red-500/20 bg-neutral-900"
               }`}
             >
-              <h2 className="text-sm font-medium">{message}</h2>
+              <p className="text-sm font-medium">{message}</p>
 
               <button
-                onClick={() => {
-                  setIsSuccess("IDLE");
-                  setMessage("");
-                }}
-                className="flex size-7 cursor-pointer items-center justify-center rounded-full text-neutral-400 transition-colors duration-200 hover:bg-neutral-800 hover:text-white"
+                type="button"
+                onClick={dismiss}
+                aria-label="Dismiss notification"
+                className="flex size-9 cursor-pointer items-center justify-center rounded-full text-neutral-400 transition-colors duration-200 hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
-                x
+                ×
               </button>
             </section>
           </div>
