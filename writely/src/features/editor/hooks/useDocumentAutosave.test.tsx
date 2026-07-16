@@ -6,6 +6,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentAutosave } from "./useDocumentAutosave";
+import { readLocalDraft, writeLocalDraft } from "../utils/localDraft";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -164,5 +165,105 @@ describe("useDocumentAutosave", () => {
         version: 1,
       }),
     );
+  });
+
+  it("clears a stale recovered draft when it matches the saved document", async () => {
+    const editor = createEditor();
+
+    writeLocalDraft({
+      docId,
+      title: "Saved Draft",
+      content: emptyContent,
+      baseVersion: 0,
+      savedAt: new Date().toISOString(),
+    });
+
+    function Harness() {
+      const [title, setTitle] = useState("Saved Draft");
+
+      useDocumentAutosave({
+        docId,
+        document: {
+          id: docId,
+          userId: "user-1",
+          title: "Saved Draft",
+          content: emptyContent,
+          writingMode: "Clear",
+          version: 1,
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        editor,
+        title,
+        setTitle,
+        onWordCountChange: vi.fn(),
+        onError: vi.fn(),
+      });
+
+      return null;
+    }
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    expect(readLocalDraft(docId)).toBeNull();
+  });
+
+  it("does not restore a discarded recovered draft during unmount", async () => {
+    const editor = createEditor();
+    let autosave: ReturnType<typeof useDocumentAutosave> | null = null;
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    writeLocalDraft({
+      docId,
+      title: "Recovered Draft",
+      content: emptyContent,
+      baseVersion: 0,
+      savedAt: new Date().toISOString(),
+    });
+
+    function Harness() {
+      const [title, setTitle] = useState("Saved Draft");
+
+      autosave = useDocumentAutosave({
+        docId,
+        document: {
+          id: docId,
+          userId: "user-1",
+          title: "Saved Draft",
+          content: emptyContent,
+          writingMode: "Clear",
+          version: 1,
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        editor,
+        title,
+        setTitle,
+        onWordCountChange: vi.fn(),
+        onError: vi.fn(),
+      });
+
+      return null;
+    }
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    act(() => {
+      autosave?.openSavedVersion();
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+
+    expect(readLocalDraft(docId)).toBeNull();
+    consoleErrorSpy.mockRestore();
   });
 });

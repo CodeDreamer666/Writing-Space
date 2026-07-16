@@ -68,6 +68,7 @@ export function useDocumentAutosave({
   const activeDocIdRef = useRef(docId);
   const baseVersionRef = useRef(document.version);
   const dirtyRef = useRef(false);
+  const isDiscardingLocalDraftRef = useRef(false);
   const hydratedDocIdRef = useRef<string | null>(null);
   const isReadyRef = useRef(false);
   const isSavingRef = useRef(false);
@@ -102,7 +103,11 @@ export function useDocumentAutosave({
   }, [title]);
 
   const persistCurrentDraft = useCallback(() => {
-    if (!isReadyRef.current || activeDocIdRef.current !== docId) {
+    if (
+      isDiscardingLocalDraftRef.current ||
+      !isReadyRef.current ||
+      activeDocIdRef.current !== docId
+    ) {
       return;
     }
 
@@ -351,18 +356,37 @@ export function useDocumentAutosave({
       ? document.content
       : { type: "doc", content: [{ type: "paragraph" }] };
     const localDraft = readLocalDraft(docId);
-    const content = localDraft?.content ?? serverContent;
-    const nextTitle = localDraft?.title ?? serverTitle;
+    const serverSnapshot = serializeDraft(serverTitle, serverContent);
+    const localDraftSnapshot = localDraft
+      ? serializeDraft(
+          localDraft.title.trim() || DEFAULT_TITLE,
+          localDraft.content,
+        )
+      : null;
+    const hasRecoveredChanges =
+      localDraft !== null && localDraftSnapshot !== serverSnapshot;
+
+    if (localDraft && !hasRecoveredChanges) {
+      clearLocalDraft(docId);
+    }
+
+    const content =
+      hasRecoveredChanges && localDraft ? localDraft.content : serverContent;
+    const nextTitle =
+      hasRecoveredChanges && localDraft ? localDraft.title : serverTitle;
 
     editor.commands.setContent(content, { emitUpdate: false });
     titleRef.current = nextTitle;
 
-    baseVersionRef.current = localDraft?.baseVersion ?? document.version;
-    lastSavedSnapshotRef.current = serializeDraft(serverTitle, serverContent);
+    baseVersionRef.current =
+      hasRecoveredChanges && localDraft
+        ? localDraft.baseVersion
+        : document.version;
+    lastSavedSnapshotRef.current = serverSnapshot;
     hydratedDocIdRef.current = docId;
     isReadyRef.current = true;
 
-    if (!localDraft) {
+    if (!localDraft || !hasRecoveredChanges) {
       dirtyRef.current = false;
       queueMicrotask(() => {
         if (activeDocIdRef.current !== docId) {
@@ -420,6 +444,10 @@ export function useDocumentAutosave({
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (isDiscardingLocalDraftRef.current) {
+        return;
+      }
+
       if (!dirtyRef.current && !isSavingRef.current) {
         return;
       }
@@ -451,6 +479,18 @@ export function useDocumentAutosave({
   };
 
   const openSavedVersion = () => {
+    isDiscardingLocalDraftRef.current = true;
+    dirtyRef.current = false;
+    queuedSaveRef.current = false;
+
+    if (localDraftTimerRef.current) {
+      clearTimeout(localDraftTimerRef.current);
+    }
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
     clearLocalDraft(docId);
     window.location.reload();
   };

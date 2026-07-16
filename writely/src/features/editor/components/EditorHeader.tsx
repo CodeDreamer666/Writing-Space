@@ -2,6 +2,7 @@ import LoadingIcon from "~/components/shared/LoadingIcon";
 
 type Props = {
   isAiOpen: boolean;
+  isConflict: boolean;
   isSaving: boolean;
   onSave: () => void;
   onAiToggle: () => void;
@@ -9,10 +10,15 @@ type Props = {
 
 export default function EditorHeader({
   isAiOpen,
+  isConflict,
   isSaving,
   onSave,
   onAiToggle,
 }: Props) {
+  const saveButtonLabel = isConflict
+    ? "Resolve the version conflict below before saving"
+    : "Save draft now";
+
   return (
     <header className="sticky top-0 z-30 border-b border-[#1E2530]/70 bg-[#0B0D10]/85 backdrop-blur-xl">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -27,16 +33,19 @@ export default function EditorHeader({
 
         <div className="flex items-center gap-2">
           <button
-            disabled={isSaving}
+            disabled={isSaving || isConflict}
             onClick={onSave}
-            aria-label="Save draft now"
-            className="flex h-8 cursor-pointer items-center gap-2 rounded-md border border-[#2A313C] bg-[#121820] px-3 text-xs font-medium text-[#D5D9DF] transition-colors hover:border-[#394352] hover:text-[#F5F5F7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3] disabled:cursor-wait disabled:opacity-60"
+            aria-label={saveButtonLabel}
+            title={saveButtonLabel}
+            className={`flex h-8 cursor-pointer items-center gap-2 rounded-md border border-[#2A313C] bg-[#121820] px-3 text-xs font-medium text-[#D5D9DF] transition-colors hover:border-[#394352] hover:text-[#F5F5F7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3] disabled:opacity-60 ${isConflict ? "disabled:cursor-not-allowed" : "disabled:cursor-wait"}`}
           >
             {isSaving ? (
               <>
                 <LoadingIcon />
                 <span>Saving...</span>
               </>
+            ) : isConflict ? (
+              "Resolve conflict"
             ) : (
               "Save"
             )}
