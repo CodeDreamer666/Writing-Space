@@ -1,6 +1,7 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
 import StatusMessageProvider from "~/components/layout/StatusMessageProvider";
+import BetaUtilities from "~/components/layout/BetaUtilities";
 import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
@@ -18,7 +19,10 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <StatusMessageProvider>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <TRPCReactProvider>
+            {children}
+            <BetaUtilities />
+          </TRPCReactProvider>
         </StatusMessageProvider>
       </body>
     </html>

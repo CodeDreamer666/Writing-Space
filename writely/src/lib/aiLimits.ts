@@ -1,0 +1,2 @@
+export const DAILY_AI_TOKEN_LIMIT = 10_000;
+export const MAX_AI_SELECTION_CHARACTERS = 10_000;

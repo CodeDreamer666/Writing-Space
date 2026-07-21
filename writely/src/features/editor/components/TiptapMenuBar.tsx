@@ -9,6 +9,7 @@ const VIEWPORT_PADDING = 8;
 
 type Props = {
   editor: Editor | null;
+  aiEnabled: boolean;
   onAiOpen: () => void;
 };
 
@@ -19,7 +20,7 @@ type ToolbarButton = {
   isActive?: boolean;
 };
 
-export default function TiptapMenuBar({ editor, onAiOpen }: Props) {
+export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ left: 0, top: 0 });
 
@@ -113,12 +114,15 @@ export default function TiptapMenuBar({ editor, onAiOpen }: Props) {
       action: () => editor.chain().focus().toggleBlockquote().run(),
       isActive: editor.isActive("blockquote"),
     },
-    {
+  ];
+
+  if (aiEnabled) {
+    buttons.push({
       label: <span className="text-[11px] font-semibold">AI</span>,
       title: "Ask AI",
       action: onAiOpen,
-    },
-  ];
+    });
+  }
 
   return (
     <div

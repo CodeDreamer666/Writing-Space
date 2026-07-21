@@ -40,10 +40,31 @@ model User {
     updatedAt     DateTime   @default(now()) @updatedAt
     sessions      Session[]
     documents     Document[]
+    aiDailyUsage  AiDailyUsage[]
+    feedback      Feedback[]
     accounts      Account[]
 
     @@unique([email])
     @@map("user")
+}
+
+model AiDailyUsage {
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId     String
+    usageDate  DateTime @db.Date
+    tokensUsed Int      @default(0)
+
+    @@id([userId, usageDate])
+}
+
+model Feedback {
+    id        String   @id @default(uuid())
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String
+    message   String
+    createdAt DateTime @default(now())
+
+    @@index([userId, createdAt])
 }
 
 model Session {

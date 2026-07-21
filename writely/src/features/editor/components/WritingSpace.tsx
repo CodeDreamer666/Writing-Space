@@ -5,12 +5,15 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import Loading from "~/components/shared/Loading";
 import ServerError from "~/components/shared/ServerError";
+import { MAX_DOCUMENT_CHARACTERS } from "~/lib/documentLimits";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { WRITING_MODES, type WritingMode } from "~/types/writing";
 import { useDocumentAutosave } from "../hooks/useDocumentAutosave";
+import { DocumentCharacterLimit } from "../extensions/DocumentCharacterLimit";
 import {
     captureAiContext,
     isAiContextCurrent,
@@ -23,6 +26,32 @@ import EditorHeader from "./EditorHeader";
 import EditorUtilityBar from "./EditorUtilityBar";
 
 type Document = RouterOutputs["docs"]["getSelectedDoc"];
+
+function createExportFilename(title: string, format: "txt" | "md"): string {
+    const safeTitle = title
+        .trim()
+        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
+        .replace(/\s+/g, " ")
+        .slice(0, 100);
+
+    return `${safeTitle || "Untitled draft"}.${format}`;
+}
+
+function downloadExport(title: string, content: string, format: "txt" | "md") {
+    const blob = new Blob([content], {
+        type:
+            format === "md"
+                ? "text/markdown;charset=utf-8"
+                : "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = createExportFilename(title, format);
+    link.click();
+    URL.revokeObjectURL(url);
+}
 
 function isWritingMode(value: string): value is WritingMode {
     return WRITING_MODES.includes(value as WritingMode);
@@ -39,7 +68,8 @@ function DocumentUnavailable() {
                     This writing could not be opened.
                 </h1>
                 <p className="mt-3 text-sm leading-7 text-[#8E96A3]">
-                    It may have been deleted, or it may belong to another account.
+                    It may have been deleted, or it may belong to another
+                    account.
                 </p>
                 <Link
                     href="/"
@@ -59,11 +89,22 @@ function EditorRuntime({
     docId: string;
     document: Document;
 }) {
+    const { showMessage } = useStatusMessage();
     const editor = useEditor({
         extensions: [
             StarterKit,
             Placeholder.configure({
-                placeholder: "Start with the sentence you cannot stop thinking about",
+                placeholder:
+                    "Start with the sentence you cannot stop thinking about",
+            }),
+            DocumentCharacterLimit.configure({
+                limit: MAX_DOCUMENT_CHARACTERS,
+                onLimitExceeded: () => {
+                    showMessage(
+                        `A document can contain up to ${MAX_DOCUMENT_CHARACTERS.toLocaleString()} characters.`,
+                        false,
+                    );
+                },
             }),
         ],
         content: "<p></p>",
@@ -71,8 +112,7 @@ function EditorRuntime({
         editorProps: {
             attributes: {
                 "aria-label": "Draft content",
-                class:
-                    "min-h-[48vh] outline-none text-lg leading-[1.85] text-[#D5D9DF] transition-colors duration-200 focus:text-[#F5F5F7]",
+                class: "min-h-[48vh] outline-none text-lg leading-[1.85] text-[#D5D9DF] transition-colors duration-200 focus:text-[#F5F5F7]",
                 role: "textbox",
             },
         },
@@ -82,7 +122,9 @@ function EditorRuntime({
         return <Loading />;
     }
 
-    return <EditorExperience docId={docId} document={document} editor={editor} />;
+    return (
+        <EditorExperience docId={docId} document={document} editor={editor} />
+    );
 }
 
 function EditorExperience({
@@ -100,11 +142,27 @@ function EditorExperience({
 
     const [title, setTitle] = useState(document.title);
     const [wordCount, setWordCount] = useState(0);
+    const [characterCount, setCharacterCount] = useState(0);
     const [selectedMode, setSelectedMode] = useState<WritingMode>(
         isWritingMode(document.writingMode) ? document.writingMode : "Clear",
     );
     const [isAiOpen, setIsAiOpen] = useState(false);
     const [selectionText, setSelectionText] = useState("");
+    const [isExporting, setIsExporting] = useState(false);
+
+    const { data: aiStatus, error: aiStatusError } = api.ai.getStatus.useQuery(
+        undefined,
+        {
+            retry: false,
+            refetchOnWindowFocus: true,
+        },
+    );
+    const aiEnabled = aiStatus?.enabled ?? false;
+    const aiMessage =
+        aiStatus?.message ??
+        (aiStatusError
+            ? "Writely AI is unavailable right now. You can keep writing and saving normally."
+            : "Checking AI availability…");
 
     const handleSaveError = useCallback(
         (error: unknown) => {
@@ -114,9 +172,11 @@ function EditorExperience({
     );
 
     const {
+        discardRecovery,
         handleTitleChange,
         isHydrated,
         openSavedVersion,
+        restoreRecovery,
         saveNow,
         saveStatus,
     } = useDocumentAutosave({
@@ -128,6 +188,10 @@ function EditorExperience({
         onWordCountChange: setWordCount,
         onError: handleSaveError,
     });
+
+    useEffect(() => {
+        editor.setEditable(saveStatus !== "recovery");
+    }, [editor, saveStatus]);
 
     const updateWritingMode = api.docs.updateWritingMode.useMutation({
         onSuccess: (result) => {
@@ -155,6 +219,19 @@ function EditorExperience({
 
         return () => {
             editor.off("selectionUpdate", updateSelection);
+        };
+    }, [editor]);
+
+    useEffect(() => {
+        const updateCharacterCount = () => {
+            setCharacterCount(editor.state.doc.textContent.length);
+        };
+
+        updateCharacterCount();
+        editor.on("transaction", updateCharacterCount);
+
+        return () => {
+            editor.off("transaction", updateCharacterCount);
         };
     }, [editor]);
 
@@ -202,13 +279,42 @@ function EditorExperience({
     };
 
     const handleBackToDrafts = async () => {
-        if (saveStatus === "conflict") {
+        if (saveStatus === "conflict" || saveStatus === "recovery") {
             router.push("/");
             return;
         }
 
         if (saveStatus === "saved" || (await saveNow())) {
             router.push("/");
+        }
+    };
+
+    const handleExport = async (format: "txt" | "md") => {
+        if (isExporting) {
+            return;
+        }
+
+        setIsExporting(true);
+
+        try {
+            if (saveStatus !== "saved" && !(await saveNow())) {
+                return;
+            }
+
+            const exportedDocument = await utils.client.docs.exportDoc.query({
+                docId,
+                format,
+            });
+
+            downloadExport(
+                exportedDocument.title,
+                exportedDocument.content,
+                exportedDocument.format,
+            );
+        } catch (error) {
+            handleTRPCError({ error, router });
+        } finally {
+            setIsExporting(false);
         }
     };
 
@@ -219,27 +325,39 @@ function EditorExperience({
     return (
         <div className="min-h-screen bg-[#0B0D10] text-[#F5F5F7] transition-colors duration-300">
             <EditorHeader
-                isAiOpen={isAiOpen}
-                isConflict={saveStatus === "conflict"}
+                saveBlockedReason={
+                    saveStatus === "conflict" || saveStatus === "recovery"
+                        ? saveStatus
+                        : null
+                }
                 isSaving={saveStatus === "saving"}
                 onSave={() => {
                     void saveNow();
                 }}
-                onAiToggle={() => setIsAiOpen((isOpen) => !isOpen)}
             />
 
             <div className="mx-auto w-full max-w-6xl transition-all duration-300">
+                {aiStatus && !aiStatus.enabled && (
+                    <p className="mx-4 mt-4 rounded-lg border border-[#2A313C] bg-[#121820] px-4 py-3 text-sm text-[#AEB4BE] sm:mx-6 lg:mx-8">
+                        {aiStatus.message}
+                    </p>
+                )}
+
                 <EditorDocument
                     editor={editor}
                     selectedMode={selectedMode}
                     isWritingModeSaving={updateWritingMode.isPending}
                     saveStatus={saveStatus}
                     title={title}
+                    characterCount={characterCount}
+                    aiEnabled={aiEnabled}
                     onModeChange={handleWritingModeChange}
                     onRetrySave={() => {
                         void saveNow();
                     }}
                     onOpenSavedVersion={openSavedVersion}
+                    onRestoreRecovery={restoreRecovery}
+                    onDiscardRecovery={discardRecovery}
                     onTitleChange={handleTitleChange}
                     onAiOpen={() => setIsAiOpen(true)}
                 />
@@ -247,6 +365,10 @@ function EditorExperience({
                 <EditorUtilityBar
                     wordCount={wordCount}
                     readingTime={readingTime(wordCount)}
+                    isExporting={isExporting}
+                    onExport={(format) => {
+                        void handleExport(format);
+                    }}
                     onBackToDrafts={() => {
                         void handleBackToDrafts();
                     }}
@@ -257,9 +379,13 @@ function EditorExperience({
                     mode={selectedMode}
                     selectionWordCount={countWords(selectionText)}
                     hasSelection={selectionText.length > 0}
-                    hasDocumentContent={wordCount > 0}
+                    aiEnabled={aiEnabled}
+                    aiMessage={aiMessage}
+                    remainingTokens={aiStatus?.remainingTokens ?? 0}
                     captureContext={() => captureAiContext(editor)}
-                    isContextCurrent={(context) => isAiContextCurrent(editor, context)}
+                    isContextCurrent={(context) =>
+                        isAiContextCurrent(editor, context)
+                    }
                     onReplace={(context, content) =>
                         replaceAiContext(editor, context, content)
                     }

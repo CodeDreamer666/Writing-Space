@@ -1,13 +1,17 @@
 type Props = {
   wordCount: number;
   readingTime: string;
+  isExporting: boolean;
   onBackToDrafts: () => void;
+  onExport: (format: "txt" | "md") => void;
 };
 
 export default function EditorUtilityBar({
   wordCount,
   readingTime,
+  isExporting,
   onBackToDrafts,
+  onExport,
 }: Props) {
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
@@ -32,9 +36,27 @@ export default function EditorUtilityBar({
           <span>Back to drafts</span>
         </button>
 
-        <p className="px-2 text-right text-[#6B7280]">
-          {wordCount.toLocaleString()} words · {readingTime}
-        </p>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <p className="px-2 text-right text-[#6B7280]">
+            {wordCount.toLocaleString()} words · {readingTime}
+          </p>
+          <button
+            type="button"
+            disabled={isExporting}
+            onClick={() => onExport("txt")}
+            className="min-h-9 cursor-pointer rounded-lg border border-[#2A313C] px-3 text-[#AEB4BE] transition-colors hover:bg-[#161B22] hover:text-[#F5F5F7] disabled:cursor-wait disabled:opacity-60"
+          >
+            Export .txt
+          </button>
+          <button
+            type="button"
+            disabled={isExporting}
+            onClick={() => onExport("md")}
+            className="min-h-9 cursor-pointer rounded-lg border border-[#2A313C] px-3 text-[#AEB4BE] transition-colors hover:bg-[#161B22] hover:text-[#F5F5F7] disabled:cursor-wait disabled:opacity-60"
+          >
+            Export .md
+          </button>
+        </div>
       </footer>
     </div>
   );

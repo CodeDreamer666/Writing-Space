@@ -5,20 +5,77 @@ type Props = {
     status: SaveStatus;
     onRetry: () => void;
     onOpenSavedVersion: () => void;
+    onRestoreRecovery: () => void;
+    onDiscardRecovery: () => void;
 };
 
 export default function SaveStatusNotice({
     status,
     onRetry,
     onOpenSavedVersion,
+    onRestoreRecovery,
+    onDiscardRecovery,
 }: Props) {
     const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
 
-    if (status !== "error" && status !== "conflict") {
+    if (status !== "error" && status !== "conflict" && status !== "recovery") {
         return null;
     }
 
     const isConflict = status === "conflict";
+    const isRecovery = status === "recovery";
+
+    if (isRecovery) {
+        return (
+            <aside
+                role="status"
+                className="mb-5 flex flex-col gap-3 rounded-xl border border-[#4A596C] bg-[#151D27] px-4 py-3 text-sm text-[#D5DFEB] sm:flex-row sm:items-center sm:justify-between"
+            >
+                <p className="leading-relaxed">
+                    {isConfirmingDiscard
+                        ? "Discard the unsaved browser recovery copy and keep the saved version? This cannot be undone."
+                        : "Unsaved writing was found in this browser. Nothing has been replaced. Choose whether to restore it."}
+                </p>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                    {isConfirmingDiscard ? (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setIsConfirmingDiscard(false)}
+                                className="min-h-11 cursor-pointer rounded-lg border border-[#596B82] px-3 text-xs font-medium text-[#D5DFEB] hover:bg-[#1E2936]"
+                            >
+                                Go back
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onDiscardRecovery}
+                                className="min-h-11 cursor-pointer rounded-lg bg-[#D5DFEB] px-3 text-xs font-medium text-[#151D27] hover:bg-[#E7EDF4]"
+                            >
+                                Discard recovery copy
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setIsConfirmingDiscard(true)}
+                                className="min-h-11 cursor-pointer rounded-lg border border-[#596B82] px-3 text-xs font-medium text-[#D5DFEB] hover:bg-[#1E2936]"
+                            >
+                                Keep saved version
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onRestoreRecovery}
+                                className="min-h-11 cursor-pointer rounded-lg bg-[#D5DFEB] px-3 text-xs font-medium text-[#151D27] hover:bg-[#E7EDF4]"
+                            >
+                                Restore writing
+                            </button>
+                        </>
+                    )}
+                </div>
+            </aside>
+        );
+    }
 
     return (
         <aside
@@ -52,7 +109,11 @@ export default function SaveStatusNotice({
             ) : (
                 <button
                     type="button"
-                    onClick={isConflict ? () => setIsConfirmingDiscard(true) : onRetry}
+                    onClick={
+                        isConflict
+                            ? () => setIsConfirmingDiscard(true)
+                            : onRetry
+                    }
                     className="min-h-11 shrink-0 cursor-pointer rounded-lg border border-[#8D5A4E] px-3 text-xs font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]"
                 >
                     {isConflict ? "View saved version" : "Retry save"}

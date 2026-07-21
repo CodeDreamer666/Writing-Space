@@ -29,13 +29,26 @@ export function useHandleTRPCError() {
     const zodError = error.data?.zodError;
 
     if (zodError) {
-      showMessage("Invalid input", false);
+      const validationMessage = [
+        ...zodError.formErrors,
+        ...Object.values(zodError.fieldErrors).flat(),
+      ].find((message): message is string => typeof message === "string");
+
+      showMessage(validationMessage ?? "Please check your input.", false);
+      return;
+    }
+
+    if (!error.data) {
+      showMessage(
+        "We could not reach Writely. Check your connection and try again.",
+        false,
+      );
       return;
     }
 
     switch (code) {
       case "BAD_REQUEST":
-        showMessage("Invalid input", false);
+        showMessage(error.message || "Please check your input.", false);
         return;
 
       case "UNAUTHORIZED":
@@ -43,23 +56,36 @@ export function useHandleTRPCError() {
         return;
 
       case "FORBIDDEN":
-        showMessage("You do not have permission to do this.", false);
+        showMessage(
+          error.message || "You do not have permission to do this.",
+          false,
+        );
         return;
 
       case "NOT_FOUND":
-        showMessage("Not found", false);
+        showMessage(error.message || "That item could not be found.", false);
         return;
 
       case "CONFLICT":
-        showMessage("This action conflicts with existing data", false);
+        showMessage(
+          error.message || "This writing was updated somewhere else.",
+          false,
+        );
         return;
 
       case "TOO_MANY_REQUESTS":
-        showMessage("Too many requests", false);
+        showMessage(
+          error.message || "Please wait a moment before trying again.",
+          false,
+        );
         return;
 
       case "INTERNAL_SERVER_ERROR":
-        showMessage("Server unavailable", false);
+        showMessage(
+          error.message ||
+            "Writely is unavailable right now. Please try again.",
+          false,
+        );
         return;
 
       default:

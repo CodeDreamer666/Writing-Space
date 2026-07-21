@@ -211,6 +211,64 @@ describe("useDocumentAutosave", () => {
     expect(readLocalDraft(docId)).toBeNull();
   });
 
+  it("offers a recovery copy without silently replacing saved content", async () => {
+    const editor = createEditor();
+    let autosave: ReturnType<typeof useDocumentAutosave> | null = null;
+    let observedStatus = "";
+    const recoveredContent = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Recovered writing" }],
+        },
+      ],
+    };
+
+    writeLocalDraft({
+      docId,
+      title: "Recovered Draft",
+      content: recoveredContent,
+      baseVersion: 0,
+      savedAt: new Date().toISOString(),
+    });
+
+    function Harness() {
+      const [title, setTitle] = useState("Saved Draft");
+
+      autosave = useDocumentAutosave({
+        docId,
+        document: {
+          id: docId,
+          userId: "user-1",
+          title: "Saved Draft",
+          content: emptyContent,
+          writingMode: "Clear",
+          version: 0,
+          deletedAt: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        editor,
+        title,
+        setTitle,
+        onWordCountChange: vi.fn(),
+        onError: vi.fn(),
+      });
+      observedStatus = autosave.saveStatus;
+
+      return null;
+    }
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+
+    expect(observedStatus).toBe("recovery");
+    expect(editor.getJSON()).toEqual(emptyContent);
+    expect(readLocalDraft(docId)?.content).toEqual(recoveredContent);
+  });
+
   it("does not restore a discarded recovered draft during unmount", async () => {
     const editor = createEditor();
     let autosave: ReturnType<typeof useDocumentAutosave> | null = null;

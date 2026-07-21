@@ -20,7 +20,13 @@ import {
 const AUTOSAVE_DELAY_MS = 1_200;
 const LOCAL_DRAFT_DELAY_MS = 200;
 
-export type SaveStatus = "saved" | "saving" | "unsaved" | "error" | "conflict";
+export type SaveStatus =
+  | "saved"
+  | "saving"
+  | "unsaved"
+  | "error"
+  | "conflict"
+  | "recovery";
 
 type Document = RouterOutputs["docs"]["getSelectedDoc"];
 
@@ -166,7 +172,7 @@ export function useDocumentAutosave({
     dirtyRef.current = true;
     scheduleLocalDraft();
 
-    if (saveStatus === "conflict") {
+    if (saveStatus === "conflict" || saveStatus === "recovery") {
       return;
     }
 
@@ -178,7 +184,8 @@ export function useDocumentAutosave({
     if (
       !isReadyRef.current ||
       activeDocIdRef.current !== docId ||
-      saveStatus === "conflict"
+      saveStatus === "conflict" ||
+      saveStatus === "recovery"
     ) {
       return false;
     }
@@ -370,54 +377,24 @@ export function useDocumentAutosave({
       clearLocalDraft(docId);
     }
 
-    const content =
-      hasRecoveredChanges && localDraft ? localDraft.content : serverContent;
-    const nextTitle =
-      hasRecoveredChanges && localDraft ? localDraft.title : serverTitle;
-
-    editor.commands.setContent(content, { emitUpdate: false });
-    titleRef.current = nextTitle;
-
-    baseVersionRef.current =
-      hasRecoveredChanges && localDraft
-        ? localDraft.baseVersion
-        : document.version;
+    editor.commands.setContent(serverContent, { emitUpdate: false });
+    titleRef.current = serverTitle;
+    baseVersionRef.current = document.version;
     lastSavedSnapshotRef.current = serverSnapshot;
     hydratedDocIdRef.current = docId;
     isReadyRef.current = true;
 
-    if (!localDraft || !hasRecoveredChanges) {
-      dirtyRef.current = false;
-      queueMicrotask(() => {
-        if (activeDocIdRef.current !== docId) {
-          return;
-        }
-
-        setTitle(nextTitle);
-        onWordCountChange(countWords(editor.getText()));
-        setIsHydrated(true);
-        setSaveStatus("saved");
-      });
-      return;
-    }
-
-    dirtyRef.current = true;
-    const canAutosave = canSafelyAutosaveDraft(localDraft, document.version);
-
+    dirtyRef.current = false;
     queueMicrotask(() => {
       if (activeDocIdRef.current !== docId) {
         return;
       }
 
-      setTitle(nextTitle);
+      setTitle(serverTitle);
       onWordCountChange(countWords(editor.getText()));
       setIsHydrated(true);
-      setSaveStatus(canAutosave ? "unsaved" : "conflict");
+      setSaveStatus(hasRecoveredChanges ? "recovery" : "saved");
     });
-
-    if (canAutosave) {
-      scheduleSave(0);
-    }
   }, [
     docId,
     document.content,
@@ -425,7 +402,6 @@ export function useDocumentAutosave({
     document.version,
     editor,
     onWordCountChange,
-    scheduleSave,
     setTitle,
   ]);
 
@@ -465,6 +441,10 @@ export function useDocumentAutosave({
   }, [persistCurrentDraft]);
 
   const handleTitleChange = (nextTitle: string) => {
+    if (saveStatus === "recovery") {
+      return;
+    }
+
     titleRef.current = nextTitle;
     setTitle(nextTitle);
     markDirty();
@@ -495,10 +475,41 @@ export function useDocumentAutosave({
     window.location.reload();
   };
 
+  const restoreRecovery = () => {
+    const localDraft = readLocalDraft(docId);
+
+    if (!localDraft) {
+      setSaveStatus("saved");
+      return;
+    }
+
+    editor.commands.setContent(localDraft.content, { emitUpdate: false });
+    titleRef.current = localDraft.title;
+    setTitle(localDraft.title);
+    onWordCountChange(countWords(editor.getText()));
+    baseVersionRef.current = localDraft.baseVersion;
+    dirtyRef.current = true;
+
+    if (canSafelyAutosaveDraft(localDraft, document.version)) {
+      setSaveStatus("unsaved");
+      scheduleSave(0);
+      return;
+    }
+
+    setSaveStatus("conflict");
+  };
+
+  const discardRecovery = () => {
+    clearLocalDraft(docId);
+    setSaveStatus("saved");
+  };
+
   return {
+    discardRecovery,
     handleTitleChange,
     isHydrated,
     openSavedVersion,
+    restoreRecovery,
     saveNow,
     saveStatus,
   };

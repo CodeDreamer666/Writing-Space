@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { MAX_AI_SELECTION_CHARACTERS } from "~/lib/aiLimits";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { api, type RouterOutputs } from "~/trpc/react";
 import type { AiAction, CapturedAiContext } from "~/types/ai";
@@ -23,7 +24,9 @@ type Props = {
   mode: WritingMode;
   selectionWordCount: number;
   hasSelection: boolean;
-  hasDocumentContent: boolean;
+  aiEnabled: boolean;
+  aiMessage: string;
+  remainingTokens: number;
   captureContext: () => CapturedAiContext;
   isContextCurrent: (context: CapturedAiContext) => boolean;
   onReplace: (context: CapturedAiContext, content: string) => void;
@@ -89,13 +92,16 @@ export default function AiWritingPanel({
   mode,
   selectionWordCount,
   hasSelection,
-  hasDocumentContent,
+  aiEnabled,
+  aiMessage,
+  remainingTokens,
   captureContext,
   isContextCurrent,
   onReplace,
   onClose,
 }: Props) {
   const router = useRouter();
+  const utils = api.useUtils();
   const handleTRPCError = useHandleTRPCError();
   const [customPrompt, setCustomPrompt] = useState("");
   const [result, setResult] = useState<AiResult | null>(null);
@@ -104,11 +110,12 @@ export default function AiWritingPanel({
     instruction?: string;
   } | null>(null);
   const [copyLabel, setCopyLabel] = useState("Copy");
+  const [requestError, setRequestError] = useState("");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
 
   const askAi = api.ai.askAi.useMutation();
-  const hasTarget = hasSelection || hasDocumentContent;
+  const hasTarget = hasSelection;
 
   useEffect(() => {
     if (!isOpen) {
@@ -162,37 +169,43 @@ export default function AiWritingPanel({
   }, [isOpen, onClose]);
 
   const runAction = (action: AiAction, instruction?: string) => {
-    if (askAi.isPending) {
+    if (askAi.isPending || !aiEnabled) {
       return;
     }
 
     const context = captureContext();
-    const target =
-      context.scope === "selection"
-        ? context.selectedText
-        : context.fullDocument;
+    const target = context.selectedText;
 
     if (!target?.trim()) {
+      setRequestError("Select some text before using Writely AI.");
+      return;
+    }
+
+    if (target.length > MAX_AI_SELECTION_CHARACTERS) {
+      setRequestError(
+        `AI selections can contain up to ${MAX_AI_SELECTION_CHARACTERS.toLocaleString()} characters.`,
+      );
       return;
     }
 
     setResult(null);
+    setRequestError("");
     setLastRequest({ action, instruction });
 
     askAi.mutate(
       {
         action,
         mode,
-        scope: context.scope,
         selectedText: context.selectedText,
-        fullDocument: context.fullDocument,
         instruction,
       },
       {
         onSuccess: (response) => {
           setResult({ action, context, response });
+          void utils.ai.getStatus.invalidate();
         },
         onError: (error) => {
+          setRequestError(error.message);
           handleTRPCError({ error, router });
         },
       },
@@ -269,7 +282,7 @@ export default function AiWritingPanel({
                   ? `Selected text · ${selectionWordCount} ${
                       selectionWordCount === 1 ? "word" : "words"
                     }`
-                  : "Entire document"}
+                  : "Select text to begin"}
               </p>
             </div>
 
@@ -286,13 +299,19 @@ export default function AiWritingPanel({
 
           <div className="ai-panel-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
             <p className="text-xs leading-relaxed text-[#707987]">
-              Your draft is sent to the AI provider only when you choose an
-              action.
+              Only your selected text is sent to the AI provider when you choose
+              an action.
+            </p>
+
+            <p className="rounded-lg border border-[#262C36] bg-[#151A20] px-3 py-2 text-xs leading-relaxed text-[#AEB4BE]">
+              {aiEnabled
+                ? `${remainingTokens.toLocaleString()} tokens remaining today.`
+                : aiMessage}
             </p>
 
             {!hasTarget && (
               <p className="rounded-lg border border-[#343C49] bg-[#151A20] px-3 py-2 text-xs leading-relaxed text-[#AEB4BE]">
-                Start writing or select text to use Writely AI.
+                Select the text you want Writely AI to work on.
               </p>
             )}
 
@@ -305,7 +324,7 @@ export default function AiWritingPanel({
                   <button
                     key={action}
                     onClick={() => runAction(action)}
-                    disabled={askAi.isPending || !hasTarget}
+                    disabled={askAi.isPending || !hasTarget || !aiEnabled}
                     className="group flex cursor-pointer items-center justify-between rounded-xl border border-[#222A35] bg-[#0B0D10] px-3.5 py-3 text-left transition-colors duration-200 hover:border-[#394352] hover:bg-[#121820] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span className="min-w-0">
@@ -333,7 +352,7 @@ export default function AiWritingPanel({
                   <button
                     key={action}
                     onClick={() => runAction(action)}
-                    disabled={askAi.isPending || !hasTarget}
+                    disabled={askAi.isPending || !hasTarget || !aiEnabled}
                     className="group flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#222A35] bg-[#0B0D10] px-3.5 py-3 text-left transition-all duration-200 hover:border-[#394352] hover:bg-[#121820] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span className="min-w-0">
@@ -352,48 +371,6 @@ export default function AiWritingPanel({
               </div>
             </section>
 
-            <section>
-              <label
-                htmlFor="custom-prompt"
-                className="text-[11px] font-medium tracking-widest text-[#6B7280] uppercase"
-              >
-                Custom
-              </label>
-              <div className="mt-2 rounded-xl border border-[#262C36] bg-[#0B0D10] p-3">
-                <textarea
-                  id="custom-prompt"
-                  value={customPrompt}
-                  onChange={(event) => setCustomPrompt(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "Enter" &&
-                      (event.ctrlKey || event.metaKey)
-                    ) {
-                      event.preventDefault();
-                      handleCustomSubmit();
-                    }
-                  }}
-                  placeholder="Ask Writely..."
-                  rows={3}
-                  className="w-full resize-none bg-transparent text-sm leading-relaxed text-[#E5E7EA] outline-none placeholder:text-[#4A5363]"
-                />
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <span className="text-[10px] text-[#596272]">
-                    Ctrl/⌘ + Enter
-                  </span>
-                  <button
-                    onClick={handleCustomSubmit}
-                    disabled={
-                      !customPrompt.trim() || askAi.isPending || !hasTarget
-                    }
-                    className="cursor-pointer rounded-lg bg-[#F5F5F7] px-4 py-2 text-xs font-medium text-[#0B0D10] transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Send
-                  </button>
-                </div>
-              </div>
-            </section>
-
             <section
               className="min-h-32 rounded-xl border border-[#262C36] bg-[#151A20] p-4"
               aria-live="polite"
@@ -404,10 +381,11 @@ export default function AiWritingPanel({
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#8E96A3] [animation-delay:150ms]" />
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#8E96A3] [animation-delay:300ms]" />
                 </div>
-              ) : askAi.isError || (lastRequest && !result) ? (
+              ) : requestError || askAi.isError || (lastRequest && !result) ? (
                 <div className="flex flex-col gap-1">
                   <p className="text-sm text-[#D5D9DF]">
-                    Writely AI is unavailable right now. Please try again.
+                    {requestError ||
+                      "Writely AI is unavailable right now. Please try again."}
                   </p>
                   <div className="flex items-center justify-end">
                     <button
@@ -415,7 +393,7 @@ export default function AiWritingPanel({
                         lastRequest &&
                         runAction(lastRequest.action, lastRequest.instruction)
                       }
-                      disabled={!hasTarget}
+                      disabled={!hasTarget || !aiEnabled}
                       className="mt-3 cursor-pointer rounded-lg border border-[#343C49] px-3 py-2 text-xs font-medium text-[#E5E7EA] hover:bg-[#1E2530] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Retry
