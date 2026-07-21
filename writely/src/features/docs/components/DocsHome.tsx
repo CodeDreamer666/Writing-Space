@@ -6,6 +6,7 @@ import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import Loading from "~/components/shared/Loading";
 import LoadingIcon from "~/components/shared/LoadingIcon";
 import ServerError from "~/components/shared/ServerError";
+import { useWritelyShortcuts } from "~/hooks/useWritelyShortcuts";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
@@ -20,8 +21,6 @@ export default function DocsHome() {
   const { showMessage } = useStatusMessage();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
   const { data: session, isPending: isSessionLoading } =
     authClient.useSession();
   const isAuthenticated = Boolean(session?.user);
@@ -97,8 +96,6 @@ export default function DocsHome() {
         callbackURL: "/",
       });
 
-      console.log(result);
-
       if (result.error) {
         window.sessionStorage.removeItem(CREATE_AFTER_AUTH_KEY);
         setIsSigningIn(false);
@@ -123,6 +120,12 @@ export default function DocsHome() {
   const isStartWritingPending =
     isSessionLoading || isSigningIn || createDoc.isPending;
 
+  useWritelyShortcuts({
+    onCreateDocument: () => {
+      void handleStartWriting();
+    },
+  });
+
   if (isSessionLoading || (isAuthenticated && isLoading)) {
     return <Loading />;
   }
@@ -132,13 +135,13 @@ export default function DocsHome() {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#0B0D10] text-[#F5F5F7]">
+    <div className="min-h-screen overflow-x-hidden bg-[var(--w-background)] text-[var(--w-foreground)]">
       <div className="mx-auto max-w-3xl">
         <section className="px-6 pt-8 pb-12 sm:px-8 sm:pt-12">
           <div className="mb-4 flex items-center justify-between gap-4">
             <div className="flex w-full items-center justify-between">
-              <div className="flex items-center gap-2 text-[#6B7280]">
-                <span className="text flex h-12 w-12 items-center justify-center rounded-md border border-[#2A313C] font-medium text-[#AEB4BE]">
+              <div className="flex items-center gap-2 text-[var(--w-subtle)]">
+                <span className="text flex h-12 w-12 items-center justify-center rounded-md border border-[var(--w-border)] font-medium text-[var(--w-muted)]">
                   W
                 </span>
                 <span className="text tracking-[0.12em] uppercase">
@@ -149,7 +152,7 @@ export default function DocsHome() {
               <Link
                 href="/setting"
                 aria-label="Settings and help"
-                className="flex size-10 items-center justify-center rounded-lg text-[#8E96A3] transition-colors hover:bg-[#1E2530] hover:text-[#F5F5F7] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3]"
+                className="flex size-10 items-center justify-center rounded-lg text-[var(--w-muted)] transition-colors hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -176,11 +179,11 @@ export default function DocsHome() {
           </div>
 
           <div className="flex items-center justify-between">
-            <h1 className="max-w-full text-[clamp(2.25rem,12vw,3rem)] leading-[1.12] font-medium tracking-[-0.02em] text-[#F5F5F7] sm:text-5xl">
+            <h1 className="max-w-full text-[clamp(2.25rem,12vw,3rem)] leading-[1.12] font-medium tracking-[-0.02em] text-[var(--w-foreground)] sm:text-5xl">
               What will you write today
               <span
                 aria-hidden="true"
-                className="animate-blink ml-1 inline-block h-[0.9em] w-0.5 translate-y-px rounded-[1px] bg-[#F5F5F7] align-middle motion-reduce:animate-none"
+                className="animate-blink ml-1 inline-block h-[0.9em] w-0.5 translate-y-px rounded-[1px] bg-[var(--w-foreground)] align-middle motion-reduce:animate-none"
               />
             </h1>
 
@@ -188,9 +191,9 @@ export default function DocsHome() {
               type="button"
               disabled={isStartWritingPending}
               onClick={() => {
-                handleStartWriting();
+                void handleStartWriting();
               }}
-              className="min-h-12 cursor-pointer rounded-xl bg-[#F5F5F7] px-6 text-sm font-medium text-[#0B0D10] transition-all duration-200 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F5F5F7] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
+              className="min-h-12 cursor-pointer rounded-xl bg-[var(--w-foreground)] px-6 text-sm font-medium text-[var(--w-background)] transition-all duration-200 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--w-foreground)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
             >
               {isStartWritingPending ? (
                 <span className="flex items-center gap-2">
@@ -203,14 +206,14 @@ export default function DocsHome() {
             </button>
           </div>
 
-          <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-[#8E96A3]">
+          <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-[var(--w-muted)]">
             A quiet space to think, write, and continue.
           </p>
         </section>
 
         {isAuthenticated && (
           <>
-            <div className="mx-6 h-px bg-[#1E2530] sm:mx-8" />
+            <div className="mx-6 h-px bg-[var(--w-border-soft)] sm:mx-8" />
 
             <section
               className="px-6 pt-9 pb-10 sm:px-8"
@@ -218,14 +221,14 @@ export default function DocsHome() {
             >
               <h2
                 id="recent-drafts"
-                className="mb-5 text-[11px] font-medium tracking-widest text-[#6B7280] uppercase"
+                className="mb-5 text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase"
               >
                 Recent Document
               </h2>
 
               {!docs || docs.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[#1E2530] px-5 py-12 text-center">
-                  <p className="text-sm text-[#6B7280]">
+                <div className="rounded-xl border border-dashed border-[var(--w-border-soft)] px-5 py-12 text-center">
+                  <p className="text-sm text-[var(--w-subtle)]">
                     Nothing yet — your drafts will appear here.
                   </p>
                 </div>

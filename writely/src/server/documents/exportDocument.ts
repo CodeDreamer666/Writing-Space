@@ -1,14 +1,15 @@
 import type { JSONContent } from "@tiptap/core";
 
-export type ExportFormat = "txt" | "md";
+export type ExportFormat = "txt" | "md" | "pdf" | "docx";
+export type TextExportFormat = Extract<ExportFormat, "txt" | "md">;
 
-function children(node: JSONContent, format: ExportFormat): string {
+function children(node: JSONContent, format: TextExportFormat): string {
   return (node.content ?? [])
     .map((child) => renderNode(child, format))
     .join("");
 }
 
-function renderNode(node: JSONContent, format: ExportFormat): string {
+function renderNode(node: JSONContent, format: TextExportFormat): string {
   if (node.type === "text") {
     let text = node.text ?? "";
 
@@ -39,10 +40,18 @@ function renderNode(node: JSONContent, format: ExportFormat): string {
         ? `${"#".repeat(Number(node.attrs?.level) || 1)} ${content}\n\n`
         : `${content}\n\n`;
     case "bulletList":
+      return `${(node.content ?? [])
+        .map((item) => `- ${children(item, format).trim()}\n`)
+        .join("")}\n`;
     case "orderedList":
-      return `${content}\n`;
+      return `${(node.content ?? [])
+        .map(
+          (item, index) =>
+            `${Number(node.attrs?.start ?? 1) + index}. ${children(item, format).trim()}\n`,
+        )
+        .join("")}\n`;
     case "listItem":
-      return `${format === "md" ? "- " : ""}${content.trim()}\n`;
+      return content;
     case "blockquote":
       return format === "md"
         ? `${content
@@ -62,7 +71,11 @@ function renderNode(node: JSONContent, format: ExportFormat): string {
 
 export function exportDocumentContent(
   content: JSONContent,
-  format: ExportFormat,
+  format: TextExportFormat,
 ): string {
   return `${renderNode(content, format).trimEnd()}\n`;
+}
+
+export function isDocumentEmpty(content: JSONContent): boolean {
+  return exportDocumentContent(content, "txt").trim().length === 0;
 }

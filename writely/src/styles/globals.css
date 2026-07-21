@@ -7,6 +7,35 @@
   --animate-blink: blink 1s step-end infinite;
 }
 
+:root,
+:root[data-theme="dark"] {
+  --w-background: #0b0d10;
+  --w-surface: #10151b;
+  --w-surface-raised: #161b22;
+  --w-border: #2a313c;
+  --w-border-soft: #1e2530;
+  --w-foreground: #f5f5f7;
+  --w-strong: #e5e7ea;
+  --w-muted: #aeb4be;
+  --w-subtle: #6b7280;
+  --w-placeholder: #4a5363;
+  --w-selection: #3a4657;
+}
+
+:root[data-theme="light"] {
+  --w-background: #f7f6f2;
+  --w-surface: #ffffff;
+  --w-surface-raised: #efeee9;
+  --w-border: #d7d5ce;
+  --w-border-soft: #e6e4de;
+  --w-foreground: #1c2025;
+  --w-strong: #30363d;
+  --w-muted: #606872;
+  --w-subtle: #7a828c;
+  --w-placeholder: #9aa0a8;
+  --w-selection: #cbd5e1;
+}
+
 @keyframes blink {
   0%,
   100% {
@@ -30,8 +59,27 @@
   }
 }
 
+@keyframes savePulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.landing-save-cycle {
+  animation: savePulse 3s ease-in-out infinite;
+}
+
+body[data-focus-mode="true"] [data-beta-utilities] {
+  display: none;
+}
+
 .ProseMirror {
-  color: #f5f5f7;
+  color: var(--w-foreground);
 }
 
 .ProseMirror:focus {
@@ -74,28 +122,29 @@
 }
 
 .ProseMirror blockquote {
-  border-left: 3px solid #252b36;
+  border-left: 3px solid var(--w-border);
   padding-left: 1rem;
   margin: 1rem 0;
-  color: #8e96a3;
+  color: var(--w-muted);
   font-style: italic;
 }
 
 .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #4a5363;
+  color: var(--w-placeholder);
   pointer-events: none;
   height: 0;
 }
 
 body {
-  @apply bg-[#0B0D10] text-[#F5F5F7];
+  background: var(--w-background);
+  color: var(--w-foreground);
 }
 
 ::selection {
-  background: #3a4657;
-  color: #ffffff;
+  background: var(--w-selection);
+  color: var(--w-foreground);
 }
 
 :where(button, a, input, textarea, select):focus-visible {
@@ -105,7 +154,7 @@ body {
 
 .ai-panel-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #3a4350 transparent;
+  scrollbar-color: var(--w-border) transparent;
   scrollbar-gutter: stable;
 }
 
@@ -121,12 +170,12 @@ body {
   min-height: 48px;
   border: 2px solid transparent;
   border-radius: 999px;
-  background: #3a4350;
+  background: var(--w-border);
   background-clip: padding-box;
 }
 
 .ai-panel-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #566171;
+  background: var(--w-subtle);
   background-clip: padding-box;
 }
 

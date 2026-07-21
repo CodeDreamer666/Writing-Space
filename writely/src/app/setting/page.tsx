@@ -1,246 +1,165 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ThemeSelector from "~/components/shared/ThemeSelector";
+import {
+  DAILY_AI_TOKEN_LIMIT,
+  MAX_AI_SELECTION_CHARACTERS,
+} from "~/lib/aiLimits";
+import {
+  MAX_DOCUMENT_CHARACTERS,
+  MAX_DOCUMENTS_PER_USER,
+} from "~/lib/documentLimits";
 
 export const metadata: Metadata = {
   title: "Settings & Help",
-  description:
-    "Keyboard shortcuts, limits, privacy, and beta information for Writely.",
+  description: "Writely preferences, shortcuts, limits, and help.",
 };
 
 const shortcuts = [
   ["Ctrl/Cmd + N", "Create a new document"],
   ["Ctrl/Cmd + S", "Save immediately"],
   ["Ctrl/Cmd + Shift + F", "Enter or exit Focus Mode"],
-  ["Ctrl/Cmd + Shift + E", "Export document"],
-  ["Esc", "Close menus, dialogs, or AI panels"],
+  ["Ctrl/Cmd + Shift + E", "Open document export"],
+  ["Esc", "Close the active menu, dialog, export, or AI panel"],
 ];
 
 export default function SettingsPage() {
   return (
-    <main className="min-h-screen bg-[#0B0D10] px-6 py-10 text-[#F5F5F7] sm:px-8 sm:py-14">
+    <main className="min-h-screen bg-[var(--w-background)] px-6 py-10 text-[var(--w-foreground)] sm:px-8 sm:py-14">
       <article className="mx-auto max-w-3xl pb-24">
         <Link
           href="/"
-          className="text-sm text-[#AEB4BE] transition-colors hover:text-[#F5F5F7]"
+          className="text-sm text-[var(--w-muted)] transition-colors hover:text-[var(--w-foreground)]"
         >
           ← Back to Writely
         </Link>
 
-        <header className="mt-12 border-b border-[#1E2530] pb-10">
-          <p className="text-xs font-medium tracking-[0.14em] text-[#6B7280] uppercase">
+        <header className="mt-12 border-b border-[var(--w-border-soft)] pb-10">
+          <p className="text-xs font-medium tracking-[0.14em] text-[var(--w-subtle)] uppercase">
             Writely beta
           </p>
           <h1 className="mt-3 text-4xl font-medium tracking-tight sm:text-5xl">
             Settings &amp; Help
           </h1>
-          <p className="mt-4 max-w-xl text-base leading-8 text-[#AEB4BE]">
-            Everything you need to use Writely with confidence.
+          <p className="mt-4 max-w-xl text-base leading-8 text-[var(--w-muted)]">
+            Personalize your writing space and find the essentials quickly.
           </p>
         </header>
 
-        <div className="divide-y divide-[#1E2530]">
-          <section className="py-10" aria-labelledby="keyboard-shortcuts">
-            <SectionHeading
-              id="keyboard-shortcuts"
-              title="Keyboard shortcuts"
-            />
-            <p className="mt-3 text-sm leading-7 text-[#AEB4BE]">
-              Use Writely faster with your keyboard.
+        <div className="divide-y divide-[var(--w-border-soft)]">
+          <SettingsSection title="Theme">
+            <p>Choose how Writely looks across every page and panel.</p>
+            <div className="mt-5">
+              <ThemeSelector />
+            </div>
+            <p className="mt-4 text-xs text-[var(--w-subtle)]">
+              System follows your device setting and updates when it changes.
             </p>
-            <dl className="mt-6 divide-y divide-[#1E2530] border-y border-[#1E2530]">
+          </SettingsSection>
+
+          <SettingsSection title="Keyboard shortcuts">
+            <p>Use the editor without leaving the keyboard.</p>
+            <dl className="mt-6 divide-y divide-[var(--w-border-soft)] border-y border-[var(--w-border-soft)]">
               {shortcuts.map(([keys, description]) => (
                 <div
                   key={keys}
                   className="flex items-center justify-between gap-6 py-3 text-sm"
                 >
-                  <dt className="text-[#D5D9DF]">{description}</dt>
-                  <dd className="shrink-0 rounded border border-[#394352] bg-[#10151B] px-2 py-1 font-mono text-xs text-[#AEB4BE]">
+                  <dt className="text-[var(--w-strong)]">{description}</dt>
+                  <dd className="shrink-0 rounded border border-[var(--w-border)] bg-[var(--w-surface)] px-2 py-1 font-mono text-xs text-[var(--w-muted)]">
                     {keys}
                   </dd>
                 </div>
               ))}
             </dl>
-          </section>
+          </SettingsSection>
 
-          <section className="py-10" aria-labelledby="autosave">
-            <SectionHeading id="autosave" title="Autosave" />
-            <p className="mt-3 text-sm leading-7 text-[#AEB4BE]">
-              Writely saves your writing automatically while you type.
+          <SettingsSection title="Autosave">
+            <p>
+              Writely saves while you type and clearly shows Saving…, Saved, or
+              Save failed so you know where your latest changes stand.
             </p>
-            <p className="mt-5 text-sm text-[#D5D9DF]">You may see:</p>
-            <ul className="mt-3 space-y-2 text-sm leading-7 text-[#AEB4BE]">
+            <p className="mt-4">
+              If a save fails or a tab closes unexpectedly, a temporary browser
+              recovery copy helps protect recent writing. Manual save remains
+              available from the editor or with Ctrl/Cmd + S.
+            </p>
+          </SettingsSection>
+
+          <SettingsSection title="AI usage">
+            <ul className="list-disc space-y-1 pl-5">
               <li>
-                <strong className="font-medium text-[#E5E7EA]">Saving…</strong>{" "}
-                — your latest changes are being saved
+                {DAILY_AI_TOKEN_LIMIT.toLocaleString()} AI tokens each day
               </li>
               <li>
-                <strong className="font-medium text-[#E5E7EA]">Saved</strong> —
-                your document is up to date
+                Up to {MAX_AI_SELECTION_CHARACTERS.toLocaleString()} selected
+                characters per request
               </li>
+              <li>One AI request at a time per user</li>
+              <li>Only selected text is sent for an AI action</li>
+            </ul>
+            <p className="mt-4">
+              The editor shows a simple daily usage bar. Failed or invalid AI
+              responses do not reduce your Writely allowance.
+            </p>
+          </SettingsSection>
+
+          <SettingsSection title="Document limits">
+            <ul className="list-disc space-y-1 pl-5">
+              <li>Up to {MAX_DOCUMENTS_PER_USER.toLocaleString()} documents</li>
               <li>
-                <strong className="font-medium text-[#E5E7EA]">
-                  Save failed
-                </strong>{" "}
-                — Writely could not save your latest changes
+                Up to {MAX_DOCUMENT_CHARACTERS.toLocaleString()} characters per
+                document
               </li>
             </ul>
-            <p className="mt-5 text-sm leading-7 text-[#AEB4BE]">
-              Writely may also keep a temporary recovery copy in your browser so
-              a refresh, closed tab, or failed save does not erase recent
-              writing.
-            </p>
-          </section>
+          </SettingsSection>
 
-          <section className="py-10" aria-labelledby="ai-usage">
-            <SectionHeading id="ai-usage" title="AI usage" />
-            <div className="mt-3 space-y-4 text-sm leading-7 text-[#AEB4BE]">
-              <p>Each user receives 10,000 AI tokens per day.</p>
-              <p>
-                Tokens represent the amount of text sent to and generated by AI.
-                Longer selections and responses use more tokens.
-              </p>
-              <p>
-                Your remaining daily usage is shown in Writely and resets each
-                day.
-              </p>
-              <ul className="list-disc space-y-1 pl-5">
-                <li>AI works only on text you select.</li>
-                <li>Maximum selected text per AI request: 10,000 characters</li>
-                <li>Only one AI request can run at a time per user</li>
-                <li>
-                  AI features may occasionally be temporarily disabled during
-                  maintenance or beta testing
-                </li>
-                <li>
-                  Writely does not intentionally store your AI prompts, selected
-                  text, or AI responses
-                </li>
-              </ul>
-            </div>
-          </section>
-
-          <section className="py-10" aria-labelledby="document-limits">
-            <SectionHeading id="document-limits" title="Document limits" />
-            <p className="mt-3 text-sm leading-7 text-[#AEB4BE]">
-              During the beta:
+          <SettingsSection title="Export">
+            <p>
+              Export the current document as TXT, Markdown, PDF, or Word. PDF,
+              Word, and Markdown preserve supported structure and formatting.
             </p>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-7 text-[#AEB4BE]">
-              <li>Maximum 20 documents</li>
-              <li>Maximum 50,000 characters per document</li>
-              <li>Maximum 10,000 selected characters per AI request</li>
-            </ul>
-            <p className="mt-5 text-sm leading-7 text-[#AEB4BE]">
-              These limits help keep Writely fast and reliable.
-            </p>
-          </section>
+          </SettingsSection>
 
-          <section className="py-10" aria-labelledby="export">
-            <SectionHeading id="export" title="Export" />
-            <p className="mt-3 text-sm leading-7 text-[#AEB4BE]">
-              Writely supports exporting your writing as:
+          <SettingsSection title="Privacy and beta">
+            <p>
+              Writely stores the account and document information needed to
+              provide your writing workspace. AI runs only when you choose an
+              action on selected text.
             </p>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-7 text-[#AEB4BE]">
-              <li>TXT</li>
-              <li>Markdown</li>
-              <li>PDF</li>
-              <li>Word</li>
-            </ul>
-            <p className="mt-5 text-sm leading-7 text-[#AEB4BE]">
-              TXT exports plain text, while Markdown, PDF, and Word may preserve
-              supported headings and formatting.
-            </p>
-          </section>
-
-          <section className="py-10" aria-labelledby="desktop-only">
-            <SectionHeading id="desktop-only" title="Desktop only" />
-            <div className="mt-3 space-y-4 text-sm leading-7 text-[#AEB4BE]">
-              <p>
-                Writely is currently designed for laptop and desktop computers.
-              </p>
-              <p>
-                The full writing interface is available on screens 1024px and
-                wider. Smaller screens will show a desktop-only notice.
-              </p>
-            </div>
-          </section>
-
-          <section className="py-10" aria-labelledby="privacy">
-            <SectionHeading id="privacy" title="Privacy" />
-            <div className="mt-3 space-y-4 text-sm leading-7 text-[#AEB4BE]">
-              <p>
-                Writely stores the account and document information needed to
-                provide your writing workspace.
-              </p>
-              <p>
-                When you use AI, the selected text and requested AI action are
-                temporarily sent to the AI provider to generate a response.
-                Writely does not intentionally store your AI prompts, selected
-                text, or AI responses.
-              </p>
-              <p>
-                Writely stores only the information needed to track your daily
-                AI usage.
-              </p>
-            </div>
             <Link
               href="/privacy"
-              className="mt-5 inline-flex text-sm font-medium text-[#E5E7EA] underline decoration-[#566171] underline-offset-4 hover:text-white"
+              className="mt-5 inline-flex font-medium text-[var(--w-strong)] underline decoration-[var(--w-subtle)] underline-offset-4 hover:text-[var(--w-foreground)]"
             >
               Read the full Privacy page →
             </Link>
-          </section>
-
-          <section className="py-10" aria-labelledby="feedback">
-            <SectionHeading id="feedback" title="Feedback" />
-            <p className="mt-3 text-sm leading-7 text-[#AEB4BE]">
-              Found something confusing, broken, or missing?
+            <p className="mt-5">
+              Writely is in beta. Features may change, so please use the
+              feedback option when something feels unclear or does not work as
+              expected.
             </p>
-            <p className="mt-5 text-sm font-medium text-[#E5E7EA]">
-              Send feedback
-            </p>
-            <p className="mt-2 text-sm leading-7 text-[#AEB4BE]">
-              Your feedback helps improve Writely during beta testing.
-            </p>
-          </section>
-
-          <section className="py-10" aria-labelledby="theme">
-            <SectionHeading id="theme" title="Theme" />
-            <p className="mt-3 text-sm leading-7 text-[#AEB4BE]">
-              Choose how Writely looks:
-            </p>
-            <p className="mt-4 text-sm text-[#D5D9DF]">
-              Light &nbsp; Dark &nbsp; System
-            </p>
-            <p className="mt-4 text-sm leading-7 text-[#AEB4BE]">
-              Your selected theme will be used throughout the Writely interface.
-            </p>
-          </section>
-
-          <section className="py-10" aria-labelledby="about-beta">
-            <SectionHeading id="about-beta" title="About the beta" />
-            <div className="mt-3 space-y-4 text-sm leading-7 text-[#AEB4BE]">
-              <p>Writely is currently in beta.</p>
-              <p>
-                Features may change, and occasional bugs, failed saves, AI
-                interruptions, or other issues may occur while the product is
-                being tested.
-              </p>
-              <p>
-                Please use the feedback option when something does not work as
-                expected.
-              </p>
-            </div>
-          </section>
+          </SettingsSection>
         </div>
       </article>
     </main>
   );
 }
 
-function SectionHeading({ id, title }: { id: string; title: string }) {
+function SettingsSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <h2 id={id} className="text-xl font-medium text-[#F5F5F7]">
-      {title}
-    </h2>
+    <section className="py-10">
+      <h2 className="text-xl font-medium text-[var(--w-foreground)]">
+        {title}
+      </h2>
+      <div className="mt-3 text-sm leading-7 text-[var(--w-muted)]">
+        {children}
+      </div>
+    </section>
   );
 }

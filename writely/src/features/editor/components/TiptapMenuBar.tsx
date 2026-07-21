@@ -1,6 +1,6 @@
 "use client";
 import { type Editor } from "@tiptap/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const TOOLBAR_WIDTH = 180;
 const TOOLBAR_HEIGHT = 50;
@@ -23,6 +23,7 @@ type ToolbarButton = {
 export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ left: 0, top: 0 });
+  const dismissedSelectionRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!editor) {
@@ -33,9 +34,19 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
       const { selection } = editor.state;
 
       if (selection.empty) {
+        dismissedSelectionRef.current = null;
         setIsVisible(false);
         return;
       }
+
+      const selectionKey = `${selection.from}:${selection.to}`;
+
+      if (dismissedSelectionRef.current === selectionKey) {
+        setIsVisible(false);
+        return;
+      }
+
+      dismissedSelectionRef.current = null;
 
       try {
         const from = Math.min(selection.from, selection.to);
@@ -68,12 +79,23 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
     window.addEventListener("resize", updateToolbar);
     window.addEventListener("scroll", updateToolbar, true);
 
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        const { from, to } = editor.state.selection;
+        dismissedSelectionRef.current = `${from}:${to}`;
+        setIsVisible(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
     return () => {
       editor.off("selectionUpdate", updateToolbar);
       editor.off("transaction", updateToolbar);
       editor.off("blur", updateToolbar);
       window.removeEventListener("resize", updateToolbar);
       window.removeEventListener("scroll", updateToolbar, true);
+      window.removeEventListener("keydown", handleEscape);
     };
   }, [editor]);
 
@@ -137,7 +159,7 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
       aria-hidden={!isVisible}
       inert={!isVisible}
     >
-      <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-[#2E3643] bg-[#121820]/95 p-1 shadow-2xl backdrop-blur-xl">
+      <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-[var(--w-border)] bg-[var(--w-surface-raised)]/95 p-1 shadow-2xl backdrop-blur-xl">
         {buttons.map((button) => (
           <button
             key={button.title}
@@ -146,10 +168,10 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
             aria-label={button.title}
             onMouseDown={(event) => event.preventDefault()}
             onClick={button.action}
-            className={`flex size-10 cursor-pointer items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3] active:scale-95 ${
+            className={`flex size-10 cursor-pointer items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)] active:scale-95 ${
               button.isActive
-                ? "bg-[#F5F5F7] text-[#0B0D10]"
-                : "text-[#8E96A3] hover:bg-[#1E2530] hover:text-[#F5F5F7]"
+                ? "bg-[var(--w-foreground)] text-[var(--w-background)]"
+                : "text-[var(--w-muted)] hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)]"
             }`}
           >
             {button.label}

@@ -8,30 +8,30 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-[#0B0D10] px-5 py-16 text-[#F5F5F7] sm:px-8">
+    <main className="min-h-screen bg-[var(--w-background)] px-5 py-16 text-[var(--w-foreground)] sm:px-8">
       <article className="mx-auto max-w-2xl">
         <Link
           href="/"
-          className="text-sm text-[#AEB4BE] transition-colors hover:text-[#F5F5F7]"
+          className="text-sm text-[var(--w-muted)] transition-colors hover:text-[var(--w-foreground)]"
         >
           ← Back to Writely
         </Link>
 
-        <p className="mt-12 text-xs font-medium tracking-[0.12em] text-[#6B7280] uppercase">
+        <p className="mt-12 text-xs font-medium tracking-[0.12em] text-[var(--w-subtle)] uppercase">
           Writely beta
         </p>
         <h1 className="mt-3 text-4xl font-medium tracking-tight">
           Privacy, in plain language
         </h1>
-        <p className="mt-4 text-base leading-8 text-[#AEB4BE]">
+        <p className="mt-4 text-base leading-8 text-[var(--w-muted)]">
           Writely stores the information needed to provide your account and
           writing workspace. We aim to collect only what the product needs to
           work, stay secure, and improve during beta testing.
         </p>
 
-        <div className="mt-10 space-y-8 text-sm leading-7 text-[#AEB4BE]">
+        <div className="mt-10 space-y-8 text-sm leading-7 text-[var(--w-muted)]">
           <section>
-            <h2 className="text-lg font-medium text-[#F5F5F7]">
+            <h2 className="text-lg font-medium text-[var(--w-foreground)]">
               Account and documents
             </h2>
             <p className="mt-2">
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-medium text-[#F5F5F7]">
+            <h2 className="text-lg font-medium text-[var(--w-foreground)]">
               AI requests and usage
             </h2>
             <p className="mt-2">
@@ -88,7 +88,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-medium text-[#F5F5F7]">
+            <h2 className="text-lg font-medium text-[var(--w-foreground)]">
               Recovery data
             </h2>
             <p className="mt-2">
@@ -106,7 +106,9 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-medium text-[#F5F5F7]">Feedback</h2>
+            <h2 className="text-lg font-medium text-[var(--w-foreground)]">
+              Feedback
+            </h2>
             <p className="mt-2">
               When you choose to submit feedback, Writely may store:
             </p>
@@ -122,7 +124,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-medium text-[#F5F5F7]">
+            <h2 className="text-lg font-medium text-[var(--w-foreground)]">
               Operational and security data
             </h2>
             <p className="mt-2">
@@ -145,7 +147,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-medium text-[#F5F5F7]">
+            <h2 className="text-lg font-medium text-[var(--w-foreground)]">
               What Writely does not aim to collect
             </h2>
             <p className="mt-2">
@@ -161,7 +163,9 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-medium text-[#F5F5F7]">Beta notice</h2>
+            <h2 className="text-lg font-medium text-[var(--w-foreground)]">
+              Beta notice
+            </h2>
             <p className="mt-2">Writely is currently in beta.</p>
             <p className="mt-4">
               Features, data practices, and supporting services may change as

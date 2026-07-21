@@ -14,6 +14,7 @@ type Props = {
   title: string;
   characterCount: number;
   aiEnabled: boolean;
+  isFocusMode: boolean;
   onModeChange: (mode: WritingMode) => void;
   onRetrySave: () => void;
   onOpenSavedVersion: () => void;
@@ -31,6 +32,7 @@ export default function EditorDocument({
   title,
   characterCount,
   aiEnabled,
+  isFocusMode,
   onModeChange,
   onRetrySave,
   onOpenSavedVersion,
@@ -40,10 +42,19 @@ export default function EditorDocument({
   onAiOpen,
 }: Props) {
   return (
-    <main className="min-w-0 px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
+    <main
+      data-writely-editor
+      className={`min-w-0 px-4 sm:px-6 lg:px-8 ${
+        isFocusMode ? "py-8 sm:py-14" : "py-6 sm:py-10"
+      }`}
+    >
       <div className="mx-auto max-w-3xl">
         <section
-          className={`relative rounded-xl border border-[#1E2530] bg-[#0F1318]/70 px-5 py-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)] transition-all duration-300 sm:px-8 sm:py-8`}
+          className={`relative px-5 py-6 transition-all duration-300 sm:px-8 sm:py-8 ${
+            isFocusMode
+              ? "bg-transparent"
+              : "rounded-xl border border-[var(--w-border-soft)] bg-[var(--w-surface)]/70 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+          }`}
         >
           <SaveStatusNotice
             status={saveStatus}
@@ -63,26 +74,32 @@ export default function EditorDocument({
                 autoComplete="off"
                 maxLength={200}
                 disabled={saveStatus === "recovery"}
-                className="editor-title-input w-full min-w-0 bg-transparent text-3xl leading-tight font-medium tracking-[-0.02em] text-[#F5F5F7] outline-none placeholder:text-[#4A5363] sm:text-5xl"
+                className="editor-title-input w-full min-w-0 bg-transparent text-3xl leading-tight font-medium tracking-[-0.02em] text-[var(--w-foreground)] outline-none placeholder:text-[var(--w-placeholder)] sm:text-5xl"
               />
             </div>
 
-            <WritingModeSelector
-              selectedMode={selectedMode}
-              isSaving={isWritingModeSaving}
-              onModeChange={onModeChange}
-            />
+            {!isFocusMode && (
+              <WritingModeSelector
+                selectedMode={selectedMode}
+                isSaving={isWritingModeSaving}
+                onModeChange={onModeChange}
+              />
+            )}
           </div>
 
           <EditorContent editor={editor} />
 
-          <p
-            className={`mt-6 text-right text-xs ${
-              characterCount >= 50_000 ? "text-[#E2A66F]" : "text-[#596272]"
-            }`}
-          >
-            {characterCount.toLocaleString()} / 50,000 characters
-          </p>
+          {!isFocusMode && (
+            <p
+              className={`mt-6 text-right text-xs ${
+                characterCount >= 50_000
+                  ? "text-[#E2A66F]"
+                  : "text-[var(--w-subtle)]"
+              }`}
+            >
+              {characterCount.toLocaleString()} / 50,000 characters
+            </p>
+          )}
 
           <TiptapMenuBar
             editor={editor}

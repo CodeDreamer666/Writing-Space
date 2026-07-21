@@ -8,6 +8,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import type { AiAction, CapturedAiContext } from "~/types/ai";
 import type { WritingMode } from "~/types/writing";
 import AiRewriteComparison from "./AiRewriteComparison";
+import AiUsageMeter from "./AiUsageMeter";
 
 export type { CapturedAiContext } from "~/types/ai";
 
@@ -58,22 +59,15 @@ const rewriteActions: Array<{
     label: "Make stronger",
     description: "Use clearer, more confident language.",
   },
-];
-
-const thinkingActions: Array<{
-  action: AiAction;
-  label: string;
-  description: string;
-}> = [
   {
-    action: "findWeakPoints",
-    label: "Find weak points",
-    description: "Spot unclear, repetitive, or unsupported ideas.",
+    action: "makeConcise",
+    label: "Make more concise",
+    description: "Remove repetition and unnecessary wording.",
   },
   {
-    action: "suggestDirections",
-    label: "Suggest directions",
-    description: "Explore useful ways to develop the draft.",
+    action: "improveFlow",
+    label: "Improve flow",
+    description: "Help selected sentences connect more smoothly.",
   },
 ];
 
@@ -82,8 +76,8 @@ const actionLabels: Record<AiAction, string> = {
   fixGrammar: "Fix grammar",
   makeNatural: "Make natural",
   makeStronger: "Make stronger",
-  findWeakPoints: "Find weak points",
-  suggestDirections: "Suggest directions",
+  makeConcise: "Make more concise",
+  improveFlow: "Improve flow",
   custom: "Ask Writely",
 };
 
@@ -103,7 +97,6 @@ export default function AiWritingPanel({
   const router = useRouter();
   const utils = api.useUtils();
   const handleTRPCError = useHandleTRPCError();
-  const [customPrompt, setCustomPrompt] = useState("");
   const [result, setResult] = useState<AiResult | null>(null);
   const [lastRequest, setLastRequest] = useState<{
     action: AiAction;
@@ -197,6 +190,7 @@ export default function AiWritingPanel({
         action,
         mode,
         selectedText: context.selectedText,
+        selectedHtml: context.selectedHtml,
         instruction,
       },
       {
@@ -210,16 +204,6 @@ export default function AiWritingPanel({
         },
       },
     );
-  };
-
-  const handleCustomSubmit = () => {
-    const instruction = customPrompt.trim();
-
-    if (!instruction) {
-      return;
-    }
-
-    runAction("custom", instruction);
   };
 
   const handleCopy = async () => {
@@ -264,20 +248,20 @@ export default function AiWritingPanel({
         aria-labelledby="ai-panel-title"
         aria-hidden={!isOpen}
         inert={!isOpen}
-        className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(100%,420px)] transform-gpu flex-col overflow-hidden border-l border-[#2A313C] bg-[#10151B]/98 shadow-[-24px_0_80px_rgba(0,0,0,0.48)] backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+        className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(100%,420px)] transform-gpu flex-col overflow-hidden border-l border-[var(--w-border)] bg-[var(--w-surface)]/98 shadow-[-24px_0_80px_rgba(0,0,0,0.48)] backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
           isOpen ? "translate-x-0" : "pointer-events-none translate-x-full"
         }`}
       >
         <div className="flex h-full min-h-0 flex-col">
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[#262C36] px-4 py-4">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--w-border-soft)] px-4 py-4">
             <div>
               <p
                 id="ai-panel-title"
-                className="text-[11px] font-medium tracking-widest text-[#6B7280] uppercase"
+                className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase"
               >
                 AI writing panel
               </p>
-              <p className="mt-1.5 text-xs text-[#AEB4BE]">
+              <p className="mt-1.5 text-xs text-[var(--w-muted)]">
                 {hasSelection
                   ? `Selected text · ${selectionWordCount} ${
                       selectionWordCount === 1 ? "word" : "words"
@@ -290,7 +274,7 @@ export default function AiWritingPanel({
               ref={closeButtonRef}
               type="button"
               onClick={onClose}
-              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[#8E96A3] transition-colors hover:bg-[#1E2530] hover:text-[#F5F5F7]"
+              className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] transition-colors hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)]"
               aria-label="Close AI panel"
             >
               <span className="text-lg leading-none">×</span>
@@ -298,25 +282,27 @@ export default function AiWritingPanel({
           </div>
 
           <div className="ai-panel-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
-            <p className="text-xs leading-relaxed text-[#707987]">
+            <p className="text-xs leading-relaxed text-[var(--w-muted)]">
               Only your selected text is sent to the AI provider when you choose
               an action.
             </p>
 
-            <p className="rounded-lg border border-[#262C36] bg-[#151A20] px-3 py-2 text-xs leading-relaxed text-[#AEB4BE]">
-              {aiEnabled
-                ? `${remainingTokens.toLocaleString()} tokens remaining today.`
-                : aiMessage}
-            </p>
+            {aiEnabled ? (
+              <AiUsageMeter remainingTokens={remainingTokens} />
+            ) : (
+              <p className="rounded-lg border border-[var(--w-border)] bg-[var(--w-surface-raised)] px-3 py-2 text-xs leading-relaxed text-[var(--w-muted)]">
+                {aiMessage}
+              </p>
+            )}
 
             {!hasTarget && (
-              <p className="rounded-lg border border-[#343C49] bg-[#151A20] px-3 py-2 text-xs leading-relaxed text-[#AEB4BE]">
+              <p className="rounded-lg border border-[var(--w-border)] bg-[var(--w-surface-raised)] px-3 py-2 text-xs leading-relaxed text-[var(--w-muted)]">
                 Select the text you want Writely AI to work on.
               </p>
             )}
 
             <section>
-              <p className="mb-2 text-[11px] font-medium tracking-widest text-[#6B7280] uppercase">
+              <p className="mb-2 text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
                 Selected text
               </p>
               <div className="flex flex-col gap-2">
@@ -325,45 +311,17 @@ export default function AiWritingPanel({
                     key={action}
                     onClick={() => runAction(action)}
                     disabled={askAi.isPending || !hasTarget || !aiEnabled}
-                    className="group flex cursor-pointer items-center justify-between rounded-xl border border-[#222A35] bg-[#0B0D10] px-3.5 py-3 text-left transition-colors duration-200 hover:border-[#394352] hover:bg-[#121820] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="group flex cursor-pointer items-center justify-between rounded-xl border border-[var(--w-border-soft)] bg-[var(--w-background)] px-3.5 py-3 text-left transition-colors duration-200 hover:border-[var(--w-border)] hover:bg-[var(--w-surface-raised)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span className="min-w-0">
-                      <span className="block text-sm font-medium text-[#E5E7EA]">
+                      <span className="block text-sm font-medium text-[var(--w-strong)]">
                         {label}
                       </span>
-                      <span className="mt-1.5 block text-xs leading-5 text-[#707987]">
+                      <span className="mt-1.5 block text-xs leading-5 text-[var(--w-muted)]">
                         {description}
                       </span>
                     </span>
-                    <span className="shrink-0 text-[#596272] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[#AEB4BE]">
-                      →
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section>
-              <p className="mb-2 text-[11px] font-medium tracking-widest text-[#6B7280] uppercase">
-                Thinking
-              </p>
-              <div className="space-y-2">
-                {thinkingActions.map(({ action, label, description }) => (
-                  <button
-                    key={action}
-                    onClick={() => runAction(action)}
-                    disabled={askAi.isPending || !hasTarget || !aiEnabled}
-                    className="group flex w-full cursor-pointer items-center justify-between gap-4 rounded-xl border border-[#222A35] bg-[#0B0D10] px-3.5 py-3 text-left transition-all duration-200 hover:border-[#394352] hover:bg-[#121820] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-[#E5E7EA]">
-                        {label}
-                      </span>
-                      <span className="mt-1 block truncate text-xs text-[#707987]">
-                        {description}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[#596272] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[#AEB4BE]">
+                    <span className="shrink-0 text-[var(--w-subtle)] transition-transform duration-200 group-hover:translate-x-1 group-hover:text-[var(--w-muted)]">
                       →
                     </span>
                   </button>
@@ -372,18 +330,18 @@ export default function AiWritingPanel({
             </section>
 
             <section
-              className="min-h-32 rounded-xl border border-[#262C36] bg-[#151A20] p-4"
+              className="min-h-32 rounded-xl border border-[var(--w-border-soft)] bg-[var(--w-surface-raised)] p-4"
               aria-live="polite"
             >
               {askAi.isPending ? (
                 <div className="flex h-24 items-center justify-center gap-1.5">
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#8E96A3]" />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#8E96A3] [animation-delay:150ms]" />
-                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#8E96A3] [animation-delay:300ms]" />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--w-muted)]" />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--w-muted)] [animation-delay:150ms]" />
+                  <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--w-muted)] [animation-delay:300ms]" />
                 </div>
               ) : requestError || askAi.isError || (lastRequest && !result) ? (
                 <div className="flex flex-col gap-1">
-                  <p className="text-sm text-[#D5D9DF]">
+                  <p className="text-sm text-[var(--w-strong)]">
                     {requestError ||
                       "Writely AI is unavailable right now. Please try again."}
                   </p>
@@ -394,7 +352,7 @@ export default function AiWritingPanel({
                         runAction(lastRequest.action, lastRequest.instruction)
                       }
                       disabled={!hasTarget || !aiEnabled}
-                      className="mt-3 cursor-pointer rounded-lg border border-[#343C49] px-3 py-2 text-xs font-medium text-[#E5E7EA] hover:bg-[#1E2530] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="mt-3 cursor-pointer rounded-lg border border-[var(--w-border)] px-3 py-2 text-xs font-medium text-[var(--w-strong)] hover:bg-[var(--w-border-soft)] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Retry
                     </button>
@@ -402,7 +360,7 @@ export default function AiWritingPanel({
                 </div>
               ) : result ? (
                 <div className="animate-[fadeIn_220ms_ease-out]">
-                  <p className="text-[11px] font-medium tracking-widest text-[#6B7280] uppercase">
+                  <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
                     {actionLabels[result.action]}
                   </p>
 
@@ -413,7 +371,7 @@ export default function AiWritingPanel({
                       changes={result.response.changes}
                     />
                   ) : (
-                    <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-[#D5D9DF]">
+                    <p className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-[var(--w-strong)]">
                       {result.response.content}
                     </p>
                   )}
@@ -430,14 +388,14 @@ export default function AiWritingPanel({
                       <button
                         onClick={handleReplace}
                         disabled={!canReplace}
-                        className="cursor-pointer rounded-lg bg-[#F5F5F7] px-3 py-2 text-xs font-medium text-[#0B0D10] disabled:cursor-not-allowed disabled:opacity-40"
+                        className="cursor-pointer rounded-lg bg-[var(--w-foreground)] px-3 py-2 text-xs font-medium text-[var(--w-background)] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Replace
                       </button>
                     ) : (
                       <button
                         onClick={handleCopy}
-                        className="cursor-pointer rounded-lg bg-[#F5F5F7] px-3 py-2 text-xs font-medium text-[#0B0D10]"
+                        className="cursor-pointer rounded-lg bg-[var(--w-foreground)] px-3 py-2 text-xs font-medium text-[var(--w-background)]"
                       >
                         {copyLabel}
                       </button>
@@ -447,7 +405,7 @@ export default function AiWritingPanel({
                         setResult(null);
                         setLastRequest(null);
                       }}
-                      className="cursor-pointer rounded-lg border border-[#343C49] px-3 py-2 text-xs font-medium text-[#AEB4BE] hover:bg-[#1E2530]"
+                      className="cursor-pointer rounded-lg border border-[var(--w-border)] px-3 py-2 text-xs font-medium text-[var(--w-muted)] hover:bg-[var(--w-border-soft)]"
                     >
                       Dismiss
                     </button>
@@ -455,7 +413,7 @@ export default function AiWritingPanel({
                 </div>
               ) : (
                 <div className="flex h-24 items-center">
-                  <p className="text-sm leading-relaxed text-[#6B7280]">
+                  <p className="text-sm leading-relaxed text-[var(--w-subtle)]">
                     Choose an action to see Writely’s response here.
                   </p>
                 </div>

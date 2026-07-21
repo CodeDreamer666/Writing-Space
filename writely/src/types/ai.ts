@@ -3,8 +3,8 @@ export const AI_ACTIONS = [
   "fixGrammar",
   "makeNatural",
   "makeStronger",
-  "findWeakPoints",
-  "suggestDirections",
+  "makeConcise",
+  "improveFlow",
   "custom",
 ] as const;
 
@@ -12,6 +12,7 @@ export type AiAction = (typeof AI_ACTIONS)[number];
 
 export type CapturedAiContext = {
   selectedText: string;
+  selectedHtml: string;
   from: number;
   to: number;
 };

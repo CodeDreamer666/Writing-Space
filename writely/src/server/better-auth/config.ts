@@ -4,17 +4,17 @@ import { env } from "~/env";
 import { db } from "~/server/db";
 
 export const auth = betterAuth({
-    database: prismaAdapter(db, {
-        provider: "postgresql",
-    }),
+  database: prismaAdapter(db, {
+    provider: "postgresql",
+  }),
 
-    socialProviders: {
-        google: {
-            prompt: "select_account",
-            clientId: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-        },
+  socialProviders: {
+    google: {
+      prompt: "select_account",
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;

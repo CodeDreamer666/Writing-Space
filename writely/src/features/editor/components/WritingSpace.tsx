@@ -8,8 +8,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import Loading from "~/components/shared/Loading";
 import ServerError from "~/components/shared/ServerError";
+import { useWritelyShortcuts } from "~/hooks/useWritelyShortcuts";
 import { MAX_DOCUMENT_CHARACTERS } from "~/lib/documentLimits";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
+import type { ExportFormat } from "~/server/documents/exportDocument";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { WRITING_MODES, type WritingMode } from "~/types/writing";
 import { useDocumentAutosave } from "../hooks/useDocumentAutosave";
@@ -20,38 +22,14 @@ import {
     replaceAiContext,
 } from "../utils/aiContext";
 import { countWords, readingTime } from "../utils/editorContent";
+import { downloadExport } from "../utils/exportDownload";
 import AiWritingPanel from "./AiWritingPanel";
 import EditorDocument from "./EditorDocument";
-import EditorHeader from "./EditorHeader";
+import EditorTopBar from "./EditorTopBar";
 import EditorUtilityBar from "./EditorUtilityBar";
+import ExportDialog from "./ExportDialog";
 
 type Document = RouterOutputs["docs"]["getSelectedDoc"];
-
-function createExportFilename(title: string, format: "txt" | "md"): string {
-    const safeTitle = title
-        .trim()
-        .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
-        .replace(/\s+/g, " ")
-        .slice(0, 100);
-
-    return `${safeTitle || "Untitled draft"}.${format}`;
-}
-
-function downloadExport(title: string, content: string, format: "txt" | "md") {
-    const blob = new Blob([content], {
-        type:
-            format === "md"
-                ? "text/markdown;charset=utf-8"
-                : "text/plain;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = createExportFilename(title, format);
-    link.click();
-    URL.revokeObjectURL(url);
-}
 
 function isWritingMode(value: string): value is WritingMode {
     return WRITING_MODES.includes(value as WritingMode);
@@ -59,21 +37,20 @@ function isWritingMode(value: string): value is WritingMode {
 
 function DocumentUnavailable() {
     return (
-        <main className="flex min-h-screen items-center justify-center bg-[#0B0D10] px-6 text-[#F5F5F7]">
+        <main className="flex min-h-screen items-center justify-center bg-[var(--w-background)] px-6 text-[var(--w-foreground)]">
             <section className="w-full max-w-md text-center">
-                <p className="text-xs font-medium tracking-[0.12em] text-[#6B7280] uppercase">
+                <p className="text-xs font-medium tracking-[0.12em] text-[var(--w-subtle)] uppercase">
                     Draft unavailable
                 </p>
                 <h1 className="mt-4 text-3xl font-medium tracking-tight">
                     This writing could not be opened.
                 </h1>
-                <p className="mt-3 text-sm leading-7 text-[#8E96A3]">
-                    It may have been deleted, or it may belong to another
-                    account.
+                <p className="mt-3 text-sm leading-7 text-[var(--w-muted)]">
+                    It may have been deleted, or it may belong to another account.
                 </p>
                 <Link
                     href="/"
-                    className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-[#F5F5F7] px-5 text-sm font-medium text-[#0B0D10] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3]"
+                    className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--w-foreground)] px-5 text-sm font-medium text-[var(--w-background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
                 >
                     Back to drafts
                 </Link>
@@ -94,8 +71,7 @@ function EditorRuntime({
         extensions: [
             StarterKit,
             Placeholder.configure({
-                placeholder:
-                    "Start with the sentence you cannot stop thinking about",
+                placeholder: "Start with the sentence you cannot stop thinking about",
             }),
             DocumentCharacterLimit.configure({
                 limit: MAX_DOCUMENT_CHARACTERS,
@@ -112,7 +88,8 @@ function EditorRuntime({
         editorProps: {
             attributes: {
                 "aria-label": "Draft content",
-                class: "min-h-[48vh] outline-none text-lg leading-[1.85] text-[#D5D9DF] transition-colors duration-200 focus:text-[#F5F5F7]",
+                class:
+                    "min-h-[48vh] outline-none text-lg leading-[1.85] text-[var(--w-strong)] transition-colors duration-200 focus:text-[var(--w-foreground)]",
                 role: "textbox",
             },
         },
@@ -122,9 +99,7 @@ function EditorRuntime({
         return <Loading />;
     }
 
-    return (
-        <EditorExperience docId={docId} document={document} editor={editor} />
-    );
+    return <EditorExperience docId={docId} document={document} editor={editor} />;
 }
 
 function EditorExperience({
@@ -139,6 +114,7 @@ function EditorExperience({
     const router = useRouter();
     const utils = api.useUtils();
     const handleTRPCError = useHandleTRPCError();
+    const { showMessage } = useStatusMessage();
 
     const [title, setTitle] = useState(document.title);
     const [wordCount, setWordCount] = useState(0);
@@ -147,8 +123,20 @@ function EditorExperience({
         isWritingMode(document.writingMode) ? document.writingMode : "Clear",
     );
     const [isAiOpen, setIsAiOpen] = useState(false);
+    const [isExportOpen, setIsExportOpen] = useState(false);
+    const [isFocusMode, setIsFocusMode] = useState(false);
     const [selectionText, setSelectionText] = useState("");
     const [isExporting, setIsExporting] = useState(false);
+
+    const createDocument = api.docs.createDoc.useMutation({
+        onSuccess: (newDocument) => {
+            void utils.docs.getUserDocs.invalidate();
+            router.push(`/${newDocument.id}`);
+        },
+        onError: (error) => {
+            handleTRPCError({ error, router });
+        },
+    });
 
     const { data: aiStatus, error: aiStatusError } = api.ai.getStatus.useQuery(
         undefined,
@@ -235,27 +223,6 @@ function EditorExperience({
         };
     }, [editor]);
 
-    useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (
-                event.repeat ||
-                !(event.ctrlKey || event.metaKey) ||
-                event.key.toLowerCase() !== "s"
-            ) {
-                return;
-            }
-
-            event.preventDefault();
-            void saveNow();
-        };
-
-        window.addEventListener("keydown", handleKeyDown);
-
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [saveNow]);
-
     const handleWritingModeChange = (nextMode: WritingMode) => {
         if (updateWritingMode.isPending || nextMode === selectedMode) {
             return;
@@ -289,7 +256,45 @@ function EditorExperience({
         }
     };
 
-    const handleExport = async (format: "txt" | "md") => {
+    const handleCreateDocument = async () => {
+        if (createDocument.isPending) {
+            return;
+        }
+
+        if (saveStatus === "conflict" || saveStatus === "recovery") {
+            showMessage(
+                "Resolve the current document recovery state before creating another draft.",
+                false,
+            );
+            return;
+        }
+
+        if (saveStatus !== "saved" && !(await saveNow())) {
+            return;
+        }
+
+        await createDocument.mutateAsync();
+    };
+
+    const handleToggleFocus = () => {
+        if (!isFocusMode) {
+            setIsAiOpen(false);
+            setIsExportOpen(false);
+        }
+
+        setIsFocusMode(!isFocusMode);
+    };
+
+    const handleOpenExport = () => {
+        if (isFocusMode) {
+            return;
+        }
+
+        setIsAiOpen(false);
+        setIsExportOpen(true);
+    };
+
+    const handleExport = async (format: ExportFormat) => {
         if (isExporting) {
             return;
         }
@@ -306,11 +311,8 @@ function EditorExperience({
                 format,
             });
 
-            downloadExport(
-                exportedDocument.title,
-                exportedDocument.content,
-                exportedDocument.format,
-            );
+            downloadExport(exportedDocument);
+            setIsExportOpen(false);
         } catch (error) {
             handleTRPCError({ error, router });
         } finally {
@@ -318,27 +320,41 @@ function EditorExperience({
         }
     };
 
+    useWritelyShortcuts({
+        onCreateDocument: () => {
+            void handleCreateDocument();
+        },
+        onSave: () => {
+            void saveNow();
+        },
+        onToggleFocus: handleToggleFocus,
+        onOpenExport: handleOpenExport,
+        onEscape: () => {
+            if (isExportOpen) {
+                setIsExportOpen(false);
+            } else if (isAiOpen) {
+                setIsAiOpen(false);
+            }
+        },
+    });
+
+    useEffect(() => {
+        window.document.body.dataset.focusMode = String(isFocusMode);
+
+        return () => {
+            delete window.document.body.dataset.focusMode;
+        };
+    }, [isFocusMode]);
+
     if (!isHydrated) {
         return <Loading />;
     }
 
     return (
-        <div className="min-h-screen bg-[#0B0D10] text-[#F5F5F7] transition-colors duration-300">
-            <EditorHeader
-                saveBlockedReason={
-                    saveStatus === "conflict" || saveStatus === "recovery"
-                        ? saveStatus
-                        : null
-                }
-                isSaving={saveStatus === "saving"}
-                onSave={() => {
-                    void saveNow();
-                }}
-            />
-
+        <div className="min-h-screen bg-[var(--w-background)] text-[var(--w-foreground)] transition-colors duration-300">
             <div className="mx-auto w-full max-w-6xl transition-all duration-300">
-                {aiStatus && !aiStatus.enabled && (
-                    <p className="mx-4 mt-4 rounded-lg border border-[#2A313C] bg-[#121820] px-4 py-3 text-sm text-[#AEB4BE] sm:mx-6 lg:mx-8">
+                {!isFocusMode && aiStatus && !aiStatus.enabled && (
+                    <p className="mx-4 mt-4 rounded-lg border border-[var(--w-border)] bg-[var(--w-surface-raised)] px-4 py-3 text-sm text-[var(--w-muted)] sm:mx-6 lg:mx-8">
                         {aiStatus.message}
                     </p>
                 )}
@@ -351,6 +367,7 @@ function EditorExperience({
                     title={title}
                     characterCount={characterCount}
                     aiEnabled={aiEnabled}
+                    isFocusMode={isFocusMode}
                     onModeChange={handleWritingModeChange}
                     onRetrySave={() => {
                         void saveNow();
@@ -359,20 +376,22 @@ function EditorExperience({
                     onRestoreRecovery={restoreRecovery}
                     onDiscardRecovery={discardRecovery}
                     onTitleChange={handleTitleChange}
-                    onAiOpen={() => setIsAiOpen(true)}
+                    onAiOpen={() => {
+                        if (!isFocusMode) {
+                            setIsAiOpen(true);
+                        }
+                    }}
                 />
 
-                <EditorUtilityBar
-                    wordCount={wordCount}
-                    readingTime={readingTime(wordCount)}
-                    isExporting={isExporting}
-                    onExport={(format) => {
-                        void handleExport(format);
-                    }}
-                    onBackToDrafts={() => {
-                        void handleBackToDrafts();
-                    }}
-                />
+                {!isFocusMode && (
+                    <EditorUtilityBar
+                        wordCount={wordCount}
+                        readingTime={readingTime(wordCount)}
+                        onBackToDrafts={() => {
+                            void handleBackToDrafts();
+                        }}
+                    />
+                )}
 
                 <AiWritingPanel
                     isOpen={isAiOpen}
@@ -383,13 +402,20 @@ function EditorExperience({
                     aiMessage={aiMessage}
                     remainingTokens={aiStatus?.remainingTokens ?? 0}
                     captureContext={() => captureAiContext(editor)}
-                    isContextCurrent={(context) =>
-                        isAiContextCurrent(editor, context)
-                    }
+                    isContextCurrent={(context) => isAiContextCurrent(editor, context)}
                     onReplace={(context, content) =>
                         replaceAiContext(editor, context, content)
                     }
                     onClose={() => setIsAiOpen(false)}
+                />
+
+                <ExportDialog
+                    isOpen={isExportOpen}
+                    isExporting={isExporting}
+                    onClose={() => setIsExportOpen(false)}
+                    onExport={(format) => {
+                        void handleExport(format);
+                    }}
                 />
             </div>
         </div>

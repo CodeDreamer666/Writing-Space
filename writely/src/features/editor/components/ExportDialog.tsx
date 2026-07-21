@@ -1,0 +1,93 @@
+import type { ExportFormat } from "~/server/documents/exportDocument";
+
+const formats: Array<{
+  format: ExportFormat;
+  label: string;
+  description: string;
+}> = [
+  { format: "txt", label: "TXT", description: "Plain text" },
+  { format: "md", label: "Markdown", description: "Portable formatting" },
+  { format: "pdf", label: "PDF", description: "Ready to share" },
+  { format: "docx", label: "Word", description: "Editable document" },
+];
+
+type Props = {
+  isOpen: boolean;
+  isExporting: boolean;
+  onClose: () => void;
+  onExport: (format: ExportFormat) => void;
+};
+
+export default function ExportDialog({
+  isOpen,
+  isExporting,
+  onClose,
+  onExport,
+}: Props) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+      <button
+        type="button"
+        aria-label="Close export dialog"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="export-title"
+        className="relative w-full max-w-md rounded-2xl border border-[var(--w-border)] bg-[var(--w-surface)] p-5 shadow-2xl sm:p-6"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
+              Current document
+            </p>
+            <h2
+              id="export-title"
+              className="mt-2 text-xl font-medium text-[var(--w-foreground)]"
+            >
+              Export your writing
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close export dialog"
+            className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          {formats.map(({ format, label, description }) => (
+            <button
+              key={format}
+              type="button"
+              disabled={isExporting}
+              onClick={() => onExport(format)}
+              className="cursor-pointer rounded-xl border border-[var(--w-border)] bg-[var(--w-background)] px-4 py-4 text-left transition-colors hover:bg-[var(--w-surface-raised)] disabled:cursor-wait disabled:opacity-60"
+            >
+              <span className="block text-sm font-medium text-[var(--w-foreground)]">
+                {label}
+              </span>
+              <span className="mt-1 block text-xs text-[var(--w-muted)]">
+                {description}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-4 text-xs leading-5 text-[var(--w-subtle)]">
+          Headings, lists, bold, italic, and line breaks are preserved where the
+          format supports them.
+        </p>
+      </section>
+    </div>
+  );
+}
