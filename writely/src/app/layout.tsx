@@ -1,5 +1,6 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
+import DesktopOnlyNotice from "~/components/layout/DesktopOnlyNotice";
 import StatusMessageProvider from "~/components/layout/StatusMessageProvider";
 import BetaUtilities from "~/components/layout/BetaUtilities";
 import ThemeProvider from "~/components/layout/ThemeProvider";
@@ -31,19 +32,27 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html
+      lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
+      className="desktop-beta-locked"
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>
-        <ThemeProvider>
-          <StatusMessageProvider>
-            <TRPCReactProvider>
-              {children}
-              <BetaUtilities />
-            </TRPCReactProvider>
-          </StatusMessageProvider>
-        </ThemeProvider>
+      <body className="desktop-beta-locked">
+        <div className="desktop-beta-app">
+          <ThemeProvider>
+            <StatusMessageProvider>
+              <TRPCReactProvider>
+                {children}
+                <BetaUtilities />
+              </TRPCReactProvider>
+            </StatusMessageProvider>
+          </ThemeProvider>
+        </div>
+        <DesktopOnlyNotice />
       </body>
     </html>
   );

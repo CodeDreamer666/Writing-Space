@@ -227,10 +227,57 @@ export default function DocsHome() {
               </h2>
 
               {!docs || docs.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-[var(--w-border-soft)] px-5 py-12 text-center">
-                  <p className="text-sm text-[var(--w-subtle)]">
-                    Nothing yet — your drafts will appear here.
-                  </p>
+                <div className="relative overflow-hidden rounded-xl border border-dashed border-[var(--w-border-soft)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--w-border-soft)_32%,transparent),transparent_52%)] px-5 py-11 text-center sm:py-12">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 [background-image:radial-gradient(var(--w-border-soft)_1px,transparent_1px)] [mask-image:linear-gradient(to_bottom,black,transparent)] [background-size:14px_14px] opacity-70"
+                  />
+
+                  <div className="relative mx-auto flex max-w-xs flex-col items-center">
+                    <div className="relative mb-5 flex size-16 items-center justify-center rounded-2xl border border-[var(--w-border)] bg-[var(--w-background)] text-[var(--w-muted)] shadow-[0_12px_30px_color-mix(in_srgb,var(--w-background)_30%,transparent)]">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                        className="size-8"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14.5 3.75H6.75A1.75 1.75 0 0 0 5 5.5v13A1.75 1.75 0 0 0 6.75 20.25h10.5A1.75 1.75 0 0 0 19 18.5v-9.25L14.5 3.75Z"
+                        />
+                        <path strokeLinecap="round" d="M14 3.75V10h5" />
+                        <path strokeLinecap="round" d="M8.5 14h7M8.5 17h4" />
+                      </svg>
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="absolute -top-2 -right-2 size-5 text-[var(--w-foreground)]"
+                        aria-hidden="true"
+                      >
+                        <path d="m12 2 1.1 5.9L19 9l-5.9 1.1L12 16l-1.1-5.9L5 9l5.9-1.1L12 2Z" />
+                      </svg>
+                    </div>
+
+                    <p className="text-base font-medium text-[var(--w-foreground)]">
+                      A blank page is a beginning.
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-[var(--w-subtle)]">
+                      Your next thought can start here whenever you are ready.
+                    </p>
+                    <button
+                      type="button"
+                      disabled={isStartWritingPending}
+                      onClick={() => {
+                        void handleStartWriting();
+                      }}
+                      className="mt-5 cursor-pointer text-sm font-medium text-[var(--w-foreground)] underline decoration-[var(--w-muted)] underline-offset-4 transition-colors hover:decoration-[var(--w-foreground)] focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--w-foreground)] disabled:cursor-wait disabled:opacity-60"
+                    >
+                      Write the first line
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <ul className="flex flex-col gap-1">

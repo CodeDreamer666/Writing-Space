@@ -53,13 +53,13 @@ export function useWritelyShortcuts({
       const key = event.key.toLowerCase();
       let handler: (() => void) | undefined;
 
-      if (!event.shiftKey && key === "n") {
+      if (event.altKey && !event.shiftKey && key === "n") {
         handler = onCreateDocument;
-      } else if (!event.shiftKey && key === "s") {
+      } else if (!event.altKey && !event.shiftKey && key === "s") {
         handler = onSave;
-      } else if (event.shiftKey && key === "f") {
+      } else if (event.altKey && !event.shiftKey && key === "f") {
         handler = onToggleFocus;
-      } else if (event.shiftKey && key === "e") {
+      } else if (event.altKey && !event.shiftKey && key === "e") {
         handler = onOpenExport;
       }
 

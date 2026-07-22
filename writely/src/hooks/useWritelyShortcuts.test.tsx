@@ -57,33 +57,45 @@ describe("useWritelyShortcuts", () => {
       );
     });
 
+    const createEvent = new KeyboardEvent("keydown", {
+      key: "n",
+      ctrlKey: true,
+      altKey: true,
+      cancelable: true,
+    });
+    const saveEvent = new KeyboardEvent("keydown", {
+      key: "s",
+      metaKey: true,
+      cancelable: true,
+    });
+    const focusEvent = new KeyboardEvent("keydown", {
+      key: "F",
+      ctrlKey: true,
+      altKey: true,
+      cancelable: true,
+    });
+    const exportEvent = new KeyboardEvent("keydown", {
+      key: "e",
+      metaKey: true,
+      altKey: true,
+      cancelable: true,
+    });
+
     act(() => {
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "n", ctrlKey: true }),
-      );
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "s", metaKey: true }),
-      );
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "F",
-          ctrlKey: true,
-          shiftKey: true,
-        }),
-      );
-      window.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "e",
-          metaKey: true,
-          shiftKey: true,
-        }),
-      );
+      window.dispatchEvent(createEvent);
+      window.dispatchEvent(saveEvent);
+      window.dispatchEvent(focusEvent);
+      window.dispatchEvent(exportEvent);
     });
 
     expect(onCreateDocument).toHaveBeenCalledOnce();
     expect(onSave).toHaveBeenCalledOnce();
     expect(onToggleFocus).toHaveBeenCalledOnce();
     expect(onOpenExport).toHaveBeenCalledOnce();
+    expect(createEvent.defaultPrevented).toBe(true);
+    expect(saveEvent.defaultPrevented).toBe(true);
+    expect(focusEvent.defaultPrevented).toBe(true);
+    expect(exportEvent.defaultPrevented).toBe(true);
   });
 
   it("does not run document shortcuts from unrelated form fields", () => {
@@ -100,6 +112,7 @@ describe("useWritelyShortcuts", () => {
         new KeyboardEvent("keydown", {
           key: "n",
           ctrlKey: true,
+          altKey: true,
           bubbles: true,
         }),
       );
@@ -109,6 +122,46 @@ describe("useWritelyShortcuts", () => {
     input.remove();
   });
 
+  it("requires Alt for custom app actions", () => {
+    const onCreateDocument = vi.fn();
+    const onToggleFocus = vi.fn();
+    const onOpenExport = vi.fn();
+
+    act(() => {
+      root.render(
+        <ShortcutHarness
+          onCreateDocument={onCreateDocument}
+          onToggleFocus={onToggleFocus}
+          onOpenExport={onOpenExport}
+        />,
+      );
+    });
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "n", ctrlKey: true }),
+      );
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "f",
+          ctrlKey: true,
+          shiftKey: true,
+        }),
+      );
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "e",
+          metaKey: true,
+          shiftKey: true,
+        }),
+      );
+    });
+
+    expect(onCreateDocument).not.toHaveBeenCalled();
+    expect(onToggleFocus).not.toHaveBeenCalled();
+    expect(onOpenExport).not.toHaveBeenCalled();
+  });
+
   it("lets Escape close the active interface", () => {
     const onEscape = vi.fn();
 
@@ -116,10 +169,16 @@ describe("useWritelyShortcuts", () => {
       root.render(<ShortcutHarness onEscape={onEscape} />);
     });
 
+    const escapeEvent = new KeyboardEvent("keydown", {
+      key: "Escape",
+      cancelable: true,
+    });
+
     act(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      window.dispatchEvent(escapeEvent);
     });
 
     expect(onEscape).toHaveBeenCalledOnce();
+    expect(escapeEvent.defaultPrevented).toBe(true);
   });
 });

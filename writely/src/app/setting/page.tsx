@@ -16,10 +16,10 @@ export const metadata: Metadata = {
 };
 
 const shortcuts = [
-  ["Ctrl/Cmd + N", "Create a new document"],
+  ["Ctrl/Cmd + Alt + N", "Create a new document"],
   ["Ctrl/Cmd + S", "Save immediately"],
-  ["Ctrl/Cmd + Shift + F", "Enter or exit Focus Mode"],
-  ["Ctrl/Cmd + Shift + E", "Open document export"],
+  ["Ctrl/Cmd + Alt + F", "Enter or exit Focus Mode"],
+  ["Ctrl/Cmd + Alt + E", "Open document export"],
   ["Esc", "Close the active menu, dialog, export, or AI panel"],
 ];
 

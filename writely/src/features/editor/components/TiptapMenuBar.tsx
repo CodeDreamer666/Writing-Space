@@ -2,7 +2,10 @@
 import { type Editor } from "@tiptap/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-const TOOLBAR_WIDTH = 180;
+const TOOLBAR_BUTTON_WIDTH = 40;
+const TOOLBAR_BUTTON_GAP = 4;
+const TOOLBAR_HORIZONTAL_PADDING = 8;
+const TOOLBAR_ACTION_COUNT = 5;
 const TOOLBAR_HEIGHT = 50;
 const TOOLBAR_OFFSET = 8;
 const VIEWPORT_PADDING = 8;
@@ -24,6 +27,11 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ left: 0, top: 0 });
   const dismissedSelectionRef = useRef<string | null>(null);
+  const toolbarActionCount = TOOLBAR_ACTION_COUNT + (aiEnabled ? 1 : 0);
+  const toolbarWidth =
+    toolbarActionCount * TOOLBAR_BUTTON_WIDTH +
+    (toolbarActionCount - 1) * TOOLBAR_BUTTON_GAP +
+    TOOLBAR_HORIZONTAL_PADDING;
 
   useEffect(() => {
     if (!editor) {
@@ -54,9 +62,8 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
         const fromCoords = editor.view.coordsAtPos(from);
         const toCoords = editor.view.coordsAtPos(to);
         const selectionMiddle = (fromCoords.left + toCoords.right) / 2;
-        const minLeft = VIEWPORT_PADDING + TOOLBAR_WIDTH / 2;
-        const maxLeft =
-          window.innerWidth - VIEWPORT_PADDING - TOOLBAR_WIDTH / 2;
+        const minLeft = VIEWPORT_PADDING + toolbarWidth / 2;
+        const maxLeft = window.innerWidth - VIEWPORT_PADDING - toolbarWidth / 2;
         const left = Math.min(Math.max(selectionMiddle, minLeft), maxLeft);
         const top = Math.max(
           VIEWPORT_PADDING,
@@ -65,7 +72,7 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
             TOOLBAR_OFFSET,
         );
 
-        setPosition({ left: left - TOOLBAR_WIDTH / 2, top });
+        setPosition({ left: left - toolbarWidth / 2, top });
         setIsVisible(true);
       } catch {
         setIsVisible(false);
@@ -97,7 +104,7 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
       window.removeEventListener("scroll", updateToolbar, true);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [editor]);
+  }, [editor, toolbarWidth]);
 
   if (!editor) {
     return null;
@@ -115,6 +122,18 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
       title: "Italic",
       action: () => editor.chain().focus().toggleItalic().run(),
       isActive: editor.isActive("italic"),
+    },
+    {
+      label: <span className="text-[13px] font-semibold">H</span>,
+      title: "Heading 2",
+      action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+      isActive: editor.isActive("heading", { level: 2 }),
+    },
+    {
+      label: <span className="text-[11px] font-semibold">List</span>,
+      title: "Bullet list",
+      action: () => editor.chain().focus().toggleBulletList().run(),
+      isActive: editor.isActive("bulletList"),
     },
     {
       label: (
@@ -154,7 +173,7 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
       style={{
         left: position.left,
         top: position.top,
-        width: TOOLBAR_WIDTH,
+        width: toolbarWidth,
       }}
       aria-hidden={!isVisible}
       inert={!isVisible}
