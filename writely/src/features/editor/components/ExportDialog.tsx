@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import type { ExportFormat } from "~/server/documents/exportDocument";
 
 const formats: Array<{
@@ -24,6 +27,24 @@ export default function ExportDialog({
   onClose,
   onExport,
 }: Props) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    closeButtonRef.current?.focus();
+
+    return () => {
+      if (previouslyFocused?.isConnected) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
@@ -37,10 +58,46 @@ export default function ExportDialog({
         className="absolute inset-0 cursor-default"
       />
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="export-title"
         className="relative w-full max-w-md rounded-2xl border border-[var(--w-border)] bg-[var(--w-surface)] p-5 shadow-2xl sm:p-6"
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            onClose();
+            return;
+          }
+
+          if (event.key !== "Tab" || !dialogRef.current) {
+            return;
+          }
+
+          const focusableElements = Array.from(
+            dialogRef.current.querySelectorAll<HTMLElement>(
+              'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+            ),
+          );
+          const firstElement = focusableElements[0];
+          const lastElement = focusableElements.at(-1);
+
+          if (!firstElement || !lastElement) {
+            return;
+          }
+
+          if (event.shiftKey && document.activeElement === firstElement) {
+            event.preventDefault();
+            lastElement.focus();
+          } else if (
+            !event.shiftKey &&
+            document.activeElement === lastElement
+          ) {
+            event.preventDefault();
+            firstElement.focus();
+          }
+        }}
       >
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -55,6 +112,7 @@ export default function ExportDialog({
             </h2>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             aria-label="Close export dialog"

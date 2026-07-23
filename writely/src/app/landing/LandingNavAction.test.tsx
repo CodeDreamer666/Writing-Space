@@ -70,6 +70,7 @@ describe("LandingNavAction", () => {
     expect(mocks.signInSocial).toHaveBeenCalledWith({
       provider: "google",
       callbackURL: "/",
+      errorCallbackURL: "/landing",
     });
   });
 

@@ -4,23 +4,28 @@ import { DAILY_AI_TOKEN_LIMIT } from "~/lib/aiLimits";
 import { aiRouter } from "./ai";
 
 type ProviderCompletion = {
-  choices: Array<{ message: { content: string } }>;
-  usage: {
+  choices: Array<{
+    finish_reason: "stop" | "length";
+    message: { content: string };
+  }>;
+  usage?: {
     prompt_tokens: number;
     completion_tokens: number;
+  };
+};
+
+type UsageUpdateInput = {
+  data: {
+    tokensUsed: {
+      increment: number;
+    };
   };
 };
 
 type UsageUpsertInput = {
   create: {
     userId: string;
-    usageDate: Date;
     tokensUsed: number;
-  };
-  update: {
-    tokensUsed: {
-      increment: number;
-    };
   };
 };
 
@@ -48,9 +53,14 @@ vi.mock("~/server/grok", () => ({
   },
 }));
 
+vi.mock("~/server/db", () => ({
+  db: {},
+}));
+
 type Context = Awaited<ReturnType<typeof createTRPCContext>>;
 
 const userId = "user-1";
+const docId = "8d40f4b8-9cf5-4c3f-87d9-66cc74ef535d";
 
 function createCaller({
   locked = true,
@@ -59,27 +69,50 @@ function createCaller({
   locked?: boolean;
   tokensUsed?: number;
 } = {}) {
+  let activeRequestId: string | null = null;
   const aiDailyUsage = {
-    findUnique: vi.fn().mockResolvedValue(
-      tokensUsed > 0
-        ? {
-            tokensUsed,
-          }
-        : null,
-    ),
+    findUnique: vi.fn().mockImplementation((input: unknown) => {
+      const select = (input as { select?: { requestId?: boolean } }).select;
+
+      if (select?.requestId) {
+        return Promise.resolve({ requestId: activeRequestId, tokensUsed });
+      }
+
+      return Promise.resolve(tokensUsed > 0 ? { tokensUsed } : null);
+    }),
+    update: vi
+      .fn<(input: UsageUpdateInput) => Promise<object>>()
+      .mockResolvedValue({}),
+    updateMany: vi.fn().mockImplementation((input: unknown) => {
+      const data = (input as { data?: { requestId?: string | null } }).data;
+
+      if (typeof data?.requestId === "string") {
+        if (!locked) {
+          return Promise.resolve({ count: 0 });
+        }
+
+        activeRequestId = data.requestId;
+      } else if (data?.requestId === null) {
+        activeRequestId = null;
+      }
+
+      return Promise.resolve({ count: 1 });
+    }),
     upsert: vi
       .fn<(input: UsageUpsertInput) => Promise<object>>()
       .mockResolvedValue({}),
   };
-  const transaction = {
-    $queryRaw: vi.fn().mockResolvedValue([{ locked }]),
-    aiDailyUsage,
-  };
   const database = {
     aiDailyUsage,
+    document: {
+      findFirst: vi.fn().mockResolvedValue({ id: docId }),
+    },
     $transaction: vi.fn(
-      async (callback: (value: typeof transaction) => Promise<unknown>) =>
-        callback(transaction),
+      async (
+        callback: (value: {
+          aiDailyUsage: typeof aiDailyUsage;
+        }) => Promise<unknown>,
+      ) => callback({ aiDailyUsage }),
     ),
   };
   const context = {
@@ -109,6 +142,8 @@ function createCaller({
   return {
     caller: aiRouter.createCaller(context),
     aiDailyUsage,
+    document: database.document,
+    transaction: database.$transaction,
   };
 }
 
@@ -124,6 +159,7 @@ describe("aiRouter limits and privacy", () => {
 
     await expect(
       caller.askAi({
+        docId,
         action: "fixGrammar",
         mode: "Clear",
         selectedText: "A sentence.",
@@ -138,16 +174,19 @@ describe("aiRouter limits and privacy", () => {
   it("records actual provider usage and sends only the selected text", async () => {
     providerCreate.mockReset();
     providerCreate.mockResolvedValue({
-      choices: [{ message: { content: "Clearer sentence." } }],
+      choices: [
+        { finish_reason: "stop", message: { content: "Clearer sentence." } },
+      ],
       usage: {
         prompt_tokens: 120,
         completion_tokens: 30,
       },
     });
-    const { caller, aiDailyUsage } = createCaller();
+    const { caller, aiDailyUsage, transaction } = createCaller();
 
     await expect(
       caller.askAi({
+        docId,
         action: "custom",
         mode: "Clear",
         selectedText: "Only this selected sentence.",
@@ -164,17 +203,25 @@ describe("aiRouter limits and privacy", () => {
       "Only this selected sentence.",
     );
     expect(providerInput).toMatchObject({ max_tokens: 2_500 });
-    const usageInput = aiDailyUsage.upsert.mock.calls[0]?.[0];
-    expect(usageInput?.create.userId).toBe(userId);
-    expect(usageInput?.create.tokensUsed).toBe(150);
-    expect(usageInput?.update.tokensUsed.increment).toBe(150);
+    const upsertInput = aiDailyUsage.upsert.mock.calls[0]?.[0];
+    expect(upsertInput?.create).toMatchObject({ userId, tokensUsed: 0 });
+    const usageInput = aiDailyUsage.update.mock.calls[0]?.[0];
+    expect(usageInput?.data.tokensUsed.increment).toBe(150);
+    expect(providerCreate.mock.invocationCallOrder[0]).toBeLessThan(
+      transaction.mock.invocationCallOrder[0]!,
+    );
   });
 
   it("retries a rewrite once when the provider returns invalid JSON", async () => {
     providerCreate.mockReset();
     providerCreate
       .mockResolvedValueOnce({
-        choices: [{ message: { content: "Here is a clearer version." } }],
+        choices: [
+          {
+            finish_reason: "stop",
+            message: { content: "Here is a clearer version." },
+          },
+        ],
         usage: {
           prompt_tokens: 120,
           completion_tokens: 30,
@@ -183,6 +230,7 @@ describe("aiRouter limits and privacy", () => {
       .mockResolvedValueOnce({
         choices: [
           {
+            finish_reason: "stop",
             message: {
               content:
                 '{"improved":"<h2>Clearer version</h2><p>A <strong>clearer</strong> sentence.</p><ul><li>Keep it concise.</li></ul>","changes":"The wording is more direct. The sentence is easier to scan. The original meaning is unchanged."}',
@@ -198,6 +246,7 @@ describe("aiRouter limits and privacy", () => {
 
     await expect(
       caller.askAi({
+        docId,
         action: "improveClarity",
         mode: "Clear",
         selectedText: "A sentence that needs clarity.",
@@ -209,7 +258,7 @@ describe("aiRouter limits and privacy", () => {
         "<h2>Clearer version</h2><p>A <strong>clearer</strong> sentence.</p><ul><li>Keep it concise.</li></ul>",
       changes:
         "The wording is more direct. The sentence is easier to scan. The original meaning is unchanged.",
-      remainingTokens: DAILY_AI_TOKEN_LIMIT - 320,
+      remainingTokens: DAILY_AI_TOKEN_LIMIT - 170,
     });
 
     expect(providerCreate).toHaveBeenCalledTimes(2);
@@ -220,22 +269,57 @@ describe("aiRouter limits and privacy", () => {
       "response_format",
     );
     expect(JSON.stringify(providerCreate.mock.calls[1]?.[0])).toContain(
-      "previous response was not valid",
+      "previous response was unusable",
     );
     expect(JSON.stringify(providerCreate.mock.calls[0]?.[0])).toContain(
       "<strong>sentence</strong>",
     );
 
-    const usageInput = aiDailyUsage.upsert.mock.calls[0]?.[0];
-    expect(usageInput?.create.tokensUsed).toBe(320);
-    expect(usageInput?.update.tokensUsed.increment).toBe(320);
+    const usageInput = aiDailyUsage.update.mock.calls[0]?.[0];
+    expect(usageInput?.data.tokensUsed.increment).toBe(170);
+  });
+
+  it("removes unsafe markup from a valid rewrite before returning it", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content:
+              '{"improved":"<p onclick=\\"alert(1)\\">A safer <strong>sentence</strong><script>alert(2)</script>.</p>","changes":"The wording is clearer. The structure is simpler. The meaning is preserved."}',
+          },
+        },
+      ],
+      usage: {
+        prompt_tokens: 120,
+        completion_tokens: 40,
+      },
+    });
+    const { caller } = createCaller();
+
+    const response = await caller.askAi({
+      docId,
+      action: "improveClarity",
+      mode: "Clear",
+      selectedText: "A sentence.",
+      selectedHtml: "<p>A sentence.</p>",
+    });
+
+    expect(response).toMatchObject({ type: "rewrite" });
+
+    if (response.type === "rewrite") {
+      expect(response.improved).not.toContain("onclick");
+      expect(response.improved).not.toContain("<script");
+      expect(response.improved).toContain("<strong>sentence</strong>");
+    }
   });
 
   it("does not record usage when rewrite retries do not produce a valid response", async () => {
     providerCreate.mockReset();
     providerCreate
       .mockResolvedValueOnce({
-        choices: [{ message: { content: "Not JSON" } }],
+        choices: [{ finish_reason: "stop", message: { content: "Not JSON" } }],
         usage: {
           prompt_tokens: 120,
           completion_tokens: 30,
@@ -243,7 +327,12 @@ describe("aiRouter limits and privacy", () => {
       })
       .mockResolvedValueOnce({
         choices: [
-          { message: { content: '{"improved":"<p>Missing explanation</p>"}' } },
+          {
+            finish_reason: "stop",
+            message: {
+              content: '{"improved":"<p>Missing explanation</p>"}',
+            },
+          },
         ],
         usage: {
           prompt_tokens: 130,
@@ -254,6 +343,7 @@ describe("aiRouter limits and privacy", () => {
 
     await expect(
       caller.askAi({
+        docId,
         action: "improveClarity",
         mode: "Clear",
         selectedText: "A sentence that needs clarity.",
@@ -264,13 +354,13 @@ describe("aiRouter limits and privacy", () => {
     });
 
     expect(providerCreate).toHaveBeenCalledTimes(2);
-    expect(aiDailyUsage.upsert).not.toHaveBeenCalled();
+    expect(aiDailyUsage.update).not.toHaveBeenCalled();
   });
 
   it("does not record usage when a non-rewrite response is empty", async () => {
     providerCreate.mockReset();
     providerCreate.mockResolvedValue({
-      choices: [{ message: { content: "" } }],
+      choices: [{ finish_reason: "stop", message: { content: "" } }],
       usage: {
         prompt_tokens: 120,
         completion_tokens: 30,
@@ -280,6 +370,7 @@ describe("aiRouter limits and privacy", () => {
 
     await expect(
       caller.askAi({
+        docId,
         action: "custom",
         mode: "Clear",
         selectedText: "A sentence that needs feedback.",
@@ -290,13 +381,15 @@ describe("aiRouter limits and privacy", () => {
       code: "INTERNAL_SERVER_ERROR",
     });
 
-    expect(aiDailyUsage.upsert).not.toHaveBeenCalled();
+    expect(aiDailyUsage.update).not.toHaveBeenCalled();
   });
 
   it("accepts selections at the configured character limit", async () => {
     providerCreate.mockReset();
     providerCreate.mockResolvedValue({
-      choices: [{ message: { content: "Clearer sentence." } }],
+      choices: [
+        { finish_reason: "stop", message: { content: "Clearer sentence." } },
+      ],
       usage: {
         prompt_tokens: 1_700,
         completion_tokens: 300,
@@ -306,6 +399,7 @@ describe("aiRouter limits and privacy", () => {
 
     await expect(
       caller.askAi({
+        docId,
         action: "custom",
         mode: "Clear",
         selectedText: "A".repeat(1_000),
@@ -320,6 +414,128 @@ describe("aiRouter limits and privacy", () => {
     expect(providerInput).toMatchObject({ max_tokens: 2_500 });
   });
 
+  it("scopes AI requests to an active document owned by the user", async () => {
+    providerCreate.mockReset();
+    const { caller, document } = createCaller();
+    document.findFirst.mockResolvedValue(null);
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "fixGrammar",
+        mode: "Clear",
+        selectedText: "A sentence.",
+        selectedHtml: "<p>A sentence.</p>",
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    expect(document.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: docId,
+        userId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+      },
+    });
+    expect(providerCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejects mismatched selected HTML before calling the provider", async () => {
+    providerCreate.mockReset();
+    const { caller, aiDailyUsage } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "fixGrammar",
+        mode: "Clear",
+        selectedText: "Only this sentence.",
+        selectedHtml: "<p>Different text.</p></target>",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+    expect(providerCreate).not.toHaveBeenCalled();
+    expect(aiDailyUsage.update).not.toHaveBeenCalled();
+  });
+
+  it("does not charge responses without provider usage metadata", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [{ finish_reason: "stop", message: { content: "A response." } }],
+    });
+    const { caller, aiDailyUsage } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "custom",
+        mode: "Clear",
+        selectedText: "A sentence.",
+        selectedHtml: "<p>A sentence.</p>",
+        instruction: "Explain this sentence.",
+      }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+
+    expect(aiDailyUsage.update).not.toHaveBeenCalled();
+  });
+
+  it("does not charge truncated provider responses", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: "length",
+          message: { content: "A partial response" },
+        },
+      ],
+      usage: {
+        prompt_tokens: 120,
+        completion_tokens: 30,
+      },
+    });
+    const { caller, aiDailyUsage } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "custom",
+        mode: "Clear",
+        selectedText: "A sentence.",
+        selectedHtml: "<p>A sentence.</p>",
+        instruction: "Explain this sentence.",
+      }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+
+    expect(aiDailyUsage.update).not.toHaveBeenCalled();
+  });
+
+  it("does not let a final response exceed the daily allowance", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [{ finish_reason: "stop", message: { content: "A response." } }],
+      usage: {
+        prompt_tokens: 4_500,
+        completion_tokens: 600,
+      },
+    });
+    const { caller, aiDailyUsage } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "custom",
+        mode: "Clear",
+        selectedText: "A sentence.",
+        selectedHtml: "<p>A sentence.</p>",
+        instruction: "Explain this sentence.",
+      }),
+    ).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
+
+    expect(aiDailyUsage.update).not.toHaveBeenCalled();
+  });
+
   it("rejects a request before the provider call when the allowance is too low", async () => {
     providerCreate.mockReset();
     const { caller } = createCaller({
@@ -328,6 +544,7 @@ describe("aiRouter limits and privacy", () => {
 
     await expect(
       caller.askAi({
+        docId,
         action: "fixGrammar",
         mode: "Clear",
         selectedText: "A sentence.",
@@ -345,6 +562,7 @@ describe("aiRouter limits and privacy", () => {
 
     await expect(
       caller.askAi({
+        docId,
         action: "fixGrammar",
         mode: "Clear",
         selectedText: "A sentence.",

@@ -217,7 +217,8 @@ export default function DocItem({
               id={`delete-description-${id}`}
               className="mt-2 text-sm leading-6 text-[var(--w-muted)]"
             >
-              This action cannot be undone.
+              This removes the draft from your list. You can restore it from
+              Recently deleted.
             </p>
             <div className="mt-5 flex gap-2">
               <button

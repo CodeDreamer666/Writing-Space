@@ -1,5 +1,12 @@
 import type { JSONContent } from "@tiptap/core";
-import { Document, HeadingLevel, Packer, Paragraph, TextRun } from "docx";
+import {
+  BorderStyle,
+  Document,
+  HeadingLevel,
+  Packer,
+  Paragraph,
+  TextRun,
+} from "docx";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 type RichExportFormat = "pdf" | "docx";
@@ -11,7 +18,7 @@ type StyledRun = {
 };
 
 type ContentBlock = {
-  kind: "paragraph" | "heading" | "list";
+  kind: "paragraph" | "heading" | "list" | "blockquote";
   level?: number;
   marker?: string;
   runs: StyledRun[];
@@ -68,6 +75,16 @@ function collectBlocks(content: JSONContent): ContentBlock[] {
       return;
     }
 
+    if (node.type === "blockquote") {
+      for (const child of node.content ?? []) {
+        blocks.push({
+          kind: "blockquote",
+          runs: collectRuns(child),
+        });
+      }
+      return;
+    }
+
     for (const child of node.content ?? []) {
       visit(child);
     }
@@ -84,7 +101,7 @@ function createDocx(content: JSONContent, title: string) {
         new TextRun({
           text: run.text,
           bold: run.bold,
-          italics: run.italic,
+          italics: run.italic || block.kind === "blockquote",
           break: run.text === "\n" ? 1 : undefined,
         }),
     );
@@ -105,6 +122,18 @@ function createDocx(content: JSONContent, title: string) {
     return new Paragraph({
       children,
       heading,
+      indent: block.kind === "blockquote" ? { left: 360 } : undefined,
+      border:
+        block.kind === "blockquote"
+          ? {
+              left: {
+                color: "AEB4BE",
+                space: 8,
+                style: BorderStyle.SINGLE,
+                size: 6,
+              },
+            }
+          : undefined,
       spacing: { after: block.kind === "heading" ? 220 : 160 },
     });
   });
@@ -171,7 +200,12 @@ async function createPdf(content: JSONContent, title: string) {
           { text: `${block.marker} `, bold: false, italic: false },
           ...block.runs,
         ]
-      : block.runs;
+      : block.kind === "blockquote"
+        ? [
+            { text: "| ", bold: false, italic: false },
+            ...block.runs.map((run) => ({ ...run, italic: true })),
+          ]
+        : block.runs;
     let x = margin;
 
     ensureSpace(lineHeight * 2);

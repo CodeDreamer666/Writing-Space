@@ -146,7 +146,9 @@ exports.Prisma.UserScalarFieldEnum = {
 exports.Prisma.AiDailyUsageScalarFieldEnum = {
   userId: 'userId',
   usageDate: 'usageDate',
-  tokensUsed: 'tokensUsed'
+  tokensUsed: 'tokensUsed',
+  requestId: 'requestId',
+  requestExpiresAt: 'requestExpiresAt'
 };
 
 exports.Prisma.FeedbackScalarFieldEnum = {

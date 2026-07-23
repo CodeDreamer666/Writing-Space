@@ -1,4 +1,6 @@
 import { TRPCError } from "@trpc/server";
+import type { ChatCompletion } from "groq-sdk/resources/chat/completions";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { env } from "~/env";
 import {
@@ -12,6 +14,10 @@ import { groq } from "~/server/grok";
 import { AI_ACTIONS } from "~/types/ai";
 import { WRITING_MODES } from "~/types/writing";
 
+const AI_REQUEST_TIMEOUT_MS = 45_000;
+const AI_REQUEST_LEASE_MS = 120_000;
+const AI_MESSAGE_TOKEN_OVERHEAD = 32;
+
 const rewriteActionSchema = z.enum([
   "improveClarity",
   "fixGrammar",
@@ -21,12 +27,27 @@ const rewriteActionSchema = z.enum([
   "improveFlow",
 ]);
 
+function hasThreeOrFourSentences(value: string) {
+  const sentences = value.trim().match(/[^.!?]+[.!?]+(?:["')\]]+)?(?=\s|$)/g);
+
+  return sentences !== null && sentences.length >= 3 && sentences.length <= 4;
+}
+
 const rewriteResponseSchema = z.object({
-  improved: z.string().min(1),
-  changes: z.string().min(1),
+  improved: z.string().trim().min(1),
+  changes: z
+    .string()
+    .trim()
+    .min(1)
+    .refine(
+      hasThreeOrFourSentences,
+      "The rewrite explanation must contain 3 or 4 sentences.",
+    ),
 });
 
-const richTextTagPattern = /<\/?(?:p|h[1-3]|ul|ol|li|strong|em|br)\s*\/?>/gi;
+const anyHtmlTagPattern = /<[^>]*>/g;
+const allowedRichTextTagPattern =
+  /^<\s*(\/?)\s*(p|h[1-3]|ul|ol|li|strong|em|br)\s*\/?\s*>$/i;
 
 function escapeHtml(value: string): string {
   return value
@@ -41,18 +62,63 @@ function sanitizeRichText(value: string): string {
   let sanitized = "";
   let lastIndex = 0;
 
-  for (const tag of value.matchAll(richTextTagPattern)) {
+  for (const tag of value.matchAll(anyHtmlTagPattern)) {
     const index = tag.index ?? 0;
     sanitized += escapeHtml(value.slice(lastIndex, index));
-    sanitized += tag[0].toLowerCase().replaceAll(/\s+/g, "");
+
+    const allowedTag = allowedRichTextTagPattern.exec(tag[0]);
+
+    if (allowedTag) {
+      const isClosingTag = allowedTag[1] === "/";
+      const tagName = allowedTag[2]?.toLowerCase();
+
+      if (tagName === "br") {
+        sanitized += "<br>";
+      } else if (tagName) {
+        sanitized += `<${isClosingTag ? "/" : ""}${tagName}>`;
+      }
+    }
+
     lastIndex = index + tag[0].length;
   }
 
   return sanitized + escapeHtml(value.slice(lastIndex));
 }
 
+function decodeHtmlEntities(value: string): string {
+  const namedEntities: Record<string, string> = {
+    amp: "&",
+    apos: "'",
+    gt: ">",
+    lt: "<",
+    nbsp: " ",
+    quot: '"',
+  };
+
+  return value.replace(
+    /&(?:#(\d+)|#x([0-9a-f]+)|([a-z]+));/gi,
+    (entity, decimal: string, hexadecimal: string, named: string) => {
+      if (decimal) {
+        return String.fromCodePoint(Number.parseInt(decimal, 10));
+      }
+
+      if (hexadecimal) {
+        return String.fromCodePoint(Number.parseInt(hexadecimal, 16));
+      }
+
+      return namedEntities[named.toLowerCase()] ?? entity;
+    },
+  );
+}
+
+function normalizeSelectedText(value: string): string {
+  return decodeHtmlEntities(value.replaceAll(anyHtmlTagPattern, " "))
+    .replaceAll(/\s+/g, " ")
+    .trim();
+}
+
 function hasRichTextContent(value: string): boolean {
-  return value.replaceAll(richTextTagPattern, "").trim().length > 0;
+  return normalizeSelectedText(value).length > 0;
 }
 
 function parseRewriteResponse(
@@ -76,6 +142,37 @@ function parseRewriteResponse(
   } catch {
     return null;
   }
+}
+
+function readUsableCompletion(completion: ChatCompletion) {
+  const choice = completion.choices[0];
+  const promptTokens = completion.usage?.prompt_tokens;
+  const completionTokens = completion.usage?.completion_tokens;
+
+  if (
+    choice?.finish_reason !== "stop" ||
+    !Number.isInteger(promptTokens) ||
+    !Number.isInteger(completionTokens) ||
+    promptTokens === undefined ||
+    completionTokens === undefined ||
+    promptTokens < 0 ||
+    completionTokens < 0 ||
+    promptTokens + completionTokens <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    content: choice.message.content ?? null,
+    tokensUsed: promptTokens + completionTokens,
+  };
+}
+
+function getInputTokenUpperBound(systemMessage: string, userMessage: string) {
+  return (
+    new TextEncoder().encode(`${systemMessage}\n${userMessage}`).length +
+    AI_MESSAGE_TOKEN_OVERHEAD
+  );
 }
 
 const actionInstructions = {
@@ -137,6 +234,7 @@ export const aiRouter = createTRPCRouter({
     .input(
       z
         .object({
+          docId: z.string().uuid(),
           action: z.enum(AI_ACTIONS),
           mode: z.enum(WRITING_MODES),
           selectedText: z
@@ -154,12 +252,23 @@ export const aiRouter = createTRPCRouter({
             .max(MAX_AI_SELECTION_CHARACTERS * 4),
           instruction: z.string().trim().min(1).max(2_000).optional(),
         })
-        .superRefine((input, ctx) => {
+        .superRefine((input, validationContext) => {
           if (input.action === "custom" && !input.instruction) {
-            ctx.addIssue({
+            validationContext.addIssue({
               code: "custom",
               path: ["instruction"],
               message: "Enter an instruction before sending.",
+            });
+          }
+
+          if (
+            normalizeSelectedText(input.selectedText) !==
+            normalizeSelectedText(input.selectedHtml)
+          ) {
+            validationContext.addIssue({
+              code: "custom",
+              path: ["selectedHtml"],
+              message: "The selected text and formatting do not match.",
             });
           }
         }),
@@ -169,13 +278,38 @@ export const aiRouter = createTRPCRouter({
 
       const userId = ctx.session.user.id;
       const usageDate = getUtcUsageDate();
+      const ownedDocument = await ctx.db.document.findFirst({
+        where: {
+          id: input.docId,
+          userId,
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!ownedDocument) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message:
+            "This document is unavailable or belongs to another account.",
+        });
+      }
 
       const instruction =
         input.action === "custom"
           ? input.instruction!
           : actionInstructions[input.action];
-
       const isRewrite = rewriteActionSchema.safeParse(input.action).success;
+      const safeSelectedHtml = sanitizeRichText(input.selectedHtml);
+
+      if (!hasRichTextContent(safeSelectedHtml)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Select some text before using Writely AI.",
+        });
+      }
 
       const systemMessage = [
         "You are Writely AI, a writing assistant inside a minimalist writing app.",
@@ -193,7 +327,7 @@ Use exactly this shape:
 Rules:
 - "improved" must be the complete rewritten target as non-empty HTML.
 - Preserve the target's supported formatting whenever it is relevant: paragraphs, headings, ordered and unordered lists, bold, and italic.
-- Only use these HTML tags in "improved": <p>, <h1>, <h2>, <h3>, <ul>, <ol>, <li>, <strong>, <em>, and <br>. Do not use attributes.
+- Only use these HTML tags in "improved": <p>, <h2>, <ul>, <li>, <strong>, <em>, <br> and <blockquote>. Do not use attributes.
 - "changes" must be one concise, non-empty explanation of exactly 3 or 4 sentences.
 - Do not use Markdown.
 - Do not include code fences.
@@ -201,29 +335,157 @@ Rules:
 - Do not include any text before or after the JSON object.`
           : "Return only the requested response as plain text.",
       ].join("\n");
+      const userMessage = `<target>\n${safeSelectedHtml}\n</target>\n\nInstruction: ${instruction}`;
 
-      const userMessage = `<target>\n${input.selectedHtml}\n</target>\n\nInstruction: ${instruction}`;
-
-      let response;
+      const requestId = randomUUID();
+      let leaseAcquired = false;
 
       try {
-        response = await ctx.db.$transaction(
+        await ctx.db.aiDailyUsage.upsert({
+          where: {
+            userId_usageDate: {
+              userId,
+              usageDate,
+            },
+          },
+          create: {
+            userId,
+            usageDate,
+            tokensUsed: 0,
+          },
+          update: {},
+        });
+
+        const leaseResult = await ctx.db.aiDailyUsage.updateMany({
+          where: {
+            userId,
+            usageDate,
+            OR: [
+              { requestId: null },
+              { requestExpiresAt: { lte: new Date() } },
+            ],
+          },
+          data: {
+            requestId,
+            requestExpiresAt: new Date(Date.now() + AI_REQUEST_LEASE_MS),
+          },
+        });
+
+        if (leaseResult.count === 0) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message:
+              "An AI request is already running. Wait for it to finish before trying again.",
+          });
+        }
+
+        leaseAcquired = true;
+
+        const usage = await ctx.db.aiDailyUsage.findUnique({
+          where: {
+            userId_usageDate: {
+              userId,
+              usageDate,
+            },
+          },
+          select: {
+            tokensUsed: true,
+          },
+        });
+        const tokensUsed = usage?.tokensUsed ?? 0;
+        const remainingTokensBeforeRequest = DAILY_AI_TOKEN_LIMIT - tokensUsed;
+
+        if (remainingTokensBeforeRequest <= 0) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message:
+              "You have used today’s AI allowance. It resets automatically tomorrow.",
+          });
+        }
+
+        const createCompletion = async (message: string) => {
+          const outputTokenLimit = Math.min(
+            AI_FALLBACK_OUTPUT_TOKEN_LIMIT,
+            remainingTokensBeforeRequest -
+              getInputTokenUpperBound(systemMessage, message),
+          );
+
+          if (outputTokenLimit <= 0) {
+            throw new TRPCError({
+              code: "TOO_MANY_REQUESTS",
+              message:
+                "This selection is too large for today’s remaining AI allowance.",
+            });
+          }
+
+          return groq.chat.completions.create(
+            {
+              messages: [
+                {
+                  role: "system",
+                  content: systemMessage,
+                },
+                {
+                  role: "user",
+                  content: message,
+                },
+              ],
+              model: "llama-3.3-70b-versatile",
+              max_tokens: outputTokenLimit,
+            },
+            {
+              timeout: AI_REQUEST_TIMEOUT_MS,
+            },
+          );
+        };
+
+        let completion = await createCompletion(userMessage);
+        let usableCompletion = readUsableCompletion(completion);
+        let rewrite = isRewrite
+          ? parseRewriteResponse(usableCompletion?.content ?? null)
+          : null;
+
+        if (isRewrite && (!usableCompletion || !rewrite)) {
+          const retryMessage = `${userMessage}\n\nYour previous response was unusable. Return only one valid JSON object matching the required shape.`;
+          completion = await createCompletion(retryMessage);
+          usableCompletion = readUsableCompletion(completion);
+          rewrite = parseRewriteResponse(usableCompletion?.content ?? null);
+        }
+
+        if (!usableCompletion) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message:
+              "Writely AI returned an unusable response. Please try again.",
+          });
+        }
+
+        if (isRewrite && !rewrite) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message:
+              "Writely AI returned an invalid response. Please try again.",
+          });
+        }
+
+        if (!isRewrite && !usableCompletion.content?.trim()) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Writely AI returned an empty response. Please try again.",
+          });
+        }
+
+        if (usableCompletion.tokensUsed > remainingTokensBeforeRequest) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message:
+              "This response would exceed today’s AI allowance. Try a shorter selection.",
+          });
+        }
+
+        const updatedTokensUsed = await ctx.db.$transaction(
           async (transaction) => {
-            const lockResult = await transaction.$queryRaw<
-              Array<{ locked: boolean }>
-            >`SELECT pg_try_advisory_xact_lock(
-                             hashtextextended(${"ai-request:" + userId}, 0)
-                         ) AS locked`;
-
-            if (!lockResult[0]?.locked) {
-              throw new TRPCError({
-                code: "TOO_MANY_REQUESTS",
-                message:
-                  "An AI request is already running. Wait for it to finish before trying again.",
-              });
-            }
-
-            const usage = await transaction.aiDailyUsage.findUnique({
+            const currentUsage = await transaction.aiDailyUsage.findUnique({
               where: {
                 userId_usageDate: {
                   userId,
@@ -231,129 +493,88 @@ Rules:
                 },
               },
               select: {
+                requestId: true,
                 tokensUsed: true,
               },
             });
 
-            const tokensUsed = usage?.tokensUsed ?? 0;
-            const remainingTokens = DAILY_AI_TOKEN_LIMIT - tokensUsed;
+            if (currentUsage?.requestId !== requestId) {
+              throw new TRPCError({
+                code: "TOO_MANY_REQUESTS",
+                message: "This AI request took too long. Please try it again.",
+              });
+            }
 
-            if (remainingTokens <= 0) {
+            if (
+              currentUsage.tokensUsed + usableCompletion.tokensUsed >
+              DAILY_AI_TOKEN_LIMIT
+            ) {
               throw new TRPCError({
                 code: "TOO_MANY_REQUESTS",
                 message:
-                  "You have used today’s AI allowance. It resets automatically tomorrow.",
+                  "This response would exceed today’s AI allowance. Try a shorter selection.",
               });
             }
 
-            const createCompletion = (message: string, maxTokens: number) =>
-              groq.chat.completions.create({
-                messages: [
-                  {
-                    role: "system",
-                    content: systemMessage,
-                  },
-                  {
-                    role: "user",
-                    content: message,
-                  },
-                ],
-                model: "llama-3.3-70b-versatile",
-                max_tokens: maxTokens,
-              });
-
-            const initialOutputLimit = Math.min(
-              AI_FALLBACK_OUTPUT_TOKEN_LIMIT,
-              remainingTokens - systemMessage.length - userMessage.length,
-            );
-
-            if (initialOutputLimit <= 0) {
-              throw new TRPCError({
-                code: "TOO_MANY_REQUESTS",
-                message:
-                  "This selection is too large for today’s remaining AI allowance.",
-              });
-            }
-
-            let completion = await createCompletion(
-              userMessage,
-              initialOutputLimit,
-            );
-            let content = completion.choices[0]?.message.content ?? null;
-            let rewrite = isRewrite ? parseRewriteResponse(content) : null;
-            let requestTokens =
-              (completion.usage?.prompt_tokens ?? 0) +
-              (completion.usage?.completion_tokens ?? 0);
-
-            if (isRewrite && !rewrite) {
-              const retryMessage = `${userMessage}\n\nYour previous response was not valid for the required JSON shape. Return only one valid JSON object matching the requested shape.`;
-              const retryOutputLimit = Math.min(
-                AI_FALLBACK_OUTPUT_TOKEN_LIMIT,
-                remainingTokens -
-                  requestTokens -
-                  systemMessage.length -
-                  retryMessage.length,
-              );
-
-              if (retryOutputLimit > 0) {
-                completion = await createCompletion(
-                  retryMessage,
-                  retryOutputLimit,
-                );
-                content = completion.choices[0]?.message.content ?? null;
-                rewrite = parseRewriteResponse(content);
-                requestTokens +=
-                  (completion.usage?.prompt_tokens ?? 0) +
-                  (completion.usage?.completion_tokens ?? 0);
-              }
-            }
-
-            if (isRewrite) {
-              if (!rewrite) {
-                throw new TRPCError({
-                  code: "INTERNAL_SERVER_ERROR",
-                  message:
-                    "Writely AI returned an invalid response. Please try again.",
-                });
-              }
-            } else if (!content?.trim()) {
-              throw new TRPCError({
-                code: "INTERNAL_SERVER_ERROR",
-                message:
-                  "Writely AI returned an empty response. Please try again.",
-              });
-            }
-
-            await transaction.aiDailyUsage.upsert({
+            await transaction.aiDailyUsage.update({
               where: {
                 userId_usageDate: {
                   userId,
                   usageDate,
                 },
               },
-              create: {
-                userId,
-                usageDate,
-                tokensUsed: requestTokens,
-              },
-              update: {
+              data: {
                 tokensUsed: {
-                  increment: requestTokens,
+                  increment: usableCompletion.tokensUsed,
                 },
+                requestId: null,
+                requestExpiresAt: null,
               },
             });
 
-            return {
-              content: content ?? null,
-              rewrite,
-              tokensUsed: tokensUsed + requestTokens,
-            };
-          },
-          {
-            maxWait: 5_000,
-            timeout: 60_000,
+            return currentUsage.tokensUsed + usableCompletion.tokensUsed;
           },
         );
+
+        const response = {
+          content: usableCompletion.content,
+          rewrite,
+          tokensUsed: updatedTokensUsed,
+        };
+        const remainingTokens = Math.max(
+          0,
+          DAILY_AI_TOKEN_LIMIT - response.tokensUsed,
+        );
+
+        if (isRewrite) {
+          if (!response.rewrite) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message:
+                "Writely AI returned an invalid response. Please try again.",
+            });
+          }
+
+          return {
+            type: "rewrite" as const,
+            original: input.selectedText,
+            ...response.rewrite,
+            remainingTokens,
+          };
+        }
+
+        if (!response.content?.trim()) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Writely AI returned an empty response. Please try again.",
+          });
+        }
+
+        return {
+          type: "response" as const,
+          content: response.content.trim(),
+          remainingTokens,
+        };
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;
@@ -371,41 +592,26 @@ Rules:
           message:
             "Writely AI could not complete that request. Please try again.",
         });
-      }
-
-      const remainingTokens = Math.max(
-        0,
-        DAILY_AI_TOKEN_LIMIT - response.tokensUsed,
-      );
-
-      if (isRewrite) {
-        if (!response.rewrite) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message:
-              "Writely AI returned an invalid response. Please try again.",
-          });
+      } finally {
+        if (leaseAcquired) {
+          try {
+            await ctx.db.aiDailyUsage.updateMany({
+              where: {
+                userId,
+                usageDate,
+                requestId,
+              },
+              data: {
+                requestId: null,
+                requestExpiresAt: null,
+              },
+            });
+          } catch {
+            if (process.env.NODE_ENV === "development") {
+              console.error("AI request lease cleanup failed.");
+            }
+          }
         }
-
-        return {
-          type: "rewrite" as const,
-          original: input.selectedText,
-          ...response.rewrite,
-          remainingTokens,
-        };
       }
-
-      if (!response.content?.trim()) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Writely AI returned an empty response. Please try again.",
-        });
-      }
-
-      return {
-        type: "response" as const,
-        content: response.content.trim(),
-        remainingTokens,
-      };
     }),
 });

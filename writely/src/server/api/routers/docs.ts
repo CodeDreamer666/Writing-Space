@@ -153,6 +153,26 @@ export const docsRouter = createTRPCRouter({
     });
   }),
 
+  getDeletedDocs: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.db.document.findMany({
+      where: {
+        userId: ctx.session.user.id,
+        deletedAt: {
+          not: null,
+        },
+      },
+      orderBy: {
+        deletedAt: "desc",
+      },
+      take: 20,
+      select: {
+        id: true,
+        title: true,
+        deletedAt: true,
+      },
+    });
+  }),
+
   getSelectedDoc: protectedProcedure
     .input(z.object({ docId: docIdSchema }))
     .query(async ({ input, ctx }) => {
@@ -198,6 +218,56 @@ export const docsRouter = createTRPCRouter({
       }
 
       return { success: true };
+    }),
+
+  restoreDoc: protectedProcedure
+    .input(z.object({ docId: docIdSchema }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+
+      return ctx.db.$transaction(async (transaction) => {
+        await transaction.$queryRaw`
+          SELECT pg_advisory_xact_lock(
+            hashtextextended(${"document-create:" + userId}, 0)
+          )::text`;
+
+        const activeDocumentCount = await transaction.document.count({
+          where: {
+            userId,
+            deletedAt: null,
+          },
+        });
+
+        if (activeDocumentCount >= MAX_DOCUMENTS_PER_USER) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `You can keep up to ${MAX_DOCUMENTS_PER_USER} documents. Delete one before restoring this draft.`,
+          });
+        }
+
+        const result = await transaction.document.updateMany({
+          where: {
+            id: input.docId,
+            userId,
+            deletedAt: {
+              not: null,
+            },
+          },
+          data: {
+            deletedAt: null,
+          },
+        });
+
+        if (result.count === 0) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message:
+              "This document is unavailable or belongs to another account.",
+          });
+        }
+
+        return { success: true };
+      });
     }),
 
   updateWritingMode: protectedProcedure

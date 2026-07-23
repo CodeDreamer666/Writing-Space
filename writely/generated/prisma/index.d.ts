@@ -3873,18 +3873,24 @@ export namespace Prisma {
     userId: string | null
     usageDate: Date | null
     tokensUsed: number | null
+    requestId: string | null
+    requestExpiresAt: Date | null
   }
 
   export type AiDailyUsageMaxAggregateOutputType = {
     userId: string | null
     usageDate: Date | null
     tokensUsed: number | null
+    requestId: string | null
+    requestExpiresAt: Date | null
   }
 
   export type AiDailyUsageCountAggregateOutputType = {
     userId: number
     usageDate: number
     tokensUsed: number
+    requestId: number
+    requestExpiresAt: number
     _all: number
   }
 
@@ -3901,18 +3907,24 @@ export namespace Prisma {
     userId?: true
     usageDate?: true
     tokensUsed?: true
+    requestId?: true
+    requestExpiresAt?: true
   }
 
   export type AiDailyUsageMaxAggregateInputType = {
     userId?: true
     usageDate?: true
     tokensUsed?: true
+    requestId?: true
+    requestExpiresAt?: true
   }
 
   export type AiDailyUsageCountAggregateInputType = {
     userId?: true
     usageDate?: true
     tokensUsed?: true
+    requestId?: true
+    requestExpiresAt?: true
     _all?: true
   }
 
@@ -4006,6 +4018,8 @@ export namespace Prisma {
     userId: string
     usageDate: Date
     tokensUsed: number
+    requestId: string | null
+    requestExpiresAt: Date | null
     _count: AiDailyUsageCountAggregateOutputType | null
     _avg: AiDailyUsageAvgAggregateOutputType | null
     _sum: AiDailyUsageSumAggregateOutputType | null
@@ -4031,6 +4045,8 @@ export namespace Prisma {
     userId?: boolean
     usageDate?: boolean
     tokensUsed?: boolean
+    requestId?: boolean
+    requestExpiresAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["aiDailyUsage"]>
 
@@ -4038,6 +4054,8 @@ export namespace Prisma {
     userId?: boolean
     usageDate?: boolean
     tokensUsed?: boolean
+    requestId?: boolean
+    requestExpiresAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["aiDailyUsage"]>
 
@@ -4045,6 +4063,8 @@ export namespace Prisma {
     userId?: boolean
     usageDate?: boolean
     tokensUsed?: boolean
+    requestId?: boolean
+    requestExpiresAt?: boolean
     user?: boolean | UserDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["aiDailyUsage"]>
 
@@ -4052,9 +4072,11 @@ export namespace Prisma {
     userId?: boolean
     usageDate?: boolean
     tokensUsed?: boolean
+    requestId?: boolean
+    requestExpiresAt?: boolean
   }
 
-  export type AiDailyUsageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"userId" | "usageDate" | "tokensUsed", ExtArgs["result"]["aiDailyUsage"]>
+  export type AiDailyUsageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"userId" | "usageDate" | "tokensUsed" | "requestId" | "requestExpiresAt", ExtArgs["result"]["aiDailyUsage"]>
   export type AiDailyUsageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | UserDefaultArgs<ExtArgs>
   }
@@ -4074,6 +4096,8 @@ export namespace Prisma {
       userId: string
       usageDate: Date
       tokensUsed: number
+      requestId: string | null
+      requestExpiresAt: Date | null
     }, ExtArgs["result"]["aiDailyUsage"]>
     composites: {}
   }
@@ -4501,6 +4525,8 @@ export namespace Prisma {
     readonly userId: FieldRef<"AiDailyUsage", 'String'>
     readonly usageDate: FieldRef<"AiDailyUsage", 'DateTime'>
     readonly tokensUsed: FieldRef<"AiDailyUsage", 'Int'>
+    readonly requestId: FieldRef<"AiDailyUsage", 'String'>
+    readonly requestExpiresAt: FieldRef<"AiDailyUsage", 'DateTime'>
   }
     
 
@@ -9298,7 +9324,9 @@ export namespace Prisma {
   export const AiDailyUsageScalarFieldEnum: {
     userId: 'userId',
     usageDate: 'usageDate',
-    tokensUsed: 'tokensUsed'
+    tokensUsed: 'tokensUsed',
+    requestId: 'requestId',
+    requestExpiresAt: 'requestExpiresAt'
   };
 
   export type AiDailyUsageScalarFieldEnum = (typeof AiDailyUsageScalarFieldEnum)[keyof typeof AiDailyUsageScalarFieldEnum]
@@ -9651,6 +9679,8 @@ export namespace Prisma {
     userId?: StringFilter<"AiDailyUsage"> | string
     usageDate?: DateTimeFilter<"AiDailyUsage"> | Date | string
     tokensUsed?: IntFilter<"AiDailyUsage"> | number
+    requestId?: StringNullableFilter<"AiDailyUsage"> | string | null
+    requestExpiresAt?: DateTimeNullableFilter<"AiDailyUsage"> | Date | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }
 
@@ -9658,6 +9688,8 @@ export namespace Prisma {
     userId?: SortOrder
     usageDate?: SortOrder
     tokensUsed?: SortOrder
+    requestId?: SortOrderInput | SortOrder
+    requestExpiresAt?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
   }
 
@@ -9669,6 +9701,8 @@ export namespace Prisma {
     userId?: StringFilter<"AiDailyUsage"> | string
     usageDate?: DateTimeFilter<"AiDailyUsage"> | Date | string
     tokensUsed?: IntFilter<"AiDailyUsage"> | number
+    requestId?: StringNullableFilter<"AiDailyUsage"> | string | null
+    requestExpiresAt?: DateTimeNullableFilter<"AiDailyUsage"> | Date | string | null
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
   }, "userId_usageDate">
 
@@ -9676,6 +9710,8 @@ export namespace Prisma {
     userId?: SortOrder
     usageDate?: SortOrder
     tokensUsed?: SortOrder
+    requestId?: SortOrderInput | SortOrder
+    requestExpiresAt?: SortOrderInput | SortOrder
     _count?: AiDailyUsageCountOrderByAggregateInput
     _avg?: AiDailyUsageAvgOrderByAggregateInput
     _max?: AiDailyUsageMaxOrderByAggregateInput
@@ -9690,6 +9726,8 @@ export namespace Prisma {
     userId?: StringWithAggregatesFilter<"AiDailyUsage"> | string
     usageDate?: DateTimeWithAggregatesFilter<"AiDailyUsage"> | Date | string
     tokensUsed?: IntWithAggregatesFilter<"AiDailyUsage"> | number
+    requestId?: StringNullableWithAggregatesFilter<"AiDailyUsage"> | string | null
+    requestExpiresAt?: DateTimeNullableWithAggregatesFilter<"AiDailyUsage"> | Date | string | null
   }
 
   export type FeedbackWhereInput = {
@@ -10147,6 +10185,8 @@ export namespace Prisma {
   export type AiDailyUsageCreateInput = {
     usageDate: Date | string
     tokensUsed?: number
+    requestId?: string | null
+    requestExpiresAt?: Date | string | null
     user: UserCreateNestedOneWithoutAiDailyUsageInput
   }
 
@@ -10154,11 +10194,15 @@ export namespace Prisma {
     userId: string
     usageDate: Date | string
     tokensUsed?: number
+    requestId?: string | null
+    requestExpiresAt?: Date | string | null
   }
 
   export type AiDailyUsageUpdateInput = {
     usageDate?: DateTimeFieldUpdateOperationsInput | Date | string
     tokensUsed?: IntFieldUpdateOperationsInput | number
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    requestExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     user?: UserUpdateOneRequiredWithoutAiDailyUsageNestedInput
   }
 
@@ -10166,23 +10210,31 @@ export namespace Prisma {
     userId?: StringFieldUpdateOperationsInput | string
     usageDate?: DateTimeFieldUpdateOperationsInput | Date | string
     tokensUsed?: IntFieldUpdateOperationsInput | number
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    requestExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type AiDailyUsageCreateManyInput = {
     userId: string
     usageDate: Date | string
     tokensUsed?: number
+    requestId?: string | null
+    requestExpiresAt?: Date | string | null
   }
 
   export type AiDailyUsageUpdateManyMutationInput = {
     usageDate?: DateTimeFieldUpdateOperationsInput | Date | string
     tokensUsed?: IntFieldUpdateOperationsInput | number
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    requestExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type AiDailyUsageUncheckedUpdateManyInput = {
     userId?: StringFieldUpdateOperationsInput | string
     usageDate?: DateTimeFieldUpdateOperationsInput | Date | string
     tokensUsed?: IntFieldUpdateOperationsInput | number
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    requestExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type FeedbackCreateInput = {
@@ -10832,6 +10884,8 @@ export namespace Prisma {
     userId?: SortOrder
     usageDate?: SortOrder
     tokensUsed?: SortOrder
+    requestId?: SortOrder
+    requestExpiresAt?: SortOrder
   }
 
   export type AiDailyUsageAvgOrderByAggregateInput = {
@@ -10842,12 +10896,16 @@ export namespace Prisma {
     userId?: SortOrder
     usageDate?: SortOrder
     tokensUsed?: SortOrder
+    requestId?: SortOrder
+    requestExpiresAt?: SortOrder
   }
 
   export type AiDailyUsageMinOrderByAggregateInput = {
     userId?: SortOrder
     usageDate?: SortOrder
     tokensUsed?: SortOrder
+    requestId?: SortOrder
+    requestExpiresAt?: SortOrder
   }
 
   export type AiDailyUsageSumOrderByAggregateInput = {
@@ -11629,11 +11687,15 @@ export namespace Prisma {
   export type AiDailyUsageCreateWithoutUserInput = {
     usageDate: Date | string
     tokensUsed?: number
+    requestId?: string | null
+    requestExpiresAt?: Date | string | null
   }
 
   export type AiDailyUsageUncheckedCreateWithoutUserInput = {
     usageDate: Date | string
     tokensUsed?: number
+    requestId?: string | null
+    requestExpiresAt?: Date | string | null
   }
 
   export type AiDailyUsageCreateOrConnectWithoutUserInput = {
@@ -11792,6 +11854,8 @@ export namespace Prisma {
     userId?: StringFilter<"AiDailyUsage"> | string
     usageDate?: DateTimeFilter<"AiDailyUsage"> | Date | string
     tokensUsed?: IntFilter<"AiDailyUsage"> | number
+    requestId?: StringNullableFilter<"AiDailyUsage"> | string | null
+    requestExpiresAt?: DateTimeNullableFilter<"AiDailyUsage"> | Date | string | null
   }
 
   export type FeedbackUpsertWithWhereUniqueWithoutUserInput = {
@@ -12183,6 +12247,8 @@ export namespace Prisma {
   export type AiDailyUsageCreateManyUserInput = {
     usageDate: Date | string
     tokensUsed?: number
+    requestId?: string | null
+    requestExpiresAt?: Date | string | null
   }
 
   export type FeedbackCreateManyUserInput = {
@@ -12272,16 +12338,22 @@ export namespace Prisma {
   export type AiDailyUsageUpdateWithoutUserInput = {
     usageDate?: DateTimeFieldUpdateOperationsInput | Date | string
     tokensUsed?: IntFieldUpdateOperationsInput | number
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    requestExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type AiDailyUsageUncheckedUpdateWithoutUserInput = {
     usageDate?: DateTimeFieldUpdateOperationsInput | Date | string
     tokensUsed?: IntFieldUpdateOperationsInput | number
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    requestExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type AiDailyUsageUncheckedUpdateManyWithoutUserInput = {
     usageDate?: DateTimeFieldUpdateOperationsInput | Date | string
     tokensUsed?: IntFieldUpdateOperationsInput | number
+    requestId?: NullableStringFieldUpdateOperationsInput | string | null
+    requestExpiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type FeedbackUpdateWithoutUserInput = {

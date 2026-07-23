@@ -73,8 +73,36 @@ describe("landing page demos", () => {
     );
   });
 
-  it("enters and exits the Focus Mode demo", () => {
+  it("keeps the Focus Mode document read-only while its controls update it", () => {
     act(() => root.render(<FocusModeDemo />));
+
+    expect(container.querySelector("[contenteditable]")).toBeNull();
+    expect(container.querySelectorAll("button")).toHaveLength(4);
+
+    const formatPreview = container.querySelector(
+      "[data-focus-format-preview]",
+    );
+
+    if (!formatPreview) {
+      throw new Error("Unable to find the Focus Mode formatting preview");
+    }
+
+    const boldButton = getButton("Bold");
+    const italicButton = getButton("Italic");
+    const listButton = getButton("List");
+
+    act(() => {
+      boldButton.click();
+      italicButton.click();
+      listButton.click();
+    });
+
+    expect(boldButton.getAttribute("aria-pressed")).toBe("true");
+    expect(italicButton.getAttribute("aria-pressed")).toBe("true");
+    expect(listButton.getAttribute("aria-pressed")).toBe("true");
+    expect(formatPreview.className).toContain("font-semibold");
+    expect(formatPreview.className).toContain("italic");
+    expect(formatPreview.querySelectorAll("li")).toHaveLength(3);
 
     const focusButton = getButton("Enter Focus Mode");
     act(() => focusButton.click());
@@ -123,7 +151,9 @@ describe("landing page demos", () => {
   it("downloads each selected export format", async () => {
     act(() => root.render(<ExportDemo />));
 
-    expect(container.querySelector("h2")?.textContent).toBe("Project brief");
+    expect(container.querySelector(".export-preview-title")?.textContent).toBe(
+      "Project brief",
+    );
     expect(container.querySelector("strong")?.textContent).toBe("Key ideas");
     expect(container.querySelector("em")?.textContent).toBe("your voice");
 

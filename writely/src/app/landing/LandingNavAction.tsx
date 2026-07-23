@@ -6,7 +6,7 @@ import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import { authClient } from "~/server/better-auth/client";
 
 const actionClassName =
-  "rounded-lg px-3 py-2 text-sm text-[var(--w-muted)] transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]";
+  "inline-flex min-h-10 items-center justify-center rounded-xl border border-[var(--w-border)] bg-[var(--w-surface)] px-4 text-sm font-medium text-[var(--w-strong)] shadow-sm transition-colors hover:border-[var(--w-muted)] hover:bg-[var(--w-surface-raised)] disabled:cursor-wait disabled:opacity-60";
 
 export default function LandingNavAction() {
   const { data: session, isPending: isSessionPending } =
@@ -33,6 +33,7 @@ export default function LandingNavAction() {
       const result = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/",
+        errorCallbackURL: "/landing",
       });
 
       if (result.error) {

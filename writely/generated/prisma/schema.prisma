@@ -49,10 +49,12 @@ model User {
 }
 
 model AiDailyUsage {
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  usageDate  DateTime @db.Date
-  tokensUsed Int      @default(0)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  usageDate        DateTime  @db.Date
+  tokensUsed       Int       @default(0)
+  requestId        String?
+  requestExpiresAt DateTime?
 
   @@id([userId, usageDate])
 }

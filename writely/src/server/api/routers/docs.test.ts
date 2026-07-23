@@ -121,6 +121,65 @@ describe("docsRouter authorization", () => {
     expect(deletedAt).toBeInstanceOf(Date);
   });
 
+  it("lists only soft-deleted documents owned by the authenticated user", async () => {
+    const database = createDocumentDatabase();
+    database.findMany.mockResolvedValue([]);
+    const caller = createCaller(database);
+
+    await caller.getDeletedDocs();
+
+    expect(database.findMany).toHaveBeenCalledWith({
+      where: {
+        userId,
+        deletedAt: {
+          not: null,
+        },
+      },
+      orderBy: {
+        deletedAt: "desc",
+      },
+      take: 20,
+      select: {
+        id: true,
+        title: true,
+        deletedAt: true,
+      },
+    });
+  });
+
+  it("restores only a soft-deleted document owned by the authenticated user", async () => {
+    const database = createDocumentDatabase();
+    database.count.mockResolvedValue(3);
+    database.updateMany.mockResolvedValue({ count: 1 });
+    const caller = createCaller(database);
+
+    await caller.restoreDoc({ docId });
+
+    expect(database.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: docId,
+        userId,
+        deletedAt: {
+          not: null,
+        },
+      },
+      data: {
+        deletedAt: null,
+      },
+    });
+  });
+
+  it("does not restore a draft when the active document limit is reached", async () => {
+    const database = createDocumentDatabase();
+    database.count.mockResolvedValue(MAX_DOCUMENTS_PER_USER);
+    const caller = createCaller(database);
+
+    await expect(caller.restoreDoc({ docId })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(database.updateMany).not.toHaveBeenCalled();
+  });
+
   it("scopes document exports to the authenticated owner", async () => {
     const database = createDocumentDatabase();
     database.findFirst.mockResolvedValue(null);

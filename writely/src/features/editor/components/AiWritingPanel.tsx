@@ -21,6 +21,7 @@ type AiResult = {
 };
 
 type Props = {
+  docId: string;
   isOpen: boolean;
   mode: WritingMode;
   selectionWordCount: number;
@@ -82,6 +83,7 @@ const actionLabels: Record<AiAction, string> = {
 };
 
 export default function AiWritingPanel({
+  docId,
   isOpen,
   mode,
   selectionWordCount,
@@ -187,6 +189,7 @@ export default function AiWritingPanel({
 
     askAi.mutate(
       {
+        docId,
         action,
         mode,
         selectedText: context.selectedText,
