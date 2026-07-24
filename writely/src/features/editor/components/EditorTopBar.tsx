@@ -3,10 +3,7 @@ import type { SaveStatus } from "../hooks/useDocumentAutosave";
 type Props = {
     saveStatus: SaveStatus;
     isFocusMode: boolean;
-    isCreating: boolean;
     isExporting: boolean;
-    onBack: () => void;
-    onCreate: () => void;
     onExport: () => void;
     onSave: () => void;
     onToggleFocus: () => void;
@@ -42,10 +39,7 @@ const buttonClassName =
 export default function EditorTopBar({
     saveStatus,
     isFocusMode,
-    isCreating,
     isExporting,
-    onBack,
-    onCreate,
     onExport,
     onSave,
     onToggleFocus,
@@ -73,16 +67,16 @@ export default function EditorTopBar({
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                        type="button"
+                        disabled={cannotSave}
+                        onClick={onSave}
+                        className={buttonClassName}
+                    >
+                        Save
+                    </button>
                     {!isFocusMode && (
                         <>
-                            <button
-                                type="button"
-                                disabled={cannotSave}
-                                onClick={onSave}
-                                className={buttonClassName}
-                            >
-                                Save
-                            </button>
                             <button
                                 type="button"
                                 disabled={isExporting}
@@ -98,7 +92,7 @@ export default function EditorTopBar({
                         aria-pressed={isFocusMode}
                         onClick={onToggleFocus}
                         className={`${buttonClassName} ${isFocusMode
-                                ? "bg-[var(--w-foreground)] text-[var(--w-background)] hover:bg-[var(--w-foreground)] hover:text-[var(--w-background)]"
+                                ? "bg-[var(--w-surface-raised)] text-[var(--w-foreground)] hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
                                 : ""
                             }`}
                     >

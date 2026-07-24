@@ -1,12 +1,12 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import AiUsageMeter, { getAiUsagePercentage } from "./AiUsageMeter";
+import AiUsageMeter, { getAiRemainingPercentage } from "./AiUsageMeter";
 
 describe("AiUsageMeter", () => {
-  it("calculates and caps daily usage", () => {
-    expect(getAiUsagePercentage(3_750)).toBe(25);
-    expect(getAiUsagePercentage(-100)).toBe(100);
-    expect(getAiUsagePercentage(8_000)).toBe(0);
+  it("calculates and caps the remaining daily allowance", () => {
+    expect(getAiRemainingPercentage(3_750)).toBe(75);
+    expect(getAiRemainingPercentage(-100)).toBe(0);
+    expect(getAiRemainingPercentage(8_000)).toBe(100);
   });
 
   it("shows a user-friendly progress summary without raw token numbers", () => {
@@ -15,7 +15,8 @@ describe("AiUsageMeter", () => {
     );
 
     expect(markup).toContain("AI usage today");
-    expect(markup).toContain("50% used");
+    expect(markup).toContain("50% left");
+    expect(markup).not.toContain("justify-end");
     expect(markup).toContain("Resets tomorrow");
     expect(markup).not.toContain("2,500 tokens");
   });

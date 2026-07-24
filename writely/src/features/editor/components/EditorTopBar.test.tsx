@@ -40,9 +40,11 @@ describe("EditorTopBar", () => {
       />,
     );
 
-    expect(markup).toContain("Focus Mode");
     expect(markup).toContain("Exit focus");
+    expect(markup).toContain("Save");
     expect(markup).not.toContain("Export");
     expect(markup).not.toContain("New");
+    expect(markup).toContain("bg-[var(--w-surface-raised)]");
+    expect(markup).not.toContain("bg-[var(--w-foreground)]");
   });
 });
