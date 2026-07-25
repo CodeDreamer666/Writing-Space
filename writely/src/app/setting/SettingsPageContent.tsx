@@ -11,7 +11,11 @@ import {
   MAX_DOCUMENT_CHARACTERS,
   MAX_DOCUMENTS_PER_USER,
 } from "~/lib/documentLimits";
-import { InterfaceLanguageSettings, SignOutButton } from "./SettingsControls";
+import {
+  AuthenticatedAccount,
+  InterfaceLanguageSettings,
+  SignOutButton,
+} from "./SettingsControls";
 
 const shortcutKeys = [
   ["Ctrl/Cmd + Alt + N", "settings.createDocument"],
@@ -139,11 +143,13 @@ export default function SettingsPageContent() {
           <SettingsSection title={t("settings.beta")}>
             <p className="mt-5">{t("settings.betaDescription")}</p>
           </SettingsSection>
-         
-          <SettingsSection title={t("settings.account")}>
-            <p>{t("settings.accountDescription")}</p>
-            <SignOutButton />
-          </SettingsSection>
+
+          <AuthenticatedAccount>
+            <SettingsSection title={t("settings.account")}>
+              <p>{t("settings.accountDescription")}</p>
+              <SignOutButton />
+            </SettingsSection>
+          </AuthenticatedAccount>
         </div>
       </article>
     </main>

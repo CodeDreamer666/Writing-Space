@@ -32,7 +32,11 @@ vi.mock("~/server/better-auth/client", () => ({
   },
 }));
 
-import { InterfaceLanguageSettings, SignOutButton } from "./SettingsControls";
+import {
+  AuthenticatedAccount,
+  InterfaceLanguageSettings,
+  SignOutButton,
+} from "./SettingsControls";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -165,5 +169,23 @@ describe("Settings controls", () => {
 
     expect(container.querySelector("button")).toBeNull();
     expect(container.textContent).not.toContain("Sign out");
+  });
+
+  it("hides the complete account content without an authenticated session", () => {
+    mocks.useSession.mockReturnValue({
+      data: null,
+    });
+
+    act(() =>
+      root.render(
+        <AuthenticatedAccount>
+          <p>Sign out of Writely on this device.</p>
+        </AuthenticatedAccount>,
+      ),
+    );
+
+    expect(container.textContent).not.toContain(
+      "Sign out of Writely on this device.",
+    );
   });
 });

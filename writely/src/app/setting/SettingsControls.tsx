@@ -14,6 +14,20 @@ import {
 } from "~/lib/writingLanguage";
 import { authClient } from "~/server/better-auth/client";
 
+export function AuthenticatedAccount({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { data: session } = authClient.useSession();
+
+  if (!session?.user) {
+    return null;
+  }
+
+  return children;
+}
+
 export function InterfaceLanguageSettings() {
   const { t } = useUiLanguage();
   const language = useSyncExternalStore(
