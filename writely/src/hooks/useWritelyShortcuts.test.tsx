@@ -12,14 +12,12 @@ let root: Root;
 
 function ShortcutHarness({
   onCreateDocument,
-  onSave,
   onToggleFocus,
   onOpenExport,
   onEscape,
 }: Parameters<typeof useWritelyShortcuts>[0]) {
   useWritelyShortcuts({
     onCreateDocument,
-    onSave,
     onToggleFocus,
     onOpenExport,
     onEscape,
@@ -42,7 +40,6 @@ afterEach(() => {
 describe("useWritelyShortcuts", () => {
   it("handles Windows and macOS editor shortcuts", () => {
     const onCreateDocument = vi.fn();
-    const onSave = vi.fn();
     const onToggleFocus = vi.fn();
     const onOpenExport = vi.fn();
 
@@ -50,7 +47,6 @@ describe("useWritelyShortcuts", () => {
       root.render(
         <ShortcutHarness
           onCreateDocument={onCreateDocument}
-          onSave={onSave}
           onToggleFocus={onToggleFocus}
           onOpenExport={onOpenExport}
         />,
@@ -61,11 +57,6 @@ describe("useWritelyShortcuts", () => {
       key: "n",
       ctrlKey: true,
       altKey: true,
-      cancelable: true,
-    });
-    const saveEvent = new KeyboardEvent("keydown", {
-      key: "s",
-      metaKey: true,
       cancelable: true,
     });
     const focusEvent = new KeyboardEvent("keydown", {
@@ -83,19 +74,41 @@ describe("useWritelyShortcuts", () => {
 
     act(() => {
       window.dispatchEvent(createEvent);
-      window.dispatchEvent(saveEvent);
       window.dispatchEvent(focusEvent);
       window.dispatchEvent(exportEvent);
     });
 
     expect(onCreateDocument).toHaveBeenCalledOnce();
-    expect(onSave).toHaveBeenCalledOnce();
     expect(onToggleFocus).toHaveBeenCalledOnce();
     expect(onOpenExport).toHaveBeenCalledOnce();
     expect(createEvent.defaultPrevented).toBe(true);
-    expect(saveEvent.defaultPrevented).toBe(true);
     expect(focusEvent.defaultPrevented).toBe(true);
     expect(exportEvent.defaultPrevented).toBe(true);
+  });
+
+  it("does not intercept Ctrl or Cmd + S", () => {
+    act(() => {
+      root.render(<ShortcutHarness />);
+    });
+
+    const controlSaveEvent = new KeyboardEvent("keydown", {
+      key: "s",
+      ctrlKey: true,
+      cancelable: true,
+    });
+    const commandSaveEvent = new KeyboardEvent("keydown", {
+      key: "s",
+      metaKey: true,
+      cancelable: true,
+    });
+
+    act(() => {
+      window.dispatchEvent(controlSaveEvent);
+      window.dispatchEvent(commandSaveEvent);
+    });
+
+    expect(controlSaveEvent.defaultPrevented).toBe(false);
+    expect(commandSaveEvent.defaultPrevented).toBe(false);
   });
 
   it("does not run document shortcuts from unrelated form fields", () => {

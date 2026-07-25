@@ -8,9 +8,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import Loading from "~/components/shared/Loading";
 import ServerError from "~/components/shared/ServerError";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { useWritelyShortcuts } from "~/hooks/useWritelyShortcuts";
 import { MAX_DOCUMENT_CHARACTERS } from "~/lib/documentLimits";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
+import { countUnsupportedPictographs } from "~/lib/writingLanguage";
 import type { ExportFormat } from "~/server/documents/exportDocument";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { WRITING_MODES, type WritingMode } from "~/types/writing";
@@ -21,7 +23,7 @@ import {
     isAiContextCurrent,
     replaceAiContext,
 } from "../utils/aiContext";
-import { countWords, readingTime } from "../utils/editorContent";
+import { countWords } from "../utils/editorContent";
 import { downloadExport } from "../utils/exportDownload";
 import AiWritingPanel from "./AiWritingPanel";
 import EditorDocument from "./EditorDocument";
@@ -36,23 +38,25 @@ function isWritingMode(value: string): value is WritingMode {
 }
 
 function DocumentUnavailable() {
+    const { t } = useUiLanguage();
+
     return (
         <main className="flex min-h-screen items-center justify-center bg-[var(--w-background)] px-6 text-[var(--w-foreground)]">
             <section className="w-full max-w-md text-center">
                 <p className="text-xs font-medium tracking-[0.12em] text-[var(--w-subtle)] uppercase">
-                    Draft unavailable
+                    {t("editor.unavailableLabel")}
                 </p>
                 <h1 className="mt-4 text-3xl font-medium tracking-tight">
-                    This writing could not be opened.
+                    {t("editor.unavailableTitle")}
                 </h1>
                 <p className="mt-3 text-sm leading-7 text-[var(--w-muted)]">
-                    It may have been deleted, or it may belong to another account.
+                    {t("editor.unavailableDescription")}
                 </p>
                 <Link
                     href="/"
                     className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--w-foreground)] px-5 text-sm font-medium text-[var(--w-background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
                 >
-                    Back to drafts
+                    {t("editor.backDrafts")}
                 </Link>
             </section>
         </main>
@@ -67,19 +71,25 @@ function EditorRuntime({
     document: Document;
 }) {
     const { showMessage } = useStatusMessage();
+    const { locale, t } = useUiLanguage();
     const editor = useEditor({
         extensions: [
             StarterKit,
             Placeholder.configure({
-                placeholder: "Start with the sentence you cannot stop thinking about",
+                placeholder: t("editor.placeholder"),
             }),
             DocumentCharacterLimit.configure({
                 limit: MAX_DOCUMENT_CHARACTERS,
                 onLimitExceeded: () => {
                     showMessage(
-                        `A document can contain up to ${MAX_DOCUMENT_CHARACTERS.toLocaleString()} characters.`,
+                        t("editor.documentLimit", {
+                            count: MAX_DOCUMENT_CHARACTERS.toLocaleString(locale),
+                        }),
                         false,
                     );
+                },
+                onUnsupportedPictograph: () => {
+                    showMessage(t("validation.pictograph"), false);
                 },
             }),
         ],
@@ -87,7 +97,7 @@ function EditorRuntime({
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                "aria-label": "Draft content",
+                "aria-label": t("editor.contentLabel"),
                 class:
                     "min-h-[48vh] outline-none text-lg leading-[1.85] text-[var(--w-strong)] transition-colors duration-200 focus:text-[var(--w-foreground)]",
                 role: "textbox",
@@ -115,6 +125,7 @@ function EditorExperience({
     const utils = api.useUtils();
     const handleTRPCError = useHandleTRPCError();
     const { showMessage } = useStatusMessage();
+    const { locale, t } = useUiLanguage();
 
     const [title, setTitle] = useState(document.title);
     const [wordCount, setWordCount] = useState(0);
@@ -149,9 +160,7 @@ function EditorExperience({
     const aiEnabled = aiStatus?.enabled ?? false;
     const aiMessage =
         aiStatus?.message ??
-        (aiStatusError
-            ? "Writely AI is unavailable right now. You can keep writing and saving normally."
-            : "Checking AI availability…");
+        (aiStatusError ? t("editor.aiUnavailable") : t("editor.aiChecking"));
 
     const handleSaveError = useCallback(
         (error: unknown) => {
@@ -166,7 +175,7 @@ function EditorExperience({
         isHydrated,
         openSavedVersion,
         restoreRecovery,
-        saveNow,
+        savePendingChanges,
         saveStatus,
     } = useDocumentAutosave({
         docId,
@@ -246,13 +255,25 @@ function EditorExperience({
         );
     };
 
+    const handleValidatedTitleChange = (nextTitle: string) => {
+        if (
+            countUnsupportedPictographs(nextTitle) >
+            countUnsupportedPictographs(title)
+        ) {
+            showMessage(t("validation.pictograph"), false);
+            return;
+        }
+
+        handleTitleChange(nextTitle);
+    };
+
     const handleBackToDrafts = async () => {
         if (saveStatus === "conflict" || saveStatus === "recovery") {
             router.push("/");
             return;
         }
 
-        if (saveStatus === "saved" || (await saveNow())) {
+        if (saveStatus === "saved" || (await savePendingChanges())) {
             router.push("/");
         }
     };
@@ -266,14 +287,11 @@ function EditorExperience({
 
         try {
             if (saveStatus === "conflict" || saveStatus === "recovery") {
-                showMessage(
-                    "Resolve the current document recovery state before creating another draft.",
-                    false,
-                );
+                showMessage(t("editor.resolveRecovery"), false);
                 return;
             }
 
-            if (saveStatus !== "saved" && !(await saveNow())) {
+            if (saveStatus !== "saved" && !(await savePendingChanges())) {
                 return;
             }
 
@@ -311,7 +329,7 @@ function EditorExperience({
         setIsExporting(true);
 
         try {
-            if (saveStatus !== "saved" && !(await saveNow())) {
+            if (saveStatus !== "saved" && !(await savePendingChanges())) {
                 return;
             }
 
@@ -332,9 +350,6 @@ function EditorExperience({
     useWritelyShortcuts({
         onCreateDocument: () => {
             void handleCreateDocument();
-        },
-        onSave: () => {
-            void saveNow();
         },
         onToggleFocus: handleToggleFocus,
         onOpenExport: handleOpenExport,
@@ -367,15 +382,12 @@ function EditorExperience({
                     isFocusMode={isFocusMode}
                     isExporting={isExporting}
                     onExport={handleOpenExport}
-                    onSave={() => {
-                        void saveNow();
-                    }}
                     onToggleFocus={handleToggleFocus}
                 />
 
                 {!isFocusMode && aiStatus && !aiStatus.enabled && (
                     <p className="mx-4 mt-4 rounded-lg border border-[var(--w-border)] bg-[var(--w-surface-raised)] px-4 py-3 text-sm text-[var(--w-muted)] sm:mx-6 lg:mx-8">
-                        {aiStatus.message}
+                        {t("editor.aiUnavailable")}
                     </p>
                 )}
 
@@ -390,12 +402,12 @@ function EditorExperience({
                     isFocusMode={isFocusMode}
                     onModeChange={handleWritingModeChange}
                     onRetrySave={() => {
-                        void saveNow();
+                        void savePendingChanges();
                     }}
                     onOpenSavedVersion={openSavedVersion}
                     onRestoreRecovery={restoreRecovery}
                     onDiscardRecovery={discardRecovery}
-                    onTitleChange={handleTitleChange}
+                    onTitleChange={handleValidatedTitleChange}
                     onAiOpen={() => {
                         if (!isFocusMode) {
                             setIsAiOpen(true);
@@ -406,7 +418,11 @@ function EditorExperience({
                 {!isFocusMode && (
                     <EditorUtilityBar
                         wordCount={wordCount}
-                        readingTime={readingTime(wordCount)}
+                        readingTime={t("editor.readingTime", {
+                            count: Math.max(1, Math.ceil(wordCount / 200)).toLocaleString(
+                                locale,
+                            ),
+                        })}
                         onBackToDrafts={() => {
                             void handleBackToDrafts();
                         }}
@@ -418,6 +434,7 @@ function EditorExperience({
                     isOpen={isAiOpen}
                     mode={selectedMode}
                     selectionWordCount={countWords(selectionText)}
+                    selectionCharacterCount={selectionText.length}
                     hasSelection={selectionText.length > 0}
                     aiEnabled={aiEnabled}
                     aiMessage={aiMessage}

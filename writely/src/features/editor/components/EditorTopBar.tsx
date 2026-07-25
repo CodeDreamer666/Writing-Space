@@ -1,3 +1,6 @@
+"use client";
+
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type { SaveStatus } from "../hooks/useDocumentAutosave";
 
 type Props = {
@@ -5,32 +8,34 @@ type Props = {
     isFocusMode: boolean;
     isExporting: boolean;
     onExport: () => void;
-    onSave: () => void;
     onToggleFocus: () => void;
 };
 
-function saveStatusLabel(status: SaveStatus) {
+function saveStatusLabel(
+    status: SaveStatus,
+    t: ReturnType<typeof useUiLanguage>["t"],
+) {
     if (status === "error") {
-        return "Save failed";
+        return t("editor.saveFailed");
     }
 
     if (status === "saved") {
-        return "Saved";
+        return t("editor.saved");
     }
 
     if (status === "conflict") {
-        return "Resolve conflict";
+        return t("editor.resolveConflict");
     }
 
     if (status === "recovery") {
-        return "Recovery available";
+        return t("editor.recoveryAvailable");
     }
 
     if (status === "unsaved") {
-        return "Unsaved changes";
+        return t("editor.unsavedChanges");
     }
 
-    return "Saving…";
+    return t("editor.saving");
 }
 
 const buttonClassName =
@@ -41,13 +46,9 @@ export default function EditorTopBar({
     isFocusMode,
     isExporting,
     onExport,
-    onSave,
     onToggleFocus,
 }: Props) {
-    const cannotSave =
-        saveStatus === "saving" ||
-        saveStatus === "conflict" ||
-        saveStatus === "recovery";
+    const { t } = useUiLanguage();
 
     return (
         <header className="sticky top-0 z-30 border-b border-[var(--w-border-soft)] bg-[var(--w-background)]/90 backdrop-blur-xl">
@@ -61,20 +62,12 @@ export default function EditorTopBar({
                                     : "text-[var(--w-subtle)]"
                                 }`}
                         >
-                            {saveStatusLabel(saveStatus)}
+                            {saveStatusLabel(saveStatus, t)}
                         </span>
                     )}
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5">
-                    <button
-                        type="button"
-                        disabled={cannotSave}
-                        onClick={onSave}
-                        className={buttonClassName}
-                    >
-                        Save
-                    </button>
                     {!isFocusMode && (
                         <>
                             <button
@@ -83,7 +76,7 @@ export default function EditorTopBar({
                                 onClick={onExport}
                                 className={buttonClassName}
                             >
-                                Export
+                                {t("editor.export")}
                             </button>
                         </>
                     )}
@@ -96,7 +89,7 @@ export default function EditorTopBar({
                                 : ""
                             }`}
                     >
-                        {isFocusMode ? "Exit focus" : "Focus"}
+                        {isFocusMode ? t("editor.exitFocus") : t("editor.focus")}
                     </button>
                 </div>
             </div>

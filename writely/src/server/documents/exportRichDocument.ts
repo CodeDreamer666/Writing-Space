@@ -7,9 +7,6 @@ import {
   Paragraph,
   TextRun,
 } from "docx";
-import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
-
-type RichExportFormat = "pdf" | "docx";
 
 type StyledRun = {
   text: string;
@@ -145,120 +142,9 @@ function createDocx(content: JSONContent, title: string) {
   });
 }
 
-function fontForRun(
-  run: StyledRun,
-  fonts: {
-    regular: PDFFont;
-    bold: PDFFont;
-    italic: PDFFont;
-    boldItalic: PDFFont;
-  },
-) {
-  if (run.bold && run.italic) {
-    return fonts.boldItalic;
-  }
-
-  if (run.bold) {
-    return fonts.bold;
-  }
-
-  return run.italic ? fonts.italic : fonts.regular;
-}
-
-async function createPdf(content: JSONContent, title: string) {
-  const pdf = await PDFDocument.create();
-  pdf.setTitle(title);
-  pdf.setCreator("Writely");
-
-  const fonts = {
-    regular: await pdf.embedFont(StandardFonts.Helvetica),
-    bold: await pdf.embedFont(StandardFonts.HelveticaBold),
-    italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
-    boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
-  };
-  const pageSize: [number, number] = [612, 792];
-  const margin = 64;
-  const maxWidth = pageSize[0] - margin * 2;
-  let page = pdf.addPage(pageSize);
-  let y = pageSize[1] - margin;
-
-  const ensureSpace = (height: number) => {
-    if (y - height >= margin) {
-      return;
-    }
-
-    page = pdf.addPage(pageSize);
-    y = pageSize[1] - margin;
-  };
-
-  for (const block of collectBlocks(content)) {
-    const fontSize =
-      block.kind === "heading" ? (block.level === 1 ? 22 : 17) : 11;
-    const lineHeight = fontSize * 1.45;
-    const runs = block.marker
-      ? [
-          { text: `${block.marker} `, bold: false, italic: false },
-          ...block.runs,
-        ]
-      : block.kind === "blockquote"
-        ? [
-            { text: "| ", bold: false, italic: false },
-            ...block.runs.map((run) => ({ ...run, italic: true })),
-          ]
-        : block.runs;
-    let x = margin;
-
-    ensureSpace(lineHeight * 2);
-
-    for (const run of runs) {
-      const font = fontForRun(run, fonts);
-      const words = run.text.replaceAll("\n", " \n ").split(/(\s+)/);
-
-      for (const word of words) {
-        if (!word) {
-          continue;
-        }
-
-        if (word.includes("\n")) {
-          x = margin;
-          y -= lineHeight;
-          ensureSpace(lineHeight);
-          continue;
-        }
-
-        const width = font.widthOfTextAtSize(word, fontSize);
-
-        if (x > margin && x + width > margin + maxWidth) {
-          x = margin;
-          y -= lineHeight;
-          ensureSpace(lineHeight);
-        }
-
-        page.drawText(word, {
-          x,
-          y,
-          size: fontSize,
-          font,
-          color: rgb(0.12, 0.14, 0.16),
-        });
-        x += width;
-      }
-    }
-
-    y -= lineHeight * (block.kind === "heading" ? 1.35 : 1.15);
-  }
-
-  return pdf.save();
-}
-
-export async function exportRichDocument(
+export function exportRichDocument(
   content: JSONContent,
   title: string,
-  format: RichExportFormat,
 ): Promise<Buffer> {
-  if (format === "docx") {
-    return Packer.toBuffer(createDocx(content, title));
-  }
-
-  return Buffer.from(await createPdf(content, title));
+  return Packer.toBuffer(createDocx(content, title));
 }

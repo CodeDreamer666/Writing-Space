@@ -90,7 +90,7 @@ describe("useDocumentAutosave", () => {
     container.remove();
   });
 
-  it("keeps manual and automatic saving active after Strict Mode replays effects", async () => {
+  it("keeps autosave and pending-change flushing active after Strict Mode replays effects", async () => {
     const editor = createEditor();
     let autosave: ReturnType<typeof useDocumentAutosave> | null = null;
 
@@ -150,18 +150,18 @@ describe("useDocumentAutosave", () => {
     );
 
     act(() => {
-      autosave?.handleTitleChange("Manually saved title");
+      autosave?.handleTitleChange("Pending title");
     });
 
     await act(async () => {
-      await autosave?.saveNow();
+      await autosave?.savePendingChanges();
     });
 
     expect(trpcMocks.mutateSave).toHaveBeenCalledTimes(2);
     expect(trpcMocks.mutateSave).toHaveBeenLastCalledWith(
       expect.objectContaining({
         docId,
-        title: "Manually saved title",
+        title: "Pending title",
         version: 1,
       }),
     );

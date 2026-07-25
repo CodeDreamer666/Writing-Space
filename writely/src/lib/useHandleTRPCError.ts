@@ -3,6 +3,7 @@
 import { TRPCClientError } from "@trpc/client";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type { AppRouter } from "~/server/api/root";
 
 type HandleTRPCErrorParams = {
@@ -18,10 +19,11 @@ function isTRPCClientError(
 
 export function useHandleTRPCError() {
   const { showMessage } = useStatusMessage();
+  const { t } = useUiLanguage();
 
   return function handleTRPCError({ error, router }: HandleTRPCErrorParams) {
     if (!isTRPCClientError(error)) {
-      showMessage("Something went wrong", false);
+      showMessage(t("common.somethingWrong"), false);
       return;
     }
 
@@ -34,21 +36,18 @@ export function useHandleTRPCError() {
         ...Object.values(zodError.fieldErrors).flat(),
       ].find((message): message is string => typeof message === "string");
 
-      showMessage(validationMessage ?? "Please check your input.", false);
+      showMessage(validationMessage ?? t("error.input"), false);
       return;
     }
 
     if (!error.data) {
-      showMessage(
-        "We could not reach Writely. Check your connection and try again.",
-        false,
-      );
+      showMessage(t("error.connection"), false);
       return;
     }
 
     switch (code) {
       case "BAD_REQUEST":
-        showMessage(error.message || "Please check your input.", false);
+        showMessage(error.message || t("error.input"), false);
         return;
 
       case "UNAUTHORIZED":
@@ -56,40 +55,27 @@ export function useHandleTRPCError() {
         return;
 
       case "FORBIDDEN":
-        showMessage(
-          error.message || "You do not have permission to do this.",
-          false,
-        );
+        showMessage(error.message || t("error.permission"), false);
         return;
 
       case "NOT_FOUND":
-        showMessage(error.message || "That item could not be found.", false);
+        showMessage(error.message || t("error.notFound"), false);
         return;
 
       case "CONFLICT":
-        showMessage(
-          error.message || "This writing was updated somewhere else.",
-          false,
-        );
+        showMessage(error.message || t("error.conflict"), false);
         return;
 
       case "TOO_MANY_REQUESTS":
-        showMessage(
-          error.message || "Please wait a moment before trying again.",
-          false,
-        );
+        showMessage(error.message || t("error.wait"), false);
         return;
 
       case "INTERNAL_SERVER_ERROR":
-        showMessage(
-          error.message ||
-            "Writely is unavailable right now. Please try again.",
-          false,
-        );
+        showMessage(error.message || t("error.unavailable"), false);
         return;
 
       default:
-        showMessage("Something went wrong", false);
+        showMessage(t("common.somethingWrong"), false);
     }
   };
 }

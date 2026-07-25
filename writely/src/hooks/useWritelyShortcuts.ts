@@ -4,7 +4,6 @@ import { useEffect } from "react";
 
 type ShortcutHandlers = {
   onCreateDocument?: () => void;
-  onSave?: () => void;
   onToggleFocus?: () => void;
   onOpenExport?: () => void;
   onEscape?: () => void;
@@ -26,7 +25,6 @@ function isUnrelatedFormField(target: EventTarget | null) {
 
 export function useWritelyShortcuts({
   onCreateDocument,
-  onSave,
   onToggleFocus,
   onOpenExport,
   onEscape,
@@ -55,8 +53,6 @@ export function useWritelyShortcuts({
 
       if (event.altKey && !event.shiftKey && key === "n") {
         handler = onCreateDocument;
-      } else if (!event.altKey && !event.shiftKey && key === "s") {
-        handler = onSave;
       } else if (event.altKey && !event.shiftKey && key === "f") {
         handler = onToggleFocus;
       } else if (event.altKey && !event.shiftKey && key === "e") {
@@ -76,5 +72,5 @@ export function useWritelyShortcuts({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onCreateDocument, onEscape, onOpenExport, onSave, onToggleFocus]);
+  }, [onCreateDocument, onEscape, onOpenExport, onToggleFocus]);
 }

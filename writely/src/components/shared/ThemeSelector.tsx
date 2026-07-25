@@ -1,20 +1,21 @@
 "use client";
 
 import { useTheme } from "~/components/layout/ThemeProvider";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { THEMES, type Theme } from "~/lib/theme";
-
-const themeLabels: Record<Theme, string> = {
-  light: "Light",
-  dark: "Dark",
-  system: "System",
-};
 
 export default function ThemeSelector() {
   const { theme, setTheme } = useTheme();
+  const { t } = useUiLanguage();
+  const themeLabels: Record<Theme, string> = {
+    light: t("theme.light"),
+    dark: t("theme.dark"),
+    system: t("theme.system"),
+  };
 
   return (
     <fieldset>
-      <legend className="sr-only">Choose a theme</legend>
+      <legend className="sr-only">{t("theme.choose")}</legend>
       <div className="grid max-w-md grid-cols-3 gap-2 rounded-xl border border-[var(--w-border)] bg-[var(--w-surface)] p-1.5">
         {THEMES.map((option) => {
           const isSelected = theme === option;

@@ -450,7 +450,7 @@ export function useDocumentAutosave({
     markDirty();
   };
 
-  const saveNow = async () => {
+  const savePendingChanges = async () => {
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
     }
@@ -510,7 +510,7 @@ export function useDocumentAutosave({
     isHydrated,
     openSavedVersion,
     restoreRecovery,
-    saveNow,
+    savePendingChanges,
     saveStatus,
   };
 }

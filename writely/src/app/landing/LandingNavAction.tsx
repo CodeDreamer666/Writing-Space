@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { authClient } from "~/server/better-auth/client";
 
 const actionClassName =
@@ -12,12 +13,13 @@ export default function LandingNavAction() {
   const { data: session, isPending: isSessionPending } =
     authClient.useSession();
   const { showMessage } = useStatusMessage();
+  const { t } = useUiLanguage();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   if (session?.user) {
     return (
       <Link href="/" className={actionClassName}>
-        Open app
+        {t("auth.openApp")}
       </Link>
     );
   }
@@ -38,11 +40,11 @@ export default function LandingNavAction() {
 
       if (result.error) {
         setIsSigningIn(false);
-        showMessage("Unable to start Google sign-in", false);
+        showMessage(t("docs.signInError"), false);
       }
     } catch {
       setIsSigningIn(false);
-      showMessage("Unable to start Google sign-in", false);
+      showMessage(t("docs.signInError"), false);
     }
   };
 
@@ -56,7 +58,7 @@ export default function LandingNavAction() {
       aria-busy={isSigningIn}
       className={actionClassName}
     >
-      {isSigningIn ? "Signing in…" : "Sign in"}
+      {isSigningIn ? t("auth.signingIn") : t("auth.signIn")}
     </button>
   );
 }

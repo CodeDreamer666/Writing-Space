@@ -2,8 +2,15 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import LoadingIcon from "~/components/shared/LoadingIcon";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
+import { translateUi } from "~/lib/uiTranslations";
+import type { InterfaceLanguage } from "~/lib/writingLanguage";
 
-function formatRelativeTime(date: Date | string): string {
+function formatRelativeTime(
+  date: Date | string,
+  language: InterfaceLanguage,
+  locale: string,
+): string {
   const now = new Date();
   const then = new Date(date);
   const diffMs = now.getTime() - then.getTime();
@@ -12,26 +19,26 @@ function formatRelativeTime(date: Date | string): string {
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffMins <= 0) {
-    return "Just now";
+    return translateUi(language, "docs.justNow");
   }
 
   if (diffMins < 60) {
-    return `${diffMins}m ago`;
+    return translateUi(language, "docs.minutesAgo", { count: diffMins });
   }
 
   if (diffHours < 24) {
-    return `${diffHours}h ago`;
+    return translateUi(language, "docs.hoursAgo", { count: diffHours });
   }
 
   if (diffDays === 1) {
-    return "Yesterday";
+    return translateUi(language, "docs.yesterday");
   }
 
   if (diffDays < 7) {
-    return then.toLocaleDateString("en-US", { weekday: "long" });
+    return then.toLocaleDateString(locale, { weekday: "long" });
   }
 
-  return then.toLocaleDateString("en-US", {
+  return then.toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
     year: then.getFullYear() === now.getFullYear() ? undefined : "numeric",
@@ -53,6 +60,7 @@ export default function DocItem({
   isDeleting,
   onDelete,
 }: DocItemProps) {
+  const { language, locale, t } = useUiLanguage();
   const deleteDialogRef = useRef<HTMLElement>(null);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -159,7 +167,7 @@ export default function DocItem({
                 {title}
               </p>
               <p className="mt-1 text-xs text-[var(--w-subtle)]">
-                {formatRelativeTime(updatedAt)}
+                {formatRelativeTime(updatedAt, language, locale)}
               </p>
             </div>
           </Link>
@@ -169,7 +177,7 @@ export default function DocItem({
             type="button"
             onClick={() => setIsDeleteDialogOpen(true)}
             className="mr-2 flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] opacity-100 transition-all hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)] sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-            aria-label={`Options for ${title}`}
+            aria-label={t("docs.options", { title })}
             aria-haspopup="menu"
           >
             <svg
@@ -211,14 +219,13 @@ export default function DocItem({
               id={`delete-title-${id}`}
               className="text-base font-medium text-[var(--w-foreground)]"
             >
-              Delete “{title}”?
+              {t("docs.deleteTitle", { title })}
             </h2>
             <p
               id={`delete-description-${id}`}
               className="mt-2 text-sm leading-6 text-[var(--w-muted)]"
             >
-              This removes the draft from your list. You can restore it from
-              Recently deleted.
+              {t("docs.deleteDescription")}
             </p>
             <div className="mt-5 flex gap-2">
               <button
@@ -228,7 +235,7 @@ export default function DocItem({
                 onClick={() => closeDialog()}
                 className="min-h-11 w-full cursor-pointer rounded-xl text-sm text-[var(--w-muted)] transition-colors hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)] disabled:cursor-wait disabled:opacity-60"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 type="button"
@@ -237,7 +244,9 @@ export default function DocItem({
                 className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#D85E50] text-sm font-medium text-white transition-colors hover:bg-[#EA6C5E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF8A7D] disabled:cursor-wait disabled:opacity-60"
               >
                 {isDeleting && <LoadingIcon />}
-                <span>{isDeleting ? "Deleting" : "Delete"}</span>
+                <span>
+                  {isDeleting ? t("docs.deleting") : t("docs.delete")}
+                </span>
               </button>
             </div>
           </section>

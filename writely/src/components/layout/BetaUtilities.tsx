@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
 import { useStatusMessage } from "./StatusMessageProvider";
@@ -12,6 +13,7 @@ export default function BetaUtilities() {
   const pathname = usePathname();
   const handleTRPCError = useHandleTRPCError();
   const { showMessage } = useStatusMessage();
+  const { t } = useUiLanguage();
   const { data: session } = authClient.useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -22,7 +24,7 @@ export default function BetaUtilities() {
     onSuccess: () => {
       setMessage("");
       setIsOpen(false);
-      showMessage("Thank you — your feedback was received.", true);
+      showMessage(t("feedback.thanks"), true);
     },
     onError: (error) => {
       handleTRPCError({ error, router });
@@ -105,7 +107,7 @@ export default function BetaUtilities() {
             onClick={() => setIsOpen(true)}
             className="pointer-events-auto min-h-10 cursor-pointer rounded-full border border-[var(--w-border)] bg-[var(--w-surface-raised)]/95 px-4 text-xs font-medium text-[var(--w-strong)] shadow-xl backdrop-blur transition-colors hover:bg-[var(--w-border-soft)]"
           >
-            Send feedback
+            {t("feedback.send")}
           </button>
         </div>
       </div>
@@ -122,20 +124,20 @@ export default function BetaUtilities() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
-                  Writely beta
+                  {t("common.writelyBeta")}
                 </p>
                 <h2
                   id="feedback-title"
                   className="mt-2 text-xl font-medium text-[var(--w-foreground)]"
                 >
-                  Share feedback
+                  {t("feedback.share")}
                 </h2>
               </div>
               <button
                 ref={closeButtonRef}
                 type="button"
                 onClick={() => setIsOpen(false)}
-                aria-label="Close feedback form"
+                aria-label={t("feedback.close")}
                 className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)]"
               >
                 ×
@@ -148,7 +150,7 @@ export default function BetaUtilities() {
                   htmlFor="feedback-message"
                   className="text-sm text-[var(--w-strong)]"
                 >
-                  What worked, or what should feel better?
+                  {t("feedback.question")}
                 </label>
                 <textarea
                   id="feedback-message"
@@ -158,7 +160,7 @@ export default function BetaUtilities() {
                   maxLength={2_000}
                   rows={6}
                   required
-                  placeholder="Tell us about your experience…"
+                  placeholder={t("feedback.placeholder")}
                   className="mt-2 w-full resize-y rounded-xl border border-[var(--w-border)] bg-[var(--w-background)] px-3 py-3 text-sm leading-6 text-[var(--w-foreground)] outline-none placeholder:text-[var(--w-subtle)]"
                 />
                 <div className="mt-2 flex items-center justify-between gap-4">
@@ -172,13 +174,15 @@ export default function BetaUtilities() {
                     }
                     className="min-h-10 cursor-pointer rounded-lg bg-[var(--w-foreground)] px-4 text-xs font-medium text-[var(--w-background)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {submitFeedback.isPending ? "Sending…" : "Send feedback"}
+                    {submitFeedback.isPending
+                      ? t("feedback.sending")
+                      : t("feedback.send")}
                   </button>
                 </div>
               </form>
             ) : (
               <p className="mt-5 rounded-xl border border-[var(--w-border)] bg-[var(--w-background)] px-4 py-3 text-sm leading-6 text-[var(--w-muted)]">
-                Sign in from the Writely home page to send feedback.
+                {t("feedback.signIn")}
               </p>
             )}
           </section>

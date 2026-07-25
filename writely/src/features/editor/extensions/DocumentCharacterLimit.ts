@@ -1,9 +1,11 @@
 import { Extension } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
+import { countUnsupportedPictographs } from "~/lib/writingLanguage";
 
 type Options = {
   limit: number;
   onLimitExceeded: () => void;
+  onUnsupportedPictograph: () => void;
 };
 
 export const DocumentCharacterLimit = Extension.create<Options>({
@@ -13,6 +15,7 @@ export const DocumentCharacterLimit = Extension.create<Options>({
     return {
       limit: 50_000,
       onLimitExceeded: () => undefined,
+      onUnsupportedPictograph: () => undefined,
     };
   },
 
@@ -28,10 +31,25 @@ export const DocumentCharacterLimit = Extension.create<Options>({
           const nextLength = transaction.doc.textContent.length;
           const isHydratingSavedContent =
             transaction.getMeta("preventUpdate") === true;
+          const currentPictographCount = countUnsupportedPictographs(
+            state.doc.textContent,
+          );
+          const nextPictographCount = countUnsupportedPictographs(
+            transaction.doc.textContent,
+          );
           const isWithinLimit =
             nextLength <= this.options.limit || nextLength <= currentLength;
 
-          if (isHydratingSavedContent || isWithinLimit) {
+          if (isHydratingSavedContent) {
+            return true;
+          }
+
+          if (nextPictographCount > currentPictographCount) {
+            this.options.onUnsupportedPictograph();
+            return false;
+          }
+
+          if (isWithinLimit) {
             return true;
           }
 

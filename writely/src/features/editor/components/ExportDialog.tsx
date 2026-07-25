@@ -1,18 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type { ExportFormat } from "~/server/documents/exportDocument";
-
-const formats: Array<{
-  format: ExportFormat;
-  label: string;
-  description: string;
-}> = [
-  { format: "txt", label: "TXT", description: "Plain text" },
-  { format: "md", label: "Markdown", description: "Portable formatting" },
-  { format: "pdf", label: "PDF", description: "Ready to share" },
-  { format: "docx", label: "Word", description: "Editable document" },
-];
 
 type Props = {
   isOpen: boolean;
@@ -27,6 +17,7 @@ export default function ExportDialog({
   onClose,
   onExport,
 }: Props) {
+  const { t } = useUiLanguage();
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -49,11 +40,29 @@ export default function ExportDialog({
     return null;
   }
 
+  const formats: Array<{
+    format: ExportFormat;
+    label: string;
+    description: string;
+  }> = [
+    { format: "txt", label: "TXT", description: t("editor.plainText") },
+    {
+      format: "md",
+      label: "Markdown",
+      description: t("editor.portableFormatting"),
+    },
+    {
+      format: "docx",
+      label: "Word",
+      description: t("editor.editableDocument"),
+    },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
       <button
         type="button"
-        aria-label="Close export dialog"
+        aria-label={t("editor.closeExport")}
         onClick={onClose}
         className="absolute inset-0 cursor-default"
       />
@@ -102,27 +111,27 @@ export default function ExportDialog({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
-              Current document
+              {t("editor.exportCurrent")}
             </p>
             <h2
               id="export-title"
               className="mt-2 text-xl font-medium text-[var(--w-foreground)]"
             >
-              Export your writing
+              {t("editor.exportTitle")}
             </h2>
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            aria-label="Close export dialog"
+            aria-label={t("editor.closeExport")}
             className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
           >
             ×
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-2">
+        <div className="mt-5 flex flex-col gap-2">
           {formats.map(({ format, label, description }) => (
             <button
               key={format}
@@ -142,8 +151,7 @@ export default function ExportDialog({
         </div>
 
         <p className="mt-4 text-xs leading-5 text-[var(--w-subtle)]">
-          Headings, lists, bold, italic, and line breaks are preserved where the
-          format supports them.
+          {t("editor.exportFormatting")}
         </p>
       </section>
     </div>

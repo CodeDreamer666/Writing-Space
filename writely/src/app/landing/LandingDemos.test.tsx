@@ -73,36 +73,11 @@ describe("landing page demos", () => {
     );
   });
 
-  it("keeps the Focus Mode document read-only while its controls update it", () => {
+  it("keeps the Focus Mode document read-only while its control updates it", () => {
     act(() => root.render(<FocusModeDemo />));
 
     expect(container.querySelector("[contenteditable]")).toBeNull();
-    expect(container.querySelectorAll("button")).toHaveLength(4);
-
-    const formatPreview = container.querySelector(
-      "[data-focus-format-preview]",
-    );
-
-    if (!formatPreview) {
-      throw new Error("Unable to find the Focus Mode formatting preview");
-    }
-
-    const boldButton = getButton("Bold");
-    const italicButton = getButton("Italic");
-    const listButton = getButton("List");
-
-    act(() => {
-      boldButton.click();
-      italicButton.click();
-      listButton.click();
-    });
-
-    expect(boldButton.getAttribute("aria-pressed")).toBe("true");
-    expect(italicButton.getAttribute("aria-pressed")).toBe("true");
-    expect(listButton.getAttribute("aria-pressed")).toBe("true");
-    expect(formatPreview.className).toContain("font-semibold");
-    expect(formatPreview.className).toContain("italic");
-    expect(formatPreview.querySelectorAll("li")).toHaveLength(3);
+    expect(container.querySelectorAll("button")).toHaveLength(1);
 
     const focusButton = getButton("Enter Focus Mode");
     act(() => focusButton.click());
@@ -160,7 +135,6 @@ describe("landing page demos", () => {
     for (const [label, format] of [
       ["TXT", "txt"],
       ["Markdown", "md"],
-      ["PDF", "pdf"],
       ["Word", "docx"],
     ] as const) {
       await act(async () => {
@@ -177,12 +151,12 @@ describe("landing page demos", () => {
     act(() => root.render(<ExportDemo />));
 
     await act(async () => {
-      getButton("PDF").click();
+      getButton("Word").click();
     });
 
-    expect(getButton("PDF").getAttribute("aria-pressed")).toBe("true");
+    expect(getButton("Word").getAttribute("aria-pressed")).toBe("true");
     expect(container.textContent).toContain(
-      "PDF export failed. Please try again.",
+      "Word export failed. Please try again.",
     );
   });
 });

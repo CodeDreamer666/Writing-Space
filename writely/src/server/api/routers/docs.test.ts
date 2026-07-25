@@ -121,65 +121,6 @@ describe("docsRouter authorization", () => {
     expect(deletedAt).toBeInstanceOf(Date);
   });
 
-  it("lists only soft-deleted documents owned by the authenticated user", async () => {
-    const database = createDocumentDatabase();
-    database.findMany.mockResolvedValue([]);
-    const caller = createCaller(database);
-
-    await caller.getDeletedDocs();
-
-    expect(database.findMany).toHaveBeenCalledWith({
-      where: {
-        userId,
-        deletedAt: {
-          not: null,
-        },
-      },
-      orderBy: {
-        deletedAt: "desc",
-      },
-      take: 20,
-      select: {
-        id: true,
-        title: true,
-        deletedAt: true,
-      },
-    });
-  });
-
-  it("restores only a soft-deleted document owned by the authenticated user", async () => {
-    const database = createDocumentDatabase();
-    database.count.mockResolvedValue(3);
-    database.updateMany.mockResolvedValue({ count: 1 });
-    const caller = createCaller(database);
-
-    await caller.restoreDoc({ docId });
-
-    expect(database.updateMany).toHaveBeenCalledWith({
-      where: {
-        id: docId,
-        userId,
-        deletedAt: {
-          not: null,
-        },
-      },
-      data: {
-        deletedAt: null,
-      },
-    });
-  });
-
-  it("does not restore a draft when the active document limit is reached", async () => {
-    const database = createDocumentDatabase();
-    database.count.mockResolvedValue(MAX_DOCUMENTS_PER_USER);
-    const caller = createCaller(database);
-
-    await expect(caller.restoreDoc({ docId })).rejects.toMatchObject({
-      code: "FORBIDDEN",
-    });
-    expect(database.updateMany).not.toHaveBeenCalled();
-  });
-
   it("scopes document exports to the authenticated owner", async () => {
     const database = createDocumentDatabase();
     database.findFirst.mockResolvedValue(null);
@@ -220,6 +161,12 @@ describe("docsRouter save safety", () => {
   it("updates only the matching owner and document version", async () => {
     const database = createDocumentDatabase();
     const updatedAt = new Date();
+    database.findFirst.mockResolvedValue({
+      title: "Old title",
+      content,
+      updatedAt,
+      version: 3,
+    });
     database.updateManyAndReturn.mockResolvedValue([
       { title: "A title", updatedAt, version: 4 },
     ]);
@@ -251,8 +198,12 @@ describe("docsRouter save safety", () => {
 
   it("reports a conflict instead of overwriting a newer version", async () => {
     const database = createDocumentDatabase();
-    database.updateManyAndReturn.mockResolvedValue([]);
-    database.findFirst.mockResolvedValue({ id: docId });
+    database.findFirst.mockResolvedValue({
+      title: "Newer title",
+      content,
+      updatedAt: new Date(),
+      version: 3,
+    });
     const caller = createCaller(database);
 
     await expect(
@@ -265,6 +216,100 @@ describe("docsRouter save safety", () => {
     ).rejects.toMatchObject({
       code: "CONFLICT",
     } satisfies Partial<TRPCError>);
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("returns the authoritative version without incrementing an identical save", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    database.findFirst.mockResolvedValue({
+      title: "A title",
+      content,
+      updatedAt,
+      version: 4,
+    });
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 3,
+      }),
+    ).resolves.toEqual({
+      title: "A title",
+      updatedAt,
+      version: 4,
+    });
+
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("treats JSON content as identical when stored object keys are reordered", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    const savedContent = {
+      type: "doc",
+      attrs: { second: 2, first: 1 },
+      content: [{ type: "paragraph" }],
+    };
+    const submittedContent = {
+      type: "doc",
+      attrs: { first: 1, second: 2 },
+      content: [{ type: "paragraph" }],
+    };
+    database.findFirst.mockResolvedValue({
+      title: "A title",
+      content: savedContent,
+      updatedAt,
+      version: 4,
+    });
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content: submittedContent,
+        version: 3,
+      }),
+    ).resolves.toMatchObject({ version: 4 });
+
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("accepts the authoritative result when concurrent saves write the same snapshot", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    database.findFirst
+      .mockResolvedValueOnce({
+        title: "Old title",
+        content,
+        updatedAt,
+        version: 3,
+      })
+      .mockResolvedValueOnce({
+        title: "A title",
+        content,
+        updatedAt,
+        version: 4,
+      });
+    database.updateManyAndReturn.mockResolvedValue([]);
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 3,
+      }),
+    ).resolves.toEqual({
+      title: "A title",
+      updatedAt,
+      version: 4,
+    });
   });
 
   it("rejects titles over the server limit", async () => {
@@ -280,6 +325,78 @@ describe("docsRouter save safety", () => {
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported pictographs in a title", async () => {
+    const database = createDocumentDatabase();
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "Decorated draft 🎨",
+        content,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(database.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported pictographs in document writing", async () => {
+    const database = createDocumentDatabase();
+    const caller = createCaller(database);
+    const decoratedContent = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Decorated writing 🎨" }],
+        },
+      ],
+    };
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content: decoratedContent,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(database.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("accepts Chinese and Tamil writing without treating it as pictographs", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    const multilingualContent = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "中文写作 தமிழ் எழுத்து" }],
+        },
+      ],
+    };
+    database.findFirst.mockResolvedValue({
+      title: "中文 தமிழ்",
+      content,
+      updatedAt,
+      version: 0,
+    });
+    database.updateManyAndReturn.mockResolvedValue([
+      { title: "中文 தமிழ்", updatedAt, version: 1 },
+    ]);
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "中文 தமிழ்",
+        content: multilingualContent,
+        version: 0,
+      }),
+    ).resolves.toMatchObject({ version: 1 });
   });
 
   it("rejects document payloads over the server limit", async () => {

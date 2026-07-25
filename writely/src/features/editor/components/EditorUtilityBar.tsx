@@ -1,3 +1,7 @@
+"use client";
+
+import { useUiLanguage } from "~/hooks/useUiLanguage";
+
 type Props = {
   wordCount: number;
   readingTime: string;
@@ -9,6 +13,8 @@ export default function EditorUtilityBar({
   readingTime,
   onBackToDrafts,
 }: Props) {
+  const { locale, t } = useUiLanguage();
+
   return (
     <div className="mx-auto w-full max-w-3xl p-6">
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--w-border-soft)] pt-4 text-xs text-[var(--w-muted)]">
@@ -29,11 +35,12 @@ export default function EditorUtilityBar({
           >
             <path d="m15 18-6-6 6-6" />
           </svg>
-          <span>Back to drafts</span>
+          <span>{t("editor.backDrafts")}</span>
         </button>
 
         <p className="px-2 text-right text-[var(--w-subtle)]">
-          {wordCount.toLocaleString()} words · {readingTime}
+          {t("editor.words", { count: wordCount.toLocaleString(locale) })} ·{" "}
+          {readingTime}
         </p>
       </footer>
     </div>

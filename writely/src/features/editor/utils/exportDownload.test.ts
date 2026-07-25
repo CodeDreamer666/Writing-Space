@@ -9,6 +9,6 @@ describe("createExportFilename", () => {
   });
 
   it("uses a safe fallback for an empty title", () => {
-    expect(createExportFilename("   ", "pdf")).toBe("Untitled draft.pdf");
+    expect(createExportFilename("   ", "docx")).toBe("Untitled draft.docx");
   });
 });

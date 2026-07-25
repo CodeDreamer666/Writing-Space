@@ -1,7 +1,7 @@
 import { type Editor, EditorContent } from "@tiptap/react";
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type { WritingMode } from "~/types/writing";
 import type { SaveStatus } from "../hooks/useDocumentAutosave";
-import { DEFAULT_TITLE } from "../utils/editorContent";
 import SaveStatusNotice from "./SaveStatusNotice";
 import TiptapMenuBar from "./TiptapMenuBar";
 import WritingModeSelector from "./WritingModeSelector";
@@ -41,6 +41,8 @@ export default function EditorDocument({
   onTitleChange,
   onAiOpen,
 }: Props) {
+  const { locale, t } = useUiLanguage();
+
   return (
     <main
       data-writely-editor
@@ -69,8 +71,8 @@ export default function EditorDocument({
               <input
                 value={title}
                 onChange={(event) => onTitleChange(event.target.value)}
-                placeholder={DEFAULT_TITLE}
-                aria-label="Draft title"
+                placeholder={t("editor.untitled")}
+                aria-label={t("editor.titleLabel")}
                 autoComplete="off"
                 maxLength={200}
                 disabled={saveStatus === "recovery"}
@@ -97,7 +99,9 @@ export default function EditorDocument({
                   : "text-[var(--w-subtle)]"
               }`}
             >
-              {characterCount.toLocaleString()} / 50,000 characters
+              {t("editor.characters", {
+                count: characterCount.toLocaleString(locale),
+              })}
             </p>
           )}
 

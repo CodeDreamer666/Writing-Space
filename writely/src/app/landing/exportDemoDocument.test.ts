@@ -6,7 +6,7 @@ type DownloadExportInput = {
   title: string;
   content: string;
   encoding: "utf8" | "base64";
-  format: "txt" | "md" | "pdf" | "docx";
+  format: "txt" | "md" | "docx";
   mimeType: string;
 };
 
@@ -48,21 +48,18 @@ describe("downloadDemoExport", () => {
     );
   });
 
-  it.each(["pdf", "docx"] as const)(
-    "generates a %s file with encoded rich content",
-    async (format) => {
-      await downloadDemoExport(format);
+  it("generates a Word file with encoded rich content", async () => {
+    await downloadDemoExport("docx");
 
-      expect(downloadExport).toHaveBeenCalledWith(
-        expect.objectContaining({
-          title: DEMO_EXPORT_TITLE,
-          encoding: "base64",
-          format,
-        }),
-      );
-      expect(downloadExport.mock.calls[0]?.[0].content.length).toBeGreaterThan(
-        100,
-      );
-    },
-  );
+    expect(downloadExport).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: DEMO_EXPORT_TITLE,
+        encoding: "base64",
+        format: "docx",
+      }),
+    );
+    expect(downloadExport.mock.calls[0]?.[0].content.length).toBeGreaterThan(
+      100,
+    );
+  });
 });

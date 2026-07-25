@@ -202,6 +202,12 @@ describe("aiRouter limits and privacy", () => {
     expect(JSON.stringify(providerInput)).toContain(
       "Only this selected sentence.",
     );
+    expect(JSON.stringify(providerInput)).toContain(
+      "Respond in that same language and language variety.",
+    );
+    expect(JSON.stringify(providerInput)).toContain(
+      "Do not infer the response language from the application interface",
+    );
     expect(providerInput).toMatchObject({ max_tokens: 2_500 });
     const upsertInput = aiDailyUsage.upsert.mock.calls[0]?.[0];
     expect(upsertInput?.create).toMatchObject({ userId, tokensUsed: 0 });
@@ -210,6 +216,126 @@ describe("aiRouter limits and privacy", () => {
     expect(providerCreate.mock.invocationCallOrder[0]).toBeLessThan(
       transaction.mock.invocationCallOrder[0]!,
     );
+  });
+
+  it("accepts selected HTML when inline formatting touches punctuation", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content:
+              '{"improved":"<p>This sentence is <strong>bold</strong>.</p>","changes":"Grammar was checked. Punctuation was preserved. Formatting was retained."}',
+          },
+        },
+      ],
+      usage: {
+        prompt_tokens: 50,
+        completion_tokens: 10,
+      },
+    });
+    const { caller } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "fixGrammar",
+        mode: "Clear",
+        selectedText: "This sentence is bold.",
+        selectedHtml: "<p>This sentence is <strong>bold</strong>.</p>",
+      }),
+    ).resolves.toMatchObject({
+      type: "rewrite",
+      improved: "<p>This sentence is <strong>bold</strong>.</p>",
+    });
+
+    expect(providerCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows an explicit custom translation request", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: { content: "这句话更清楚。" },
+        },
+      ],
+      usage: {
+        prompt_tokens: 90,
+        completion_tokens: 10,
+      },
+    });
+    const { caller } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "custom",
+        mode: "Clear",
+        selectedText: "This sentence is clearer.",
+        selectedHtml: "<p>This sentence is clearer.</p>",
+        instruction: "Translate this passage into Chinese.",
+      }),
+    ).resolves.toMatchObject({
+      type: "response",
+      content: "这句话更清楚。",
+    });
+
+    const providerInput = JSON.stringify(providerCreate.mock.calls[0]?.[0]);
+    expect(providerInput).toContain(
+      "Change the response language only when the supplied Instruction explicitly requests translation",
+    );
+    expect(providerInput).toContain(
+      "Instruction: Translate this passage into Chinese.",
+    );
+  });
+
+  it("accepts a Chinese rewrite by detecting the selected text language", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content:
+              '{"improved":"<p>我们讨论了关键决定，并明确了后续步骤。</p>","changes":"表达更加直接。句子更容易理解。原意保持不变。"}',
+          },
+        },
+      ],
+      usage: {
+        prompt_tokens: 130,
+        completion_tokens: 45,
+      },
+    });
+    const { caller, aiDailyUsage } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "improveClarity",
+        mode: "Clear",
+        selectedText: "我们讨论了这些决定，并明确了后续步骤。",
+        selectedHtml: "<p>我们讨论了这些决定，并明确了后续步骤。</p>",
+      }),
+    ).resolves.toMatchObject({
+      type: "rewrite",
+      improved: "<p>我们讨论了关键决定，并明确了后续步骤。</p>",
+      changes: "表达更加直接。句子更容易理解。原意保持不变。",
+      remainingTokens: DAILY_AI_TOKEN_LIMIT - 175,
+    });
+
+    expect(providerCreate).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(providerCreate.mock.calls[0]?.[0])).toContain(
+      "Detect the language and language variety of the writing inside the target tags.",
+    );
+    expect(JSON.stringify(providerCreate.mock.calls[0]?.[0])).toContain(
+      "我们讨论了这些决定，并明确了后续步骤。",
+    );
+    expect(
+      aiDailyUsage.update.mock.calls[0]?.[0]?.data.tokensUsed.increment,
+    ).toBe(175);
   });
 
   it("retries a rewrite once when the provider returns invalid JSON", async () => {
@@ -313,6 +439,39 @@ describe("aiRouter limits and privacy", () => {
       expect(response.improved).not.toContain("<script");
       expect(response.improved).toContain("<strong>sentence</strong>");
     }
+  });
+
+  it("does not charge a rewrite that contains unsupported pictographs", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content:
+              '{"improved":"<p>A decorated rewrite 🎨</p>","changes":"The wording is more vivid. The sentence remains concise. The meaning is preserved."}',
+          },
+        },
+      ],
+      usage: {
+        prompt_tokens: 120,
+        completion_tokens: 40,
+      },
+    });
+    const { caller, aiDailyUsage } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "improveClarity",
+        mode: "Clear",
+        selectedText: "A sentence.",
+        selectedHtml: "<p>A sentence.</p>",
+      }),
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+
+    expect(providerCreate).toHaveBeenCalledTimes(2);
+    expect(aiDailyUsage.update).not.toHaveBeenCalled();
   });
 
   it("does not record usage when rewrite retries do not produce a valid response", async () => {

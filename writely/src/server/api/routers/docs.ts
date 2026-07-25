@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import type { JSONContent } from "@tiptap/core";
+import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import {
   countDocumentCharacters,
@@ -7,6 +8,11 @@ import {
   MAX_DOCUMENTS_PER_USER,
   MAX_DOCUMENT_TITLE_LENGTH,
 } from "~/lib/documentLimits";
+import {
+  containsUnsupportedPictographs,
+  documentContainsUnsupportedPictographs,
+  UNSUPPORTED_PICTOGRAPH_MESSAGE,
+} from "~/lib/writingLanguage";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import {
   exportDocumentContent,
@@ -20,7 +26,15 @@ export const MAX_DOCUMENT_BYTES = 1_000_000;
 export const MAX_TITLE_LENGTH = MAX_DOCUMENT_TITLE_LENGTH;
 
 const docIdSchema = z.string().uuid();
-const titleSchema = z.string().trim().min(1).max(MAX_TITLE_LENGTH);
+const titleSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(MAX_TITLE_LENGTH)
+  .refine(
+    (title) => !containsUnsupportedPictographs(title),
+    UNSUPPORTED_PICTOGRAPH_MESSAGE,
+  );
 
 const jsonValueSchema: z.ZodType<JsonInputValue | null> = z.lazy(() =>
   z.union([
@@ -91,6 +105,11 @@ export const editorContentSchema = jsonSchema
   )
   .refine(
     (content) =>
+      !documentContainsUnsupportedPictographs(content as JSONContent),
+    UNSUPPORTED_PICTOGRAPH_MESSAGE,
+  )
+  .refine(
+    (content) =>
       new TextEncoder().encode(JSON.stringify(content)).length <=
       MAX_DOCUMENT_BYTES,
     `Document content must be ${MAX_DOCUMENT_BYTES} bytes or less`,
@@ -100,6 +119,16 @@ const emptyDocumentContent = {
   type: "doc",
   content: [{ type: "paragraph" }],
 };
+
+function hasSameDocumentSnapshot(
+  document: { title: string; content: unknown },
+  input: { title: string; content: JsonInputValue },
+) {
+  return (
+    document.title === input.title &&
+    isDeepStrictEqual(document.content, input.content)
+  );
+}
 
 export const docsRouter = createTRPCRouter({
   createDoc: protectedProcedure.mutation(async ({ ctx }) => {
@@ -153,26 +182,6 @@ export const docsRouter = createTRPCRouter({
     });
   }),
 
-  getDeletedDocs: protectedProcedure.query(async ({ ctx }) => {
-    return ctx.db.document.findMany({
-      where: {
-        userId: ctx.session.user.id,
-        deletedAt: {
-          not: null,
-        },
-      },
-      orderBy: {
-        deletedAt: "desc",
-      },
-      take: 20,
-      select: {
-        id: true,
-        title: true,
-        deletedAt: true,
-      },
-    });
-  }),
-
   getSelectedDoc: protectedProcedure
     .input(z.object({ docId: docIdSchema }))
     .query(async ({ input, ctx }) => {
@@ -220,56 +229,6 @@ export const docsRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  restoreDoc: protectedProcedure
-    .input(z.object({ docId: docIdSchema }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
-
-      return ctx.db.$transaction(async (transaction) => {
-        await transaction.$queryRaw`
-          SELECT pg_advisory_xact_lock(
-            hashtextextended(${"document-create:" + userId}, 0)
-          )::text`;
-
-        const activeDocumentCount = await transaction.document.count({
-          where: {
-            userId,
-            deletedAt: null,
-          },
-        });
-
-        if (activeDocumentCount >= MAX_DOCUMENTS_PER_USER) {
-          throw new TRPCError({
-            code: "FORBIDDEN",
-            message: `You can keep up to ${MAX_DOCUMENTS_PER_USER} documents. Delete one before restoring this draft.`,
-          });
-        }
-
-        const result = await transaction.document.updateMany({
-          where: {
-            id: input.docId,
-            userId,
-            deletedAt: {
-              not: null,
-            },
-          },
-          data: {
-            deletedAt: null,
-          },
-        });
-
-        if (result.count === 0) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message:
-              "This document is unavailable or belongs to another account.",
-          });
-        }
-
-        return { success: true };
-      });
-    }),
-
   updateWritingMode: protectedProcedure
     .input(
       z.object({
@@ -310,6 +269,44 @@ export const docsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
+      const existingDocument = await ctx.db.document.findFirst({
+        where: {
+          id: input.docId,
+          userId: ctx.session.user.id,
+          deletedAt: null,
+        },
+        select: {
+          title: true,
+          content: true,
+          updatedAt: true,
+          version: true,
+        },
+      });
+
+      if (!existingDocument) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message:
+            "This document is unavailable or belongs to another account.",
+        });
+      }
+
+      if (hasSameDocumentSnapshot(existingDocument, input)) {
+        return {
+          title: existingDocument.title,
+          updatedAt: existingDocument.updatedAt,
+          version: existingDocument.version,
+        };
+      }
+
+      if (existingDocument.version !== input.version) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message:
+            "A newer saved version exists. Your recovered writing is still safe in this browser.",
+        });
+      }
+
       const updatedDocuments = await ctx.db.document.updateManyAndReturn({
         where: {
           id: input.docId,
@@ -338,23 +335,34 @@ export const docsRouter = createTRPCRouter({
         return updatedDocument;
       }
 
-      const existingDocument = await ctx.db.document.findFirst({
+      const latestDocument = await ctx.db.document.findFirst({
         where: {
           id: input.docId,
           userId: ctx.session.user.id,
           deletedAt: null,
         },
         select: {
-          id: true,
+          title: true,
+          content: true,
+          updatedAt: true,
+          version: true,
         },
       });
 
-      if (!existingDocument) {
+      if (!latestDocument) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message:
             "This document is unavailable or belongs to another account.",
         });
+      }
+
+      if (hasSameDocumentSnapshot(latestDocument, input)) {
+        return {
+          title: latestDocument.title,
+          updatedAt: latestDocument.updatedAt,
+          version: latestDocument.version,
+        };
       }
 
       throw new TRPCError({
@@ -368,7 +376,7 @@ export const docsRouter = createTRPCRouter({
     .input(
       z.object({
         docId: docIdSchema,
-        format: z.enum(["txt", "md", "pdf", "docx"]),
+        format: z.enum(["txt", "md", "docx"]),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -423,11 +431,7 @@ export const docsRouter = createTRPCRouter({
         };
       }
 
-      const exportedFile = await exportRichDocument(
-        content,
-        document.title,
-        input.format,
-      );
+      const exportedFile = await exportRichDocument(content, document.title);
 
       return {
         title: document.title,
@@ -435,9 +439,7 @@ export const docsRouter = createTRPCRouter({
         encoding: "base64" as const,
         format: input.format,
         mimeType:
-          input.format === "pdf"
-            ? "application/pdf"
-            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       };
     }),
 });

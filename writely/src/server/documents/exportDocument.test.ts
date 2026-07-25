@@ -87,11 +87,9 @@ describe("exportDocumentContent", () => {
     ).toBe(true);
   });
 
-  it("creates valid PDF and Word containers", async () => {
-    const pdf = await exportRichDocument(content, "A title", "pdf");
-    const docx = await exportRichDocument(content, "A title", "docx");
+  it("creates a valid Word container", async () => {
+    const docx = await exportRichDocument(content, "A title");
 
-    expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
     expect(docx.subarray(0, 2).toString()).toBe("PK");
   });
 });

@@ -1,6 +1,6 @@
 import type { JSONContent } from "@tiptap/core";
 
-export type ExportFormat = "txt" | "md" | "pdf" | "docx";
+export type ExportFormat = "txt" | "md" | "docx";
 export type TextExportFormat = Extract<ExportFormat, "txt" | "md">;
 
 function children(node: JSONContent, format: TextExportFormat): string {

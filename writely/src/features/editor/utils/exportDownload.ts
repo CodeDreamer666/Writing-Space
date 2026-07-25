@@ -3,7 +3,6 @@ import type { ExportFormat } from "~/server/documents/exportDocument";
 const extensionLabels: Record<ExportFormat, string> = {
   txt: "txt",
   md: "md",
-  pdf: "pdf",
   docx: "docx",
 };
 
