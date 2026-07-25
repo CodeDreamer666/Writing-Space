@@ -143,6 +143,21 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.AiDailyUsageScalarFieldEnum = {
+  userId: 'userId',
+  usageDate: 'usageDate',
+  tokensUsed: 'tokensUsed',
+  requestId: 'requestId',
+  requestExpiresAt: 'requestExpiresAt'
+};
+
+exports.Prisma.FeedbackScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  message: 'message',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SessionScalarFieldEnum = {
   id: 'id',
   expiresAt: 'expiresAt',
@@ -209,6 +224,8 @@ exports.Prisma.NullsOrder = {
 exports.Prisma.ModelName = {
   Document: 'Document',
   User: 'User',
+  AiDailyUsage: 'AiDailyUsage',
+  Feedback: 'Feedback',
   Session: 'Session',
   Account: 'Account',
   Verification: 'Verification'

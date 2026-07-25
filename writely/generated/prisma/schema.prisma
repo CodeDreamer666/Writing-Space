@@ -30,20 +30,43 @@ model Document {
 }
 
 model User {
-  id                    String     @id
+  id                    String         @id
   name                  String //@db.Text
   email                 String
-  emailVerified         Boolean    @default(false)
-  leaveReminderDisabled Boolean    @default(false)
+  emailVerified         Boolean        @default(false)
+  leaveReminderDisabled Boolean        @default(false)
   image                 String? //@db.Text
-  createdAt             DateTime   @default(now())
-  updatedAt             DateTime   @default(now()) @updatedAt
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @default(now()) @updatedAt
   sessions              Session[]
   documents             Document[]
+  aiDailyUsage          AiDailyUsage[]
+  feedback              Feedback[]
   accounts              Account[]
 
   @@unique([email])
   @@map("user")
+}
+
+model AiDailyUsage {
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  usageDate        DateTime  @db.Date
+  tokensUsed       Int       @default(0)
+  requestId        String?
+  requestExpiresAt DateTime?
+
+  @@id([userId, usageDate])
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model Session {

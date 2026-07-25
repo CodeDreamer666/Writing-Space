@@ -1,7 +1,11 @@
+"use client";
+
+import { useUiLanguage } from "~/hooks/useUiLanguage";
+
 type Props = {
   original: string;
   improved: string;
-  changes: string[];
+  changes: string;
 };
 
 export default function AiRewriteComparison({
@@ -9,40 +13,36 @@ export default function AiRewriteComparison({
   improved,
   changes,
 }: Props) {
+  const { t } = useUiLanguage();
+
   return (
     <div className="mt-3 space-y-4">
       <section>
-        <p className="text-[11px] font-medium tracking-widest text-[#6B7280] uppercase">
-          Original
+        <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
+          {t("ai.original")}
         </p>
-        <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-[#AEB4BE]">
+        <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-[var(--w-muted)]">
           {original}
         </p>
       </section>
 
       <section>
-        <p className="text-[11px] font-medium tracking-widest text-[#6B7280] uppercase">
-          Improved version
+        <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
+          {t("ai.improved")}
         </p>
-        <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-[#F5F5F7]">
-          {improved}
-        </p>
+        <div
+          className="mt-2 text-sm leading-relaxed text-[var(--w-foreground)] [&_h1]:mt-4 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:whitespace-pre-wrap [&_ul]:my-2 [&_ul]:list-disc"
+          dangerouslySetInnerHTML={{ __html: improved }}
+        />
       </section>
 
       <section>
-        <p className="text-[11px] font-medium tracking-widest text-[#6B7280] uppercase">
-          What changed
+        <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
+          {t("ai.whatChanged")}
         </p>
-        <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-[#D5D9DF]">
-          {changes.map((change) => (
-            <li key={change} className="flex gap-2">
-              <span aria-hidden="true" className="text-[#8E96A3]">
-                •
-              </span>
-              <span>{change}</span>
-            </li>
-          ))}
-        </ul>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--w-strong)]">
+          {changes}
+        </p>
       </section>
     </div>
   );

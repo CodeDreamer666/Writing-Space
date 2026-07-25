@@ -1,3 +1,6 @@
+"use client";
+
+import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { WRITING_MODES, type WritingMode } from "~/types/writing";
 
 type Props = {
@@ -11,13 +14,24 @@ export default function WritingModeSelector({
   isSaving,
   onModeChange,
 }: Props) {
+  const { t } = useUiLanguage();
+  const modeLabels: Record<WritingMode, string> = {
+    Clear: t("editor.modeClear"),
+    Natural: t("editor.modeNatural"),
+    Persuasive: t("editor.modePersuasive"),
+    Reflective: t("editor.modeReflective"),
+    Story: t("editor.modeStory"),
+    Professional: t("editor.modeProfessional"),
+    Argumentative: t("editor.modeArgumentative"),
+  };
+
   return (
     <div className="w-full">
       <label
         htmlFor="writing-mode"
-        className="mb-2 block text-[11px] font-medium tracking-widest text-[#6B7280] uppercase"
+        className="mb-2 block text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase"
       >
-        Writing mode
+        {t("editor.writingMode")}
       </label>
       <div className="relative">
         <select
@@ -25,25 +39,25 @@ export default function WritingModeSelector({
           value={selectedMode}
           disabled={isSaving}
           onChange={(event) => onModeChange(event.target.value as WritingMode)}
-          title="Writing mode"
+          title={t("editor.writingMode")}
           aria-describedby="writing-mode-help"
-          className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-[#1E2530] bg-[#0B0D10] px-3 pr-9 text-sm text-[#D5D9DF] transition-colors outline-none hover:border-[#2E3643] hover:text-[#F5F5F7] focus:border-[#697386] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#8E96A3] disabled:cursor-wait disabled:opacity-60"
+          className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-[var(--w-border-soft)] bg-[var(--w-background)] px-3 pr-9 text-sm text-[var(--w-strong)] transition-colors outline-none hover:border-[var(--w-border)] hover:text-[var(--w-foreground)] focus:border-[var(--w-border)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)] disabled:cursor-wait disabled:opacity-60"
         >
           {WRITING_MODES.map((mode) => (
             <option key={mode} value={mode}>
-              {mode}
+              {modeLabels[mode]}
             </option>
           ))}
         </select>
-        <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[#8E96A3]">
+        <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[var(--w-muted)]">
           ▾
         </span>
       </div>
       <p
         id="writing-mode-help"
-        className="mt-2 text-xs leading-relaxed text-[#6B7280]"
+        className="mt-2 text-xs leading-relaxed text-[var(--w-subtle)]"
       >
-        Controls how AI adapts its suggestions for this draft.
+        {t("editor.modeHelp")}
       </p>
     </div>
   );
