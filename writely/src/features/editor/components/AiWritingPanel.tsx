@@ -28,6 +28,8 @@ type Props = {
   mode: WritingMode;
   selectionWordCount: number;
   selectionCharacterCount: number;
+  selectionVersion: number;
+  panelVersion: number;
   hasSelection: boolean;
   aiEnabled: boolean;
   aiMessage: string;
@@ -91,6 +93,8 @@ export default function AiWritingPanel({
   mode,
   selectionWordCount,
   selectionCharacterCount,
+  selectionVersion,
+  panelVersion,
   hasSelection,
   aiEnabled,
   aiMessage,
@@ -110,7 +114,11 @@ export default function AiWritingPanel({
     instruction?: string;
   } | null>(null);
   const [isCopied, setIsCopied] = useState(false);
-  const [requestError, setRequestError] = useState("");
+  const [requestError, setRequestError] = useState<{
+    message: string;
+    selectionVersion: number;
+    panelVersion: number;
+  } | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
 
@@ -118,6 +126,12 @@ export default function AiWritingPanel({
   const hasTarget = hasSelection;
   const isSelectionOverLimit =
     selectionCharacterCount > MAX_AI_SELECTION_CHARACTERS;
+  const visibleRequestError =
+    isOpen &&
+    requestError?.selectionVersion === selectionVersion &&
+    requestError.panelVersion === panelVersion
+      ? requestError.message
+      : "";
 
   useEffect(() => {
     if (!isOpen) {
@@ -179,21 +193,27 @@ export default function AiWritingPanel({
     const target = context.selectedText;
 
     if (!target?.trim()) {
-      setRequestError(t("ai.selectPrompt"));
+      setRequestError({
+        message: t("ai.selectPrompt"),
+        selectionVersion,
+        panelVersion,
+      });
       return;
     }
 
     if (target.length > MAX_AI_SELECTION_CHARACTERS) {
-      setRequestError(
-        t("ai.selectionLimit", {
+      setRequestError({
+        message: t("ai.selectionLimit", {
           count: MAX_AI_SELECTION_CHARACTERS.toLocaleString(locale),
         }),
-      );
+        selectionVersion,
+        panelVersion,
+      });
       return;
     }
 
     setResult(null);
-    setRequestError("");
+    setRequestError(null);
     setLastRequest({ action, instruction });
 
     askAi.mutate(
@@ -211,9 +231,11 @@ export default function AiWritingPanel({
           void utils.ai.getStatus.invalidate();
         },
         onError: (error) => {
-          setRequestError(
-            error.data?.zodError ? t("error.input") : error.message,
-          );
+          setRequestError({
+            message: error.data?.zodError ? t("error.input") : error.message,
+            selectionVersion,
+            panelVersion,
+          });
           handleTRPCError({ error, router });
         },
       },
@@ -370,10 +392,10 @@ export default function AiWritingPanel({
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--w-muted)] [animation-delay:150ms]" />
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--w-muted)] [animation-delay:300ms]" />
                 </div>
-              ) : requestError || askAi.isError || (lastRequest && !result) ? (
+              ) : visibleRequestError ? (
                 <div className="flex flex-col gap-1">
                   <p className="text-sm text-[var(--w-strong)]">
-                    {requestError || t("ai.unavailable")}
+                    {visibleRequestError}
                   </p>
                   <div className="flex items-center justify-end">
                     <button

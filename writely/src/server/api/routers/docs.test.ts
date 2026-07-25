@@ -144,6 +144,40 @@ describe("docsRouter authorization", () => {
       },
     });
   });
+
+  it.each(["txt", "md", "docx"] as const)(
+    "exports an empty document as %s",
+    async (format) => {
+      const database = createDocumentDatabase();
+      database.findFirst.mockResolvedValue({
+        title: "Empty draft",
+        content: {
+          type: "doc",
+          content: [{ type: "paragraph" }],
+        },
+      });
+      const caller = createCaller(database);
+
+      const exportedDocument = await caller.exportDoc({ docId, format });
+
+      expect(exportedDocument).toMatchObject({
+        title: "Empty draft",
+        format,
+      });
+
+      if (format === "docx") {
+        expect(exportedDocument.encoding).toBe("base64");
+        expect(
+          Buffer.from(exportedDocument.content, "base64")
+            .subarray(0, 2)
+            .toString(),
+        ).toBe("PK");
+      } else {
+        expect(exportedDocument.encoding).toBe("utf8");
+        expect(exportedDocument.content.trim()).toBe("");
+      }
+    },
+  );
 });
 
 describe("docsRouter save safety", () => {

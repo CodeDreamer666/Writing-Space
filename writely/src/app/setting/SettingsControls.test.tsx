@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   showMessage: vi.fn(),
   signOut: vi.fn(),
+  useSession: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -27,6 +28,7 @@ vi.mock("~/components/layout/StatusMessageProvider", () => ({
 vi.mock("~/server/better-auth/client", () => ({
   authClient: {
     signOut: mocks.signOut,
+    useSession: mocks.useSession,
   },
 }));
 
@@ -51,6 +53,14 @@ beforeEach(() => {
   mocks.showMessage.mockReset();
   mocks.signOut.mockReset();
   mocks.signOut.mockResolvedValue({});
+  mocks.useSession.mockReset();
+  mocks.useSession.mockReturnValue({
+    data: {
+      user: {
+        id: "user-1",
+      },
+    },
+  });
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -144,5 +154,16 @@ describe("Settings controls", () => {
       false,
     );
     expect(button.disabled).toBe(false);
+  });
+
+  it("does not show Sign out without an authenticated session", () => {
+    mocks.useSession.mockReturnValue({
+      data: null,
+    });
+
+    act(() => root.render(<SignOutButton />));
+
+    expect(container.querySelector("button")).toBeNull();
+    expect(container.textContent).not.toContain("Sign out");
   });
 });

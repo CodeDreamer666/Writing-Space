@@ -61,6 +61,8 @@ const baseProps = {
   mode: "Clear" as const,
   selectionWordCount: 2,
   selectionCharacterCount: 12,
+  selectionVersion: 1,
+  panelVersion: 1,
   hasSelection: true,
   aiEnabled: true,
   aiMessage: "Writely AI is ready.",
@@ -188,5 +190,85 @@ describe("AiWritingPanel", () => {
 
     expect(container.textContent).toContain("Please check your input.");
     expect(container.textContent).not.toContain('"code":"custom"');
+  });
+
+  it("clears a request error when the selected text changes", () => {
+    mocks.mutate.mockImplementationOnce((_input, options) => {
+      options.onError({
+        message:
+          "This selection is too large for today’s remaining AI allowance.",
+      });
+    });
+    act(() => root.render(<AiWritingPanel {...baseProps} isOpen />));
+
+    const improveClarityButton = Array.from(
+      container.querySelectorAll("button"),
+    ).find((button) => button.textContent?.includes("Improve clarity"));
+
+    act(() => improveClarityButton?.click());
+
+    expect(container.textContent).toContain(
+      "This selection is too large for today’s remaining AI allowance.",
+    );
+
+    act(() =>
+      root.render(
+        <AiWritingPanel {...baseProps} isOpen selectionVersion={2} />,
+      ),
+    );
+
+    expect(container.textContent).not.toContain(
+      "This selection is too large for today’s remaining AI allowance.",
+    );
+  });
+
+  it("clears a request error when the panel closes or a new request begins", () => {
+    mocks.mutate.mockImplementationOnce((_input, options) => {
+      options.onError({
+        message:
+          "This selection is too large for today’s remaining AI allowance.",
+      });
+    });
+    act(() => root.render(<AiWritingPanel {...baseProps} isOpen />));
+
+    const improveClarityButton = Array.from(
+      container.querySelectorAll("button"),
+    ).find((button) => button.textContent?.includes("Improve clarity"));
+
+    act(() => improveClarityButton?.click());
+    expect(container.textContent).toContain(
+      "This selection is too large for today’s remaining AI allowance.",
+    );
+
+    act(() => root.render(<AiWritingPanel {...baseProps} isOpen={false} />));
+    expect(container.textContent).not.toContain(
+      "This selection is too large for today’s remaining AI allowance.",
+    );
+
+    act(() =>
+      root.render(<AiWritingPanel {...baseProps} isOpen panelVersion={2} />),
+    );
+
+    expect(container.textContent).not.toContain(
+      "This selection is too large for today’s remaining AI allowance.",
+    );
+
+    mocks.mutate.mockImplementationOnce((_input, options) => {
+      options.onError({
+        message:
+          "This selection is too large for today’s remaining AI allowance.",
+      });
+    });
+    act(() => improveClarityButton?.click());
+    expect(container.textContent).toContain(
+      "This selection is too large for today’s remaining AI allowance.",
+    );
+
+    mocks.mutate.mockImplementationOnce(() => undefined);
+    act(() => improveClarityButton?.click());
+
+    expect(container.textContent).not.toContain(
+      "This selection is too large for today’s remaining AI allowance.",
+    );
   });
 });

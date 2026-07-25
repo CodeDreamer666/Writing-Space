@@ -193,10 +193,11 @@ function readUsableCompletion(completion: ChatCompletion) {
 }
 
 function getInputTokenUpperBound(systemMessage: string, userMessage: string) {
-  return (
-    new TextEncoder().encode(`${systemMessage}\n${userMessage}`).length +
-    AI_MESSAGE_TOKEN_OVERHEAD
-  );
+  const messageBytes = new TextEncoder().encode(
+    `${systemMessage}\n${userMessage}`,
+  ).length;
+
+  return Math.ceil(messageBytes / 4) + AI_MESSAGE_TOKEN_OVERHEAD;
 }
 
 function ensureAiEnabled() {

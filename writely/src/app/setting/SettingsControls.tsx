@@ -68,6 +68,7 @@ export function SignOutButton() {
   const router = useRouter();
   const { showMessage } = useStatusMessage();
   const { t } = useUiLanguage();
+  const { data: session } = authClient.useSession();
   const requestRef = useRef(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -94,6 +95,10 @@ export function SignOutButton() {
       showMessage(t("settings.signOutError"), false);
     }
   };
+
+  if (!session?.user) {
+    return null;
+  }
 
   return (
     <button

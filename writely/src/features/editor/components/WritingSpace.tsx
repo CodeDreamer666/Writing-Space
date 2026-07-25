@@ -137,6 +137,8 @@ function EditorExperience({
     const [isExportOpen, setIsExportOpen] = useState(false);
     const [isFocusMode, setIsFocusMode] = useState(false);
     const [selectionText, setSelectionText] = useState("");
+    const [selectionVersion, setSelectionVersion] = useState(0);
+    const [aiPanelVersion, setAiPanelVersion] = useState(0);
     const [isExporting, setIsExporting] = useState(false);
     const createRequestRef = useRef(false);
 
@@ -211,6 +213,7 @@ function EditorExperience({
         const updateSelection = () => {
             const { from, to } = editor.state.selection;
             setSelectionText(editor.state.doc.textBetween(from, to, "\n\n"));
+            setSelectionVersion((currentVersion) => currentVersion + 1);
         };
 
         editor.on("selectionUpdate", updateSelection);
@@ -410,6 +413,9 @@ function EditorExperience({
                     onTitleChange={handleValidatedTitleChange}
                     onAiOpen={() => {
                         if (!isFocusMode) {
+                            setAiPanelVersion(
+                                (currentVersion) => currentVersion + 1,
+                            );
                             setIsAiOpen(true);
                         }
                     }}
@@ -435,6 +441,8 @@ function EditorExperience({
                     mode={selectedMode}
                     selectionWordCount={countWords(selectionText)}
                     selectionCharacterCount={selectionText.length}
+                    selectionVersion={selectionVersion}
+                    panelVersion={aiPanelVersion}
                     hasSelection={selectionText.length > 0}
                     aiEnabled={aiEnabled}
                     aiMessage={aiMessage}

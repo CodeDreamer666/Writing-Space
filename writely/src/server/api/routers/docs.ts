@@ -14,10 +14,7 @@ import {
   UNSUPPORTED_PICTOGRAPH_MESSAGE,
 } from "~/lib/writingLanguage";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import {
-  exportDocumentContent,
-  isDocumentEmpty,
-} from "~/server/documents/exportDocument";
+import { exportDocumentContent } from "~/server/documents/exportDocument";
 import { exportRichDocument } from "~/server/documents/exportRichDocument";
 import type { JsonInputValue } from "~/types/json";
 import { WRITING_MODES } from "~/types/writing";
@@ -410,13 +407,6 @@ export const docsRouter = createTRPCRouter({
       }
 
       const content = parsedContent.data as JSONContent;
-
-      if (isDocumentEmpty(content)) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Add some writing before exporting this document.",
-        });
-      }
 
       if (input.format === "txt" || input.format === "md") {
         return {

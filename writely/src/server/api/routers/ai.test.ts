@@ -573,6 +573,48 @@ describe("aiRouter limits and privacy", () => {
     expect(providerInput).toMatchObject({ max_tokens: 2_500 });
   });
 
+  it("allows a small selection while usable daily allowance remains", async () => {
+    providerCreate.mockReset();
+    providerCreate.mockResolvedValue({
+      choices: [
+        {
+          finish_reason: "stop",
+          message: {
+            content:
+              '{"improved":"<p>A clearer short selection.</p>","changes":"The wording is clearer. The sentence is more direct. The meaning is preserved."}',
+          },
+        },
+      ],
+      usage: {
+        prompt_tokens: 500,
+        completion_tokens: 100,
+      },
+    });
+    const { caller } = createCaller({
+      tokensUsed: 3_000,
+    });
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "improveClarity",
+        mode: "Clear",
+        selectedText: "A short selection that needs more clarity.",
+        selectedHtml: "<p>A short selection that needs more clarity.</p>",
+      }),
+    ).resolves.toMatchObject({
+      type: "rewrite",
+      remainingTokens: 1_400,
+    });
+
+    const providerInput = providerCreate.mock.calls[0]?.[0] as
+      | { max_tokens?: number }
+      | undefined;
+
+    expect(providerInput?.max_tokens).toBeGreaterThan(0);
+    expect(providerInput?.max_tokens).toBeLessThanOrEqual(2_000);
+  });
+
   it("scopes AI requests to an active document owned by the user", async () => {
     providerCreate.mockReset();
     const { caller, document } = createCaller();

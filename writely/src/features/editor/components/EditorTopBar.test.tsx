@@ -36,7 +36,7 @@ describe("EditorTopBar", () => {
     );
 
     expect(markup).toContain("Exit focus");
-    expect(markup).toContain("Saved");
+    expect(markup).not.toContain("Saved");
     expect(markup).not.toContain("Export");
     expect(markup).not.toContain("New");
     expect(markup).not.toContain(">Save</button>");
