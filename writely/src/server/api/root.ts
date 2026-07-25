@@ -1,10 +1,12 @@
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 import { docsRouter } from "./routers/docs";
 import { aiRouter } from "./routers/ai";
+import { feedbackRouter } from "./routers/feedback";
 
 export const appRouter = createTRPCRouter({
   docs: docsRouter,
   ai: aiRouter,
+  feedback: feedbackRouter,
 });
 
 // export type definition of API
