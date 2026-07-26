@@ -45,7 +45,7 @@ export default function ServerError() {
           </button>
 
           <Link
-            href="/"
+            href="/app"
             className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 text-sm font-medium text-white transition-colors duration-200 hover:bg-neutral-800"
           >
             {t("common.backHome")}

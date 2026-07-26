@@ -13,20 +13,21 @@ vi.mock("./LandingDemos", () => ({
   FocusModeDemo: () => <div>Focus Mode demo</div>,
 }));
 
-import LandingPage from "./page";
+import HomePage from "../page";
 
-describe("LandingPage", () => {
+describe("HomePage", () => {
   it("leads with the product promise and a clear path into Writely", () => {
-    const markup = renderToStaticMarkup(<LandingPage />);
+    const markup = renderToStaticMarkup(<HomePage />);
 
     expect(markup).toContain("Give ideas");
     expect(markup).toContain("Start a private draft");
+    expect(markup).toContain('href="/app"');
     expect(markup).toContain('id="how-it-works"');
     expect(markup).toContain("AI stays in its place");
   });
 
   it("keeps the privacy promise specific and avoids invented social proof", () => {
-    const markup = renderToStaticMarkup(<LandingPage />);
+    const markup = renderToStaticMarkup(<HomePage />);
 
     expect(markup).toContain("Only the selected text is sent to AI.");
     expect(markup).not.toContain("customers");

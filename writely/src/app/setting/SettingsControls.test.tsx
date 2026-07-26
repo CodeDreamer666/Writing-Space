@@ -135,7 +135,7 @@ describe("Settings controls", () => {
       finishSignOut?.({});
     });
 
-    expect(mocks.push).toHaveBeenCalledWith("/landing");
+    expect(mocks.push).toHaveBeenCalledWith("/");
     expect(mocks.refresh).toHaveBeenCalled();
   });
 

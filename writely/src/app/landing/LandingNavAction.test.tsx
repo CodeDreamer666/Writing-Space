@@ -69,8 +69,8 @@ describe("LandingNavAction", () => {
 
     expect(mocks.signInSocial).toHaveBeenCalledWith({
       provider: "google",
-      callbackURL: "/",
-      errorCallbackURL: "/landing",
+      callbackURL: "/app",
+      errorCallbackURL: "/",
     });
   });
 
@@ -85,7 +85,7 @@ describe("LandingNavAction", () => {
     const link = container.querySelector("a");
 
     expect(link?.textContent).toBe("Open app");
-    expect(link?.getAttribute("href")).toBe("/");
+    expect(link?.getAttribute("href")).toBe("/app");
   });
 
   it("reports an OAuth start failure", async () => {

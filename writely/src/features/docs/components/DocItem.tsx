@@ -114,7 +114,7 @@ export default function DocItem({
       <li className="relative">
         <div className="group flex items-center rounded-xl transition-colors focus-within:bg-[var(--w-surface-raised)] hover:bg-[var(--w-surface-raised)]">
           <Link
-            href={`/${id}`}
+            href={`/app/${id}`}
             className="flex min-w-0 flex-1 items-center gap-3.5 rounded-xl px-3 py-3.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
           >
             <svg

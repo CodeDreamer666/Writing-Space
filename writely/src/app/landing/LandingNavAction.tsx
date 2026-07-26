@@ -18,7 +18,7 @@ export default function LandingNavAction() {
 
   if (session?.user) {
     return (
-      <Link href="/" className={actionClassName}>
+      <Link href="/app" className={actionClassName}>
         {t("auth.openApp")}
       </Link>
     );
@@ -34,8 +34,8 @@ export default function LandingNavAction() {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
-        errorCallbackURL: "/landing",
+        callbackURL: "/app",
+        errorCallbackURL: "/",
       });
 
       if (result.error) {

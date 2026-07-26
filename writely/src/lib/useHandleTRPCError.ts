@@ -51,7 +51,7 @@ export function useHandleTRPCError() {
         return;
 
       case "UNAUTHORIZED":
-        router.replace("/");
+        router.replace("/app");
         return;
 
       case "FORBIDDEN":

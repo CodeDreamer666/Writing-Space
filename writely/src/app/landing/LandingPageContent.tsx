@@ -31,7 +31,7 @@ export default function LandingPageContent() {
       <div className="mx-auto max-w-7xl px-8 lg:px-12">
         <header className="flex min-h-20 items-center justify-between border-b border-[var(--w-border-soft)]">
           <Link
-            href="/landing"
+            href="/"
             className="flex items-center gap-3 text-sm font-semibold tracking-[0.14em] text-[var(--w-strong)] uppercase"
             aria-label={copy.homeLabel}
           >
@@ -61,7 +61,7 @@ export default function LandingPageContent() {
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-4">
               <Link
-                href="/"
+                href="/app"
                 className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[var(--w-foreground)] px-6 text-sm font-medium text-[var(--w-background)] shadow-lg shadow-black/10 transition-transform hover:-translate-y-0.5 hover:opacity-90"
               >
                 {copy.heroAction}
@@ -176,7 +176,7 @@ export default function LandingPageContent() {
               </p>
             </div>
             <Link
-              href="/"
+              href="/app"
               className="mt-9 inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-[var(--w-foreground)] px-6 text-sm font-medium text-[var(--w-background)] transition-transform hover:-translate-y-0.5 hover:opacity-90 lg:mt-0"
             >
               {copy.startWriting}

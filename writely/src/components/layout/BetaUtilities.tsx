@@ -91,7 +91,7 @@ export default function BetaUtilities() {
     submitFeedback.mutate({ message });
   };
 
-  if (pathname === "/landing") {
+  if (pathname === "/") {
     return null;
   }
 

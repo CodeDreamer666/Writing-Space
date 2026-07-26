@@ -40,7 +40,7 @@ export default function DocsHome() {
 
   const createDoc = api.docs.createDoc.useMutation({
     onSuccess: (newDocument) => {
-      router.push(`/${newDocument.id}`);
+      router.push(`/app/${newDocument.id}`);
     },
     onError: (mutationError) => {
       handleTRPCError({
@@ -117,8 +117,8 @@ export default function DocsHome() {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
-        errorCallbackURL: "/",
+        callbackURL: "/app",
+        errorCallbackURL: "/app",
       });
 
       if (result.error) {

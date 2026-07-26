@@ -53,7 +53,7 @@ function DocumentUnavailable() {
                     {t("editor.unavailableDescription")}
                 </p>
                 <Link
-                    href="/"
+                    href="/app"
                     className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--w-foreground)] px-5 text-sm font-medium text-[var(--w-background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
                 >
                     {t("editor.backDrafts")}
@@ -145,7 +145,7 @@ function EditorExperience({
     const createDocument = api.docs.createDoc.useMutation({
         onSuccess: (newDocument) => {
             void utils.docs.getUserDocs.invalidate();
-            router.push(`/${newDocument.id}`);
+            router.push(`/app/${newDocument.id}`);
         },
         onError: (error) => {
             handleTRPCError({ error, router });
@@ -272,12 +272,12 @@ function EditorExperience({
 
     const handleBackToDrafts = async () => {
         if (saveStatus === "conflict" || saveStatus === "recovery") {
-            router.push("/");
+            router.push("/app");
             return;
         }
 
         if (saveStatus === "saved" || (await savePendingChanges())) {
-            router.push("/");
+            router.push("/app");
         }
     };
 
@@ -488,7 +488,7 @@ export default function WritingSpace() {
 
     useEffect(() => {
         if (error?.data?.code === "UNAUTHORIZED") {
-            router.replace("/");
+            router.replace("/app");
         }
     }, [error, router]);
 

@@ -101,7 +101,7 @@ export function SignOutButton() {
         throw new Error("Sign out failed");
       }
 
-      router.push("/landing");
+      router.push("/");
       router.refresh();
     } catch {
       requestRef.current = false;
