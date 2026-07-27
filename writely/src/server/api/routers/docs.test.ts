@@ -20,6 +20,7 @@ function createDocumentDatabase() {
   return {
     count: vi.fn<(input: unknown) => Promise<unknown>>(),
     create: vi.fn<(input: unknown) => Promise<unknown>>(),
+    deleteMany: vi.fn<(input: unknown) => Promise<unknown>>(),
     findFirst: vi.fn<(input: unknown) => Promise<unknown>>(),
     findMany: vi.fn<(input: unknown) => Promise<unknown>>(),
     updateMany: vi.fn<(input: unknown) => Promise<unknown>>(),
@@ -83,6 +84,27 @@ describe("docsRouter authorization", () => {
     expect(database.findFirst).not.toHaveBeenCalled();
   });
 
+  it("rejects unauthenticated document edits and deletions", async () => {
+    const database = createDocumentDatabase();
+    const caller = createCaller(database, false);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    await expect(caller.deleteDoc({ docId })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(database.findFirst).not.toHaveBeenCalled();
+    expect(database.deleteMany).not.toHaveBeenCalled();
+  });
+
   it("scopes document retrieval to the authenticated owner", async () => {
     const database = createDocumentDatabase();
     database.findFirst.mockResolvedValue({ id: docId, userId });
@@ -99,26 +121,60 @@ describe("docsRouter authorization", () => {
     });
   });
 
-  it("soft-deletes only a document owned by the authenticated user", async () => {
+  it("does not read another user's document", async () => {
     const database = createDocumentDatabase();
-    database.updateMany.mockResolvedValue({ count: 1 });
+    database.findFirst.mockResolvedValue(null);
+    const caller = createCaller(database);
+
+    await expect(caller.getSelectedDoc({ docId })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("permanently deletes only a document owned by the authenticated user", async () => {
+    const database = createDocumentDatabase();
+    database.deleteMany.mockResolvedValue({ count: 1 });
     const caller = createCaller(database);
 
     await caller.deleteDoc({ docId });
 
-    const deleteInput = database.updateMany.mock.calls[0]?.[0];
+    const deleteInput = database.deleteMany.mock.calls[0]?.[0];
 
-    expect(deleteInput).toMatchObject({
+    expect(deleteInput).toEqual({
       where: {
         id: docId,
         userId,
         deletedAt: null,
       },
     });
-    const deletedAt = (
-      deleteInput as { data?: { deletedAt?: unknown } } | undefined
-    )?.data?.deletedAt;
-    expect(deletedAt).toBeInstanceOf(Date);
+  });
+
+  it("does not delete another user's document", async () => {
+    const database = createDocumentDatabase();
+    database.deleteMany.mockResolvedValue({ count: 0 });
+    const caller = createCaller(database);
+
+    await expect(caller.deleteDoc({ docId })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("does not edit another user's document", async () => {
+    const database = createDocumentDatabase();
+    database.findFirst.mockResolvedValue(null);
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
   });
 
   it("scopes document exports to the authenticated owner", async () => {

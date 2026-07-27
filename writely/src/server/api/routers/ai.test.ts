@@ -173,6 +173,12 @@ describe("aiRouter limits and privacy", () => {
 
   it("records actual provider usage and sends only the selected text", async () => {
     providerCreate.mockReset();
+    const consoleLog = vi
+      .spyOn(console, "log")
+      .mockImplementation(() => undefined);
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     providerCreate.mockResolvedValue({
       choices: [
         { finish_reason: "stop", message: { content: "Clearer sentence." } },
@@ -215,6 +221,15 @@ describe("aiRouter limits and privacy", () => {
     expect(usageInput?.data.tokensUsed.increment).toBe(150);
     expect(providerCreate.mock.invocationCallOrder[0]).toBeLessThan(
       transaction.mock.invocationCallOrder[0]!,
+    );
+    expect(JSON.stringify(consoleLog.mock.calls)).not.toContain(
+      "Only this selected sentence.",
+    );
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
+      "Only this selected sentence.",
+    );
+    expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
+      "Explain this sentence.",
     );
   });
 

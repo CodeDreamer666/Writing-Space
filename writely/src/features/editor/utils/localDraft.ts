@@ -3,6 +3,7 @@ import { isEditorContent } from "./editorContent";
 
 const LOCAL_DRAFT_SCHEMA_VERSION = 1;
 const LOCAL_DRAFT_PREFIX = "writely:local-draft:";
+export const LOCAL_DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
 
 export type LocalDraft = {
   schemaVersion: typeof LOCAL_DRAFT_SCHEMA_VERSION;
@@ -26,6 +27,11 @@ export function readLocalDraft(docId: string): LocalDraft | null {
     }
 
     const draft = JSON.parse(value) as Partial<LocalDraft>;
+    const savedAtTime =
+      typeof draft.savedAt === "string"
+        ? Date.parse(draft.savedAt)
+        : Number.NaN;
+    const age = Date.now() - savedAtTime;
 
     if (
       draft.schemaVersion !== LOCAL_DRAFT_SCHEMA_VERSION ||
@@ -35,13 +41,23 @@ export function readLocalDraft(docId: string): LocalDraft | null {
       !Number.isInteger(draft.baseVersion) ||
       draft.baseVersion < 0 ||
       typeof draft.savedAt !== "string" ||
+      !Number.isFinite(savedAtTime) ||
+      age < 0 ||
+      age > LOCAL_DRAFT_MAX_AGE_MS ||
       !isEditorContent(draft.content)
     ) {
+      window.localStorage.removeItem(getDraftKey(docId));
       return null;
     }
 
     return draft as LocalDraft;
   } catch {
+    try {
+      window.localStorage.removeItem(getDraftKey(docId));
+    } catch {
+      // Storage access can be blocked by browser privacy settings.
+    }
+
     return null;
   }
 }
@@ -67,6 +83,42 @@ export function clearLocalDraft(docId: string) {
     window.localStorage.removeItem(getDraftKey(docId));
   } catch {
     // A blocked storage API must not prevent a confirmed server save.
+  }
+}
+
+export function clearAllLocalDrafts() {
+  try {
+    const draftKeys = Array.from(
+      { length: window.localStorage.length },
+      (_, index) => window.localStorage.key(index),
+    ).filter(
+      (key): key is string => key?.startsWith(LOCAL_DRAFT_PREFIX) ?? false,
+    );
+
+    draftKeys.forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
+  } catch {
+    // Blocked storage must not prevent the requested server or browser action.
+  }
+}
+
+export function cleanupStaleLocalDrafts() {
+  try {
+    const docIds = Array.from(
+      { length: window.localStorage.length },
+      (_, index) => window.localStorage.key(index),
+    )
+      .filter(
+        (key): key is string => key?.startsWith(LOCAL_DRAFT_PREFIX) ?? false,
+      )
+      .map((key) => key.slice(LOCAL_DRAFT_PREFIX.length));
+
+    docIds.forEach((docId) => {
+      readLocalDraft(docId);
+    });
+  } catch {
+    // Browser cleanup is best effort when storage access is blocked.
   }
 }
 

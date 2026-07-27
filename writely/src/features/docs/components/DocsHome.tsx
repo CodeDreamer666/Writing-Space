@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
+import { SignInLegalNotice } from "~/components/layout/LegalLinks";
 import Loading from "~/components/shared/Loading";
 import LoadingIcon from "~/components/shared/LoadingIcon";
 import ServerError from "~/components/shared/ServerError";
@@ -11,6 +12,7 @@ import { useWritelyShortcuts } from "~/hooks/useWritelyShortcuts";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
+import { clearLocalDraft } from "~/features/editor/utils/localDraft";
 import DocItem from "./DocItem";
 
 const CREATE_AFTER_AUTH_KEY = "writely:create-after-auth";
@@ -92,6 +94,9 @@ export default function DocsHome() {
       );
 
       return { previousDocuments };
+    },
+    onSuccess: (_result, { docId }) => {
+      clearLocalDraft(docId);
     },
     onError: (mutationError, _input, context) => {
       utils.docs.getUserDocs.setData(undefined, context?.previousDocuments);
@@ -236,6 +241,7 @@ export default function DocsHome() {
           <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-[var(--w-muted)]">
             {t("docs.intro")}
           </p>
+          {!isAuthenticated && <SignInLegalNotice />}
         </section>
 
         {isAuthenticated && (

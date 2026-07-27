@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { LegalLinks } from "~/components/layout/LegalLinks";
 import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { PUBLIC_COPY } from "~/lib/publicTranslations";
 import {
@@ -189,14 +190,7 @@ export default function LandingPageContent() {
 
         <footer className="flex items-center justify-between border-t border-[var(--w-border-soft)] py-8 text-sm text-[var(--w-subtle)]">
           <span>{copy.desktopBeta}</span>
-          <div className="flex items-center gap-5">
-            <Link href="/privacy" className="hover:text-[var(--w-foreground)]">
-              {copy.privacy}
-            </Link>
-            <Link href="/setting" className="hover:text-[var(--w-foreground)]">
-              {copy.settings}
-            </Link>
-          </div>
+          <LegalLinks />
         </footer>
       </div>
     </main>

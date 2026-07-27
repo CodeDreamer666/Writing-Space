@@ -67,6 +67,26 @@ const english = {
   "settings.signOut": "Sign out",
   "settings.signingOut": "Signing out…",
   "settings.signOutError": "Unable to sign out. Please try again.",
+  "settings.clearRecovery": "Clear browser recovery copies",
+  "settings.recoveryCleared":
+    "Browser recovery copies have been cleared on this device.",
+  "settings.accountExportDescription":
+    "Download your account details, documents, preferences, AI usage totals, feedback, session details, and connected-account information as JSON. Authentication tokens are excluded.",
+  "settings.downloadData": "Download my data",
+  "settings.exportingData": "Preparing export…",
+  "settings.exportReady": "Your Writely data export is ready.",
+  "settings.exportError":
+    "Unable to prepare your data export. Please try again.",
+  "settings.deleteAccountDescription":
+    "Permanently delete your Writely account and all of its documents.",
+  "settings.deleteAccount": "Delete account",
+  "settings.deleteAccountConfirmTitle": "Delete your Writely account?",
+  "settings.deleteAccountConfirmDescription":
+    "This permanently deletes your documents, account data, and recovery copies on this browser. This cannot be undone. You can sign in again later with the same email to create a new, empty account.",
+  "settings.confirmDeleteAccount": "Permanently delete account",
+  "settings.deletingAccount": "Deleting account…",
+  "settings.deleteAccountError":
+    "Unable to delete your account. For security, sign out and sign in again, then retry.",
   "auth.signIn": "Sign in",
   "auth.signingIn": "Signing in…",
   "auth.openApp": "Open app",
@@ -295,6 +315,24 @@ const chinese: TranslationDictionary = {
   "settings.signOut": "退出登录",
   "settings.signingOut": "正在退出…",
   "settings.signOutError": "无法退出登录，请重试。",
+  "settings.clearRecovery": "清除浏览器恢复副本",
+  "settings.recoveryCleared": "此设备上的浏览器恢复副本已清除。",
+  "settings.accountExportDescription":
+    "以 JSON 格式下载您的账户资料、文档、偏好、AI 使用总量、反馈、会话资料和已连接账户资料。导出不包含身份验证令牌。",
+  "settings.downloadData": "下载我的数据",
+  "settings.exportingData": "正在准备导出…",
+  "settings.exportReady": "您的 Writely 数据导出已准备好。",
+  "settings.exportError": "无法准备您的数据导出，请重试。",
+  "settings.deleteAccountDescription":
+    "永久删除您的 Writely 账户及其中的所有文档。",
+  "settings.deleteAccount": "删除账户",
+  "settings.deleteAccountConfirmTitle": "删除您的 Writely 账户？",
+  "settings.deleteAccountConfirmDescription":
+    "这将永久删除您的文档、账户数据及此浏览器中的恢复副本，且无法撤销。您日后仍可使用同一电子邮件重新登录并创建一个新的空账户。",
+  "settings.confirmDeleteAccount": "永久删除账户",
+  "settings.deletingAccount": "正在删除账户…",
+  "settings.deleteAccountError":
+    "无法删除您的账户。为确保安全，请退出后重新登录，然后再试一次。",
   "auth.signIn": "登录",
   "auth.signingIn": "正在登录…",
   "auth.openApp": "打开应用",
@@ -514,6 +552,26 @@ const malay: TranslationDictionary = {
   "settings.signOut": "Log keluar",
   "settings.signingOut": "Sedang log keluar…",
   "settings.signOutError": "Tidak dapat log keluar. Sila cuba lagi.",
+  "settings.clearRecovery": "Kosongkan salinan pemulihan pelayar",
+  "settings.recoveryCleared":
+    "Salinan pemulihan pelayar pada peranti ini telah dikosongkan.",
+  "settings.accountExportDescription":
+    "Muat turun butiran akaun, dokumen, keutamaan, jumlah penggunaan AI, maklum balas, butiran sesi dan maklumat akaun tersambung sebagai JSON. Token pengesahan tidak disertakan.",
+  "settings.downloadData": "Muat turun data saya",
+  "settings.exportingData": "Menyediakan eksport…",
+  "settings.exportReady": "Eksport data Writely anda sudah sedia.",
+  "settings.exportError":
+    "Tidak dapat menyediakan eksport data anda. Sila cuba lagi.",
+  "settings.deleteAccountDescription":
+    "Padam akaun Writely anda dan semua dokumennya secara kekal.",
+  "settings.deleteAccount": "Padam akaun",
+  "settings.deleteAccountConfirmTitle": "Padam akaun Writely anda?",
+  "settings.deleteAccountConfirmDescription":
+    "Ini akan memadam dokumen, data akaun dan salinan pemulihan pada pelayar ini secara kekal. Tindakan ini tidak boleh dibuat asal. Anda boleh log masuk semula kemudian dengan e-mel yang sama untuk mencipta akaun baharu yang kosong.",
+  "settings.confirmDeleteAccount": "Padam akaun secara kekal",
+  "settings.deletingAccount": "Sedang memadam akaun…",
+  "settings.deleteAccountError":
+    "Tidak dapat memadam akaun anda. Untuk keselamatan, log keluar dan log masuk semula, kemudian cuba lagi.",
   "auth.signIn": "Log masuk",
   "auth.signingIn": "Sedang log masuk…",
   "auth.openApp": "Buka aplikasi",
@@ -749,6 +807,26 @@ const tamil: TranslationDictionary = {
   "settings.signOut": "வெளியேறு",
   "settings.signingOut": "வெளியேறுகிறது…",
   "settings.signOutError": "வெளியேற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  "settings.clearRecovery": "உலாவி மீட்பு நகல்களை அழி",
+  "settings.recoveryCleared":
+    "இந்தச் சாதனத்திலுள்ள உலாவி மீட்பு நகல்கள் அழிக்கப்பட்டன.",
+  "settings.accountExportDescription":
+    "உங்கள் கணக்கு விவரங்கள், ஆவணங்கள், விருப்பங்கள், AI பயன்பாட்டு மொத்தங்கள், கருத்துகள், அமர்வு விவரங்கள் மற்றும் இணைக்கப்பட்ட கணக்கு தகவலை JSON ஆகப் பதிவிறக்கவும். அங்கீகார டோக்கன்கள் சேர்க்கப்படாது.",
+  "settings.downloadData": "என் தரவைப் பதிவிறக்கு",
+  "settings.exportingData": "ஏற்றுமதி தயாராகிறது…",
+  "settings.exportReady": "உங்கள் Writely தரவு ஏற்றுமதி தயாராக உள்ளது.",
+  "settings.exportError":
+    "உங்கள் தரவு ஏற்றுமதியைத் தயாரிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  "settings.deleteAccountDescription":
+    "உங்கள் Writely கணக்கையும் அதன் அனைத்து ஆவணங்களையும் நிரந்தரமாக நீக்கவும்.",
+  "settings.deleteAccount": "கணக்கை நீக்கு",
+  "settings.deleteAccountConfirmTitle": "உங்கள் Writely கணக்கை நீக்கவா?",
+  "settings.deleteAccountConfirmDescription":
+    "இது உங்கள் ஆவணங்கள், கணக்குத் தரவு மற்றும் இந்த உலாவியிலுள்ள மீட்பு நகல்களை நிரந்தரமாக நீக்கும். இதைச் செயல்தவிர்க்க முடியாது. அதே மின்னஞ்சலுடன் பின்னர் மீண்டும் உள்நுழைந்து புதிய காலிக் கணக்கை உருவாக்கலாம்.",
+  "settings.confirmDeleteAccount": "கணக்கை நிரந்தரமாக நீக்கு",
+  "settings.deletingAccount": "கணக்கு நீக்கப்படுகிறது…",
+  "settings.deleteAccountError":
+    "உங்கள் கணக்கை நீக்க முடியவில்லை. பாதுகாப்பிற்காக வெளியேறி மீண்டும் உள்நுழைந்த பிறகு முயற்சிக்கவும்.",
   "auth.signIn": "உள்நுழை",
   "auth.signingIn": "உள்நுழைகிறது…",
   "auth.openApp": "பயன்பாட்டைத் திற",

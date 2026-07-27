@@ -575,10 +575,7 @@ export const aiRouter = createTRPCRouter({
         }
 
         if (process.env.NODE_ENV === "development") {
-          console.error(
-            "AI request failed:",
-            error instanceof Error ? error.message : "Unknown error",
-          );
+          console.error("AI request failed.");
         }
 
         throw new TRPCError({

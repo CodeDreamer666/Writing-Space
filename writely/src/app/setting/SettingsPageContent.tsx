@@ -13,6 +13,9 @@ import {
 } from "~/lib/documentLimits";
 import {
   AuthenticatedAccount,
+  ClearRecoveryDataControl,
+  DeleteAccountControl,
+  DownloadAccountDataControl,
   InterfaceLanguageSettings,
   SignOutButton,
 } from "./SettingsControls";
@@ -84,6 +87,7 @@ export default function SettingsPageContent() {
           <SettingsSection title={t("settings.autosave")}>
             <p>{t("settings.autosaveDescription")}</p>
             <p className="mt-4">{t("settings.recoveryDescription")}</p>
+            <ClearRecoveryDataControl />
           </SettingsSection>
 
           <SettingsSection title={t("settings.aiUsage")}>
@@ -148,6 +152,8 @@ export default function SettingsPageContent() {
             <SettingsSection title={t("settings.account")}>
               <p>{t("settings.accountDescription")}</p>
               <SignOutButton />
+              <DownloadAccountDataControl />
+              <DeleteAccountControl />
             </SettingsSection>
           </AuthenticatedAccount>
         </div>

@@ -204,14 +204,11 @@ export const docsRouter = createTRPCRouter({
   deleteDoc: protectedProcedure
     .input(z.object({ docId: docIdSchema }))
     .mutation(async ({ ctx, input }) => {
-      const result = await ctx.db.document.updateMany({
+      const result = await ctx.db.document.deleteMany({
         where: {
           id: input.docId,
           userId: ctx.session.user.id,
           deletedAt: null,
-        },
-        data: {
-          deletedAt: new Date(),
         },
       });
 

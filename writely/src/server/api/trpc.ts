@@ -48,8 +48,15 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
   isDev: process.env.NODE_ENV === "development",
   transformer: superjson,
   errorFormatter({ shape, error }) {
+    const message =
+      process.env.NODE_ENV === "production" &&
+      shape.data.code === "INTERNAL_SERVER_ERROR"
+        ? "Writely could not complete that request. Please try again."
+        : shape.message;
+
     return {
       ...shape,
+      message,
       data: {
         ...shape.data,
         zodError:
@@ -99,7 +106,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
   if (t._config.isDev) {
     const end = Date.now();
-    console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
+    console.log(`[TRPC] ${path} completed in ${end - start}ms`);
   }
 
   return result;

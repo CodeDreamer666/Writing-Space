@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { cleanupStaleLocalDrafts } from "~/features/editor/utils/localDraft";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { authClient } from "~/server/better-auth/client";
@@ -30,6 +31,10 @@ export default function BetaUtilities() {
       handleTRPCError({ error, router });
     },
   });
+
+  useEffect(() => {
+    cleanupStaleLocalDrafts();
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {

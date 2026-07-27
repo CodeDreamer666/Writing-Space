@@ -8,6 +8,16 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
 
+  user: {
+    deleteUser: {
+      enabled: true,
+    },
+  },
+
+  account: {
+    encryptOAuthTokens: true,
+  },
+
   socialProviders: {
     google: {
       prompt: "select_account",

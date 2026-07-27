@@ -4,6 +4,7 @@ import { type NextRequest } from "next/server";
 import { env } from "~/env";
 import { appRouter } from "~/server/api/root";
 import { createTRPCContext } from "~/server/api/trpc";
+import { isSameOriginRequest } from "~/server/security/requestOrigin";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -15,8 +16,17 @@ const createContext = async (req: NextRequest) => {
   });
 };
 
-const handler = (req: NextRequest) =>
-  fetchRequestHandler({
+const handler = (req: NextRequest) => {
+  if (req.method === "POST" && !isSameOriginRequest(req)) {
+    return new Response("Forbidden", {
+      status: 403,
+      headers: {
+        "Cache-Control": "private, no-store",
+      },
+    });
+  }
+
+  return fetchRequestHandler({
     endpoint: "/api/trpc",
     req,
     router: appRouter,
@@ -25,10 +35,11 @@ const handler = (req: NextRequest) =>
       env.NODE_ENV === "development"
         ? ({ path, error }) => {
             console.error(
-              `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
+              `[tRPC] ${path ?? "<unknown>"} failed with ${error.code}`,
             );
           }
         : undefined,
   });
+};
 
 export { handler as GET, handler as POST };
