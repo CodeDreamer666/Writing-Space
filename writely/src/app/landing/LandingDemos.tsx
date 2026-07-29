@@ -18,8 +18,8 @@ type FormatButton = (typeof formatButtons)[number];
 type SaveState = "saved" | "saving" | "recovered";
 
 export function EditorPreview() {
-  const { language, t } = useUiLanguage();
-  const copy = PUBLIC_COPY[language].demo;
+  const { t } = useUiLanguage();
+  const copy = PUBLIC_COPY.demo;
   const [activeFormats, setActiveFormats] = useState<FormatButton[]>([]);
   const formatLabels: Record<FormatButton, string> = {
     Bold: copy.bold,
@@ -116,8 +116,8 @@ export function EditorPreview() {
 }
 
 export function AiRewriteDemo() {
-  const { language, t } = useUiLanguage();
-  const copy = PUBLIC_COPY[language].demo;
+  const { t } = useUiLanguage();
+  const copy = PUBLIC_COPY.demo;
   const [selectedAction, setSelectedAction] = useState<AiAction>("makeConcise");
   const aiActions = {
     improveClarity: {
@@ -176,8 +176,8 @@ export function AiRewriteDemo() {
 }
 
 export function FocusModeDemo({ expanded = false }: { expanded?: boolean }) {
-  const { language, t } = useUiLanguage();
-  const copy = PUBLIC_COPY[language].demo;
+  const { t } = useUiLanguage();
+  const copy = PUBLIC_COPY.demo;
   const [isFocused, setIsFocused] = useState(false);
 
   return (
@@ -224,7 +224,7 @@ export function FocusModeDemo({ expanded = false }: { expanded?: boolean }) {
           </p>
 
           <p className="mt-4 text-sm leading-7 text-[var(--w-muted)]">
-            {PUBLIC_COPY[language].landing.aiDescription}
+            {PUBLIC_COPY.landing.aiDescription}
           </p>
 
           <div className="mt-5 flex items-end justify-between gap-4 border-t border-[var(--w-border-soft)] pt-4">
@@ -251,8 +251,7 @@ export function FocusModeDemo({ expanded = false }: { expanded?: boolean }) {
 }
 
 export function AutosaveDemo({ expanded = false }: { expanded?: boolean }) {
-  const { language } = useUiLanguage();
-  const copy = PUBLIC_COPY[language].demo;
+  const copy = PUBLIC_COPY.demo;
   const [draft, setDraft] = useState(
     "A good idea often arrives before the right words do. I want a quiet place where I can keep writing, shape the thought slowly, and return to it without worrying about losing my progress.",
   );
@@ -324,8 +323,7 @@ export function AutosaveDemo({ expanded = false }: { expanded?: boolean }) {
 }
 
 export function ExportDemo({ expanded = false }: { expanded?: boolean }) {
-  const { language } = useUiLanguage();
-  const copy = PUBLIC_COPY[language].demo;
+  const copy = PUBLIC_COPY.demo;
   const [selectedFormat, setSelectedFormat] =
     useState<ExportFormat>("Markdown");
   const [isExporting, setIsExporting] = useState(false);

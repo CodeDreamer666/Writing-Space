@@ -4,12 +4,14 @@ import { useUiLanguage } from "~/hooks/useUiLanguage";
 
 type Props = {
   wordCount: number;
+  characterCount: number;
   readingTime: string;
   onBackToDrafts: () => void;
 };
 
 export default function EditorUtilityBar({
   wordCount,
+  characterCount,
   readingTime,
   onBackToDrafts,
 }: Props) {
@@ -40,7 +42,10 @@ export default function EditorUtilityBar({
 
         <p className="px-2 text-right text-[var(--w-subtle)]">
           {t("editor.words", { count: wordCount.toLocaleString(locale) })} ·{" "}
-          {readingTime}
+          {t("editor.characterCount", {
+            count: characterCount.toLocaleString(locale),
+          })}{" "}
+          · {readingTime}
         </p>
       </footer>
     </div>

@@ -1,5 +1,12 @@
 import { type Editor, EditorContent } from "@tiptap/react";
 import { useUiLanguage } from "~/hooks/useUiLanguage";
+import { useWritingAppearance } from "~/hooks/useWritingAppearance";
+import {
+  WRITING_EDITOR_WIDTH_PIXELS,
+  WRITING_FONT_FAMILY_VALUES,
+  WRITING_LINE_HEIGHTS,
+  WRITING_TEXT_SIZE_PIXELS,
+} from "~/lib/writingAppearance";
 import type { WritingMode } from "~/types/writing";
 import type { SaveStatus } from "../hooks/useDocumentAutosave";
 import SaveStatusNotice from "./SaveStatusNotice";
@@ -42,6 +49,8 @@ export default function EditorDocument({
   onAiOpen,
 }: Props) {
   const { locale, t } = useUiLanguage();
+  const { appearance } = useWritingAppearance();
+  const writingFontFamily = WRITING_FONT_FAMILY_VALUES[appearance.fontFamily];
 
   return (
     <main
@@ -50,7 +59,12 @@ export default function EditorDocument({
         isFocusMode ? "py-8 sm:py-14" : "py-6 sm:py-10"
       }`}
     >
-      <div className="mx-auto max-w-3xl">
+      <div
+        className="mx-auto w-full"
+        style={{
+          maxWidth: WRITING_EDITOR_WIDTH_PIXELS[appearance.editorWidth],
+        }}
+      >
         <section
           className={`relative px-5 py-6 transition-all duration-300 sm:px-8 sm:py-8 ${
             isFocusMode
@@ -77,6 +91,7 @@ export default function EditorDocument({
                 maxLength={200}
                 disabled={saveStatus === "recovery"}
                 className="editor-title-input w-full min-w-0 bg-transparent text-3xl leading-tight font-medium tracking-[-0.02em] text-[var(--w-foreground)] outline-none placeholder:text-[var(--w-placeholder)] sm:text-5xl"
+                style={{ fontFamily: writingFontFamily }}
               />
             </div>
 
@@ -89,7 +104,15 @@ export default function EditorDocument({
             )}
           </div>
 
-          <EditorContent editor={editor} />
+          <div
+            style={{
+              fontFamily: writingFontFamily,
+              fontSize: WRITING_TEXT_SIZE_PIXELS[appearance.textSize],
+              lineHeight: WRITING_LINE_HEIGHTS[appearance.lineSpacing],
+            }}
+          >
+            <EditorContent editor={editor} />
+          </div>
 
           {!isFocusMode && (
             <p

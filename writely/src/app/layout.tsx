@@ -1,10 +1,30 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
+import { Atkinson_Hyperlegible, Inter, Source_Serif_4 } from "next/font/google";
 import DesktopOnlyNotice from "~/components/layout/DesktopOnlyNotice";
 import StatusMessageProvider from "~/components/layout/StatusMessageProvider";
 import BetaUtilities from "~/components/layout/BetaUtilities";
 import ThemeProvider from "~/components/layout/ThemeProvider";
 import { TRPCReactProvider } from "~/trpc/react";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  variable: "--font-source-serif",
+  display: "swap",
+});
+
+const atkinsonHyperlegible = Atkinson_Hyperlegible({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-atkinson-hyperlegible",
+  display: "swap",
+});
 
 const themeScript = `
 (() => {
@@ -36,12 +56,12 @@ export default function RootLayout({
       lang="en"
       data-theme="dark"
       suppressHydrationWarning
-      className="desktop-beta-locked"
+      className={`${inter.variable} ${sourceSerif.variable} ${atkinsonHyperlegible.variable} desktop-beta-locked`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className="desktop-beta-locked">
+      <body className={`${inter.className} desktop-beta-locked`}>
         <div className="desktop-beta-app">
           <ThemeProvider>
             <StatusMessageProvider>

@@ -4,7 +4,6 @@ export const WRITING_MODES = [
   "Persuasive",
   "Reflective",
   "Story",
-  "Professional",
   "Argumentative",
 ] as const;
 

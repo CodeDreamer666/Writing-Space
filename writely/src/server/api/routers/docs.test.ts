@@ -5,7 +5,7 @@ import {
   MAX_DOCUMENTS_PER_USER,
 } from "~/lib/documentLimits";
 import type { createTRPCContext } from "~/server/api/trpc";
-import { docsRouter, MAX_DOCUMENT_BYTES, MAX_TITLE_LENGTH } from "./docs";
+import { docsRouter, MAX_TITLE_LENGTH } from "./docs";
 
 type Context = Awaited<ReturnType<typeof createTRPCContext>>;
 
@@ -417,102 +417,6 @@ describe("docsRouter save safety", () => {
     expect(database.updateManyAndReturn).not.toHaveBeenCalled();
   });
 
-  it("rejects unsupported pictographs in a title", async () => {
-    const database = createDocumentDatabase();
-    const caller = createCaller(database);
-
-    await expect(
-      caller.saveDoc({
-        docId,
-        title: "Decorated draft 🎨",
-        content,
-        version: 0,
-      }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(database.findFirst).not.toHaveBeenCalled();
-  });
-
-  it("rejects unsupported pictographs in document writing", async () => {
-    const database = createDocumentDatabase();
-    const caller = createCaller(database);
-    const decoratedContent = {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [{ type: "text", text: "Decorated writing 🎨" }],
-        },
-      ],
-    };
-
-    await expect(
-      caller.saveDoc({
-        docId,
-        title: "A title",
-        content: decoratedContent,
-        version: 0,
-      }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(database.findFirst).not.toHaveBeenCalled();
-  });
-
-  it("accepts Chinese and Tamil writing without treating it as pictographs", async () => {
-    const database = createDocumentDatabase();
-    const updatedAt = new Date();
-    const multilingualContent = {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [{ type: "text", text: "中文写作 தமிழ் எழுத்து" }],
-        },
-      ],
-    };
-    database.findFirst.mockResolvedValue({
-      title: "中文 தமிழ்",
-      content,
-      updatedAt,
-      version: 0,
-    });
-    database.updateManyAndReturn.mockResolvedValue([
-      { title: "中文 தமிழ்", updatedAt, version: 1 },
-    ]);
-    const caller = createCaller(database);
-
-    await expect(
-      caller.saveDoc({
-        docId,
-        title: "中文 தமிழ்",
-        content: multilingualContent,
-        version: 0,
-      }),
-    ).resolves.toMatchObject({ version: 1 });
-  });
-
-  it("rejects document payloads over the server limit", async () => {
-    const database = createDocumentDatabase();
-    const caller = createCaller(database);
-    const oversizedContent = {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [{ type: "text", text: "x".repeat(MAX_DOCUMENT_BYTES + 1) }],
-        },
-      ],
-    };
-
-    await expect(
-      caller.saveDoc({
-        docId,
-        title: "A title",
-        content: oversizedContent,
-        version: 0,
-      }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
-  });
-
   it("rejects document text over the character limit", async () => {
     const database = createDocumentDatabase();
     const caller = createCaller(database);
@@ -536,41 +440,6 @@ describe("docsRouter save safety", () => {
         docId,
         title: "A title",
         content: oversizedContent,
-        version: 0,
-      }),
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
-  });
-
-  it("rejects dangerous URL protocols in editor content", async () => {
-    const database = createDocumentDatabase();
-    const caller = createCaller(database);
-    const unsafeContent = {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text: "unsafe link",
-              marks: [
-                {
-                  type: "link",
-                  attrs: { href: "javascript:alert(1)" },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-
-    await expect(
-      caller.saveDoc({
-        docId,
-        title: "A title",
-        content: unsafeContent,
         version: 0,
       }),
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });

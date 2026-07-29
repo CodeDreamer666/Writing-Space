@@ -75,6 +75,16 @@ const rewriteActions: Array<{
     labelKey: "ai.improveFlow",
     descriptionKey: "ai.improveFlowDescription",
   },
+  {
+    action: "improveWordChoice",
+    labelKey: "ai.improveWordChoice",
+    descriptionKey: "ai.improveWordChoiceDescription",
+  },
+  {
+    action: "removeRepetition",
+    labelKey: "ai.removeRepetition",
+    descriptionKey: "ai.removeRepetitionDescription",
+  },
 ];
 
 const actionLabelKeys: Record<AiAction, UiTranslationKey> = {
@@ -84,6 +94,8 @@ const actionLabelKeys: Record<AiAction, UiTranslationKey> = {
   makeStronger: "ai.makeStronger",
   makeConcise: "ai.makeConcise",
   improveFlow: "ai.improveFlow",
+  improveWordChoice: "ai.improveWordChoice",
+  removeRepetition: "ai.removeRepetition",
   custom: "ai.askWritely",
 };
 

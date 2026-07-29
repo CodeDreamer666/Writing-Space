@@ -34,7 +34,7 @@ export default function DataDeletionPage() {
         <p>
           Go to Settings &amp; Help and choose “Clear browser recovery copies.”
           This removes Writely recovery drafts from the current browser profile
-          without removing theme or interface-language preferences.
+          without removing your theme or writing-appearance preferences.
         </p>
         <p>
           Repeat this step on every browser, device, and browser profile you

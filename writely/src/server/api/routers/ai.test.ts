@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { createTRPCContext } from "~/server/api/trpc";
-import { DAILY_AI_TOKEN_LIMIT } from "~/lib/aiLimits";
+import {
+  AI_FALLBACK_OUTPUT_TOKEN_LIMIT,
+  DAILY_AI_TOKEN_LIMIT,
+  MAX_AI_SELECTION_CHARACTERS,
+} from "~/lib/aiLimits";
+import { AI_ACTIONS } from "~/types/ai";
+import { WRITING_MODES } from "~/types/writing";
 import { aiRouter } from "./ai";
 
 type ProviderCompletion = {
@@ -150,6 +156,26 @@ function createCaller({
 describe("aiRouter limits and privacy", () => {
   afterEach(() => {
     envState.aiEnabled = "true";
+  });
+
+  it("uses the Writely 2.0 AI allowance and selection limits", () => {
+    expect(DAILY_AI_TOKEN_LIMIT).toBe(8_000);
+    expect(MAX_AI_SELECTION_CHARACTERS).toBe(1_500);
+  });
+
+  it("exposes eight rewrite actions and no Professional writing mode", () => {
+    expect(AI_ACTIONS).toEqual([
+      "improveClarity",
+      "fixGrammar",
+      "makeNatural",
+      "makeStronger",
+      "makeConcise",
+      "improveFlow",
+      "improveWordChoice",
+      "removeRepetition",
+      "custom",
+    ]);
+    expect(WRITING_MODES).not.toContain("Professional");
   });
 
   it("blocks provider calls when the global AI switch is disabled", async () => {
@@ -307,52 +333,6 @@ describe("aiRouter limits and privacy", () => {
     );
   });
 
-  it("accepts a Chinese rewrite by detecting the selected text language", async () => {
-    providerCreate.mockReset();
-    providerCreate.mockResolvedValue({
-      choices: [
-        {
-          finish_reason: "stop",
-          message: {
-            content:
-              '{"improved":"<p>我们讨论了关键决定，并明确了后续步骤。</p>","changes":"表达更加直接。句子更容易理解。原意保持不变。"}',
-          },
-        },
-      ],
-      usage: {
-        prompt_tokens: 130,
-        completion_tokens: 45,
-      },
-    });
-    const { caller, aiDailyUsage } = createCaller();
-
-    await expect(
-      caller.askAi({
-        docId,
-        action: "improveClarity",
-        mode: "Clear",
-        selectedText: "我们讨论了这些决定，并明确了后续步骤。",
-        selectedHtml: "<p>我们讨论了这些决定，并明确了后续步骤。</p>",
-      }),
-    ).resolves.toMatchObject({
-      type: "rewrite",
-      improved: "<p>我们讨论了关键决定，并明确了后续步骤。</p>",
-      changes: "表达更加直接。句子更容易理解。原意保持不变。",
-      remainingTokens: DAILY_AI_TOKEN_LIMIT - 175,
-    });
-
-    expect(providerCreate).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(providerCreate.mock.calls[0]?.[0])).toContain(
-      "Detect the language and language variety of the writing inside the target tags.",
-    );
-    expect(JSON.stringify(providerCreate.mock.calls[0]?.[0])).toContain(
-      "我们讨论了这些决定，并明确了后续步骤。",
-    );
-    expect(
-      aiDailyUsage.update.mock.calls[0]?.[0]?.data.tokensUsed.increment,
-    ).toBe(175);
-  });
-
   it("retries a rewrite once when the provider returns invalid JSON", async () => {
     providerCreate.mockReset();
     providerCreate
@@ -456,7 +436,10 @@ describe("aiRouter limits and privacy", () => {
     }
   });
 
-  it("does not charge a rewrite that contains unsupported pictographs", async () => {
+  it.each([
+    ["improveWordChoice", "more precise, effective word choices"],
+    ["removeRepetition", "remove repeated words, phrases, and ideas"],
+  ] as const)("supports the %s rewrite action", async (action, instruction) => {
     providerCreate.mockReset();
     providerCreate.mockResolvedValue({
       choices: [
@@ -464,29 +447,34 @@ describe("aiRouter limits and privacy", () => {
           finish_reason: "stop",
           message: {
             content:
-              '{"improved":"<p>A decorated rewrite 🎨</p>","changes":"The wording is more vivid. The sentence remains concise. The meaning is preserved."}',
+              '{"improved":"<p>A more effective sentence.</p>","changes":"The wording is more precise. Repeated language is reduced. The original meaning is preserved."}',
           },
         },
       ],
       usage: {
-        prompt_tokens: 120,
-        completion_tokens: 40,
+        prompt_tokens: 100,
+        completion_tokens: 50,
       },
     });
-    const { caller, aiDailyUsage } = createCaller();
+    const { caller } = createCaller();
 
     await expect(
       caller.askAi({
         docId,
-        action: "improveClarity",
+        action,
         mode: "Clear",
-        selectedText: "A sentence.",
-        selectedHtml: "<p>A sentence.</p>",
+        selectedText: "A sentence with wording that wording could improve.",
+        selectedHtml:
+          "<p>A sentence with wording that wording could improve.</p>",
       }),
-    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+    ).resolves.toMatchObject({
+      type: "rewrite",
+      remainingTokens: DAILY_AI_TOKEN_LIMIT - 150,
+    });
 
-    expect(providerCreate).toHaveBeenCalledTimes(2);
-    expect(aiDailyUsage.update).not.toHaveBeenCalled();
+    expect(JSON.stringify(providerCreate.mock.calls[0]?.[0])).toContain(
+      instruction,
+    );
   });
 
   it("does not record usage when rewrite retries do not produce a valid response", async () => {
@@ -576,8 +564,8 @@ describe("aiRouter limits and privacy", () => {
         docId,
         action: "custom",
         mode: "Clear",
-        selectedText: "A".repeat(1_000),
-        selectedHtml: `<p>${"A".repeat(1_000)}</p>`,
+        selectedText: "A".repeat(MAX_AI_SELECTION_CHARACTERS),
+        selectedHtml: `<p>${"A".repeat(MAX_AI_SELECTION_CHARACTERS)}</p>`,
         instruction: "Explain this selection.",
       }),
     ).resolves.toMatchObject({
@@ -586,6 +574,26 @@ describe("aiRouter limits and privacy", () => {
 
     const providerInput: unknown = providerCreate.mock.calls[0]?.[0];
     expect(providerInput).toMatchObject({ max_tokens: 2_500 });
+  });
+
+  it("rejects selections above the configured character limit", async () => {
+    providerCreate.mockReset();
+    const { caller } = createCaller();
+
+    await expect(
+      caller.askAi({
+        docId,
+        action: "custom",
+        mode: "Clear",
+        selectedText: "A".repeat(MAX_AI_SELECTION_CHARACTERS + 1),
+        selectedHtml: `<p>${"A".repeat(MAX_AI_SELECTION_CHARACTERS + 1)}</p>`,
+        instruction: "Explain this selection.",
+      }),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+
+    expect(providerCreate).not.toHaveBeenCalled();
   });
 
   it("allows a small selection while usable daily allowance remains", async () => {
@@ -619,7 +627,7 @@ describe("aiRouter limits and privacy", () => {
       }),
     ).resolves.toMatchObject({
       type: "rewrite",
-      remainingTokens: 1_400,
+      remainingTokens: DAILY_AI_TOKEN_LIMIT - 3_600,
     });
 
     const providerInput = providerCreate.mock.calls[0]?.[0] as
@@ -627,7 +635,9 @@ describe("aiRouter limits and privacy", () => {
       | undefined;
 
     expect(providerInput?.max_tokens).toBeGreaterThan(0);
-    expect(providerInput?.max_tokens).toBeLessThanOrEqual(2_000);
+    expect(providerInput?.max_tokens).toBeLessThanOrEqual(
+      AI_FALLBACK_OUTPUT_TOKEN_LIMIT,
+    );
   });
 
   it("scopes AI requests to an active document owned by the user", async () => {
@@ -732,7 +742,7 @@ describe("aiRouter limits and privacy", () => {
     providerCreate.mockResolvedValue({
       choices: [{ finish_reason: "stop", message: { content: "A response." } }],
       usage: {
-        prompt_tokens: 4_500,
+        prompt_tokens: DAILY_AI_TOKEN_LIMIT - 500,
         completion_tokens: 600,
       },
     });

@@ -41,7 +41,7 @@ export default function PrivacyPageContent() {
           Writely stores document titles, writing and supported formatting,
           writing mode, document version, creation and update times, and save
           information. It also stores account preferences such as whether the
-          leave-editor reminder is disabled. Theme and interface-language
+          leave-editor reminder is disabled. Your theme and writing-appearance
           preferences are kept in your browser.
         </p>
 

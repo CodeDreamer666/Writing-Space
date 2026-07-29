@@ -16,9 +16,9 @@ import {
   ClearRecoveryDataControl,
   DeleteAccountControl,
   DownloadAccountDataControl,
-  InterfaceLanguageSettings,
   SignOutButton,
 } from "./SettingsControls";
+import WritingAppearanceSettings from "./WritingAppearanceSettings";
 
 const shortcutKeys = [
   ["Ctrl/Cmd + Alt + N", "settings.createDocument"],
@@ -66,6 +66,14 @@ export default function SettingsPageContent() {
             </p>
           </SettingsSection>
 
+          <SettingsSection title={t("settings.writingAppearance")}>
+            <p>{t("settings.writingAppearanceDescription")}</p>
+            <WritingAppearanceSettings />
+            <p className="mt-4 text-xs text-[var(--w-subtle)]">
+              {t("settings.writingAppearanceExportNotice")}
+            </p>
+          </SettingsSection>
+
           <SettingsSection title={t("settings.shortcuts")}>
             <dl className="mt-6 divide-y divide-[var(--w-border-soft)] border-y border-[var(--w-border-soft)]">
               {shortcutKeys.map(([keys, descriptionKey]) => (
@@ -108,10 +116,8 @@ export default function SettingsPageContent() {
             <p className="mt-4">{t("settings.failedNotCharged")}</p>
           </SettingsSection>
 
-          <SettingsSection title={t("settings.language")}>
-            <p>{t("settings.languageDescription")}</p>
-            <InterfaceLanguageSettings />
-            <p className="mt-4">{t("settings.languageNotice")}</p>
+          <SettingsSection title={t("settings.languageSupport")}>
+            <p>{t("settings.languageSupportDescription")}</p>
             <p className="mt-4">{t("settings.pictographNotice")}</p>
           </SettingsSection>
 

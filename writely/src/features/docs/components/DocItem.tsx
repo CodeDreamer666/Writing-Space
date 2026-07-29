@@ -4,13 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import LoadingIcon from "~/components/shared/LoadingIcon";
 import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { translateUi } from "~/lib/uiTranslations";
-import type { InterfaceLanguage } from "~/lib/writingLanguage";
 
-function formatRelativeTime(
-  date: Date | string,
-  language: InterfaceLanguage,
-  locale: string,
-): string {
+function formatRelativeTime(date: Date | string, locale: string): string {
   const now = new Date();
   const then = new Date(date);
   const diffMs = now.getTime() - then.getTime();
@@ -19,19 +14,19 @@ function formatRelativeTime(
   const diffDays = Math.floor(diffHours / 24);
 
   if (diffMins <= 0) {
-    return translateUi(language, "docs.justNow");
+    return translateUi("docs.justNow");
   }
 
   if (diffMins < 60) {
-    return translateUi(language, "docs.minutesAgo", { count: diffMins });
+    return translateUi("docs.minutesAgo", { count: diffMins });
   }
 
   if (diffHours < 24) {
-    return translateUi(language, "docs.hoursAgo", { count: diffHours });
+    return translateUi("docs.hoursAgo", { count: diffHours });
   }
 
   if (diffDays === 1) {
-    return translateUi(language, "docs.yesterday");
+    return translateUi("docs.yesterday");
   }
 
   if (diffDays < 7) {
@@ -60,7 +55,7 @@ export default function DocItem({
   isDeleting,
   onDelete,
 }: DocItemProps) {
-  const { language, locale, t } = useUiLanguage();
+  const { locale, t } = useUiLanguage();
   const deleteDialogRef = useRef<HTMLElement>(null);
   const optionsButtonRef = useRef<HTMLButtonElement>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -167,7 +162,7 @@ export default function DocItem({
                 {title}
               </p>
               <p className="mt-1 text-xs text-[var(--w-subtle)]">
-                {formatRelativeTime(updatedAt, language, locale)}
+                {formatRelativeTime(updatedAt, locale)}
               </p>
             </div>
           </Link>

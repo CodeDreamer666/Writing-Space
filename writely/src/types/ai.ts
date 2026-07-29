@@ -5,6 +5,8 @@ export const AI_ACTIONS = [
   "makeStronger",
   "makeConcise",
   "improveFlow",
+  "improveWordChoice",
+  "removeRepetition",
   "custom",
 ] as const;
 

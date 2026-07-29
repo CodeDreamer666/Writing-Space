@@ -21,7 +21,6 @@ export default function WritingModeSelector({
     Persuasive: t("editor.modePersuasive"),
     Reflective: t("editor.modeReflective"),
     Story: t("editor.modeStory"),
-    Professional: t("editor.modeProfessional"),
     Argumentative: t("editor.modeArgumentative"),
   };
 

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LegalLinks } from "~/components/layout/LegalLinks";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { PUBLIC_COPY } from "~/lib/publicTranslations";
 import {
   AiRewriteDemo,
@@ -24,8 +23,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 export default function LandingPageContent() {
-  const { language } = useUiLanguage();
-  const copy = PUBLIC_COPY[language].landing;
+  const copy = PUBLIC_COPY.landing;
 
   return (
     <main className="landing-page min-h-screen overflow-hidden bg-[var(--w-background)] text-[var(--w-foreground)]">

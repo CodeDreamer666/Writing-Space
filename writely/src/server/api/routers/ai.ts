@@ -34,6 +34,8 @@ const rewriteActionSchema = z.enum([
   "makeStronger",
   "makeConcise",
   "improveFlow",
+  "improveWordChoice",
+  "removeRepetition",
 ]);
 
 function hasThreeOrFourSentences(value: string) {

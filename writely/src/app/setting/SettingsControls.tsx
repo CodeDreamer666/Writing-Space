@@ -1,18 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState } from "react";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import { clearAllLocalDrafts } from "~/features/editor/utils/localDraft";
 import { useUiLanguage } from "~/hooks/useUiLanguage";
-import {
-  DEFAULT_INTERFACE_LANGUAGE,
-  getStoredInterfaceLanguage,
-  INTERFACE_LANGUAGE_CHANGE_EVENT,
-  INTERFACE_LANGUAGES,
-  storeInterfaceLanguage,
-  type InterfaceLanguage,
-} from "~/lib/writingLanguage";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
 
@@ -28,56 +20,6 @@ export function AuthenticatedAccount({
   }
 
   return children;
-}
-
-export function InterfaceLanguageSettings() {
-  const { t } = useUiLanguage();
-  const language = useSyncExternalStore(
-    (onStoreChange) => {
-      window.addEventListener("storage", onStoreChange);
-      window.addEventListener(INTERFACE_LANGUAGE_CHANGE_EVENT, onStoreChange);
-
-      return () => {
-        window.removeEventListener("storage", onStoreChange);
-        window.removeEventListener(
-          INTERFACE_LANGUAGE_CHANGE_EVENT,
-          onStoreChange,
-        );
-      };
-    },
-    getStoredInterfaceLanguage,
-    () => DEFAULT_INTERFACE_LANGUAGE,
-  );
-
-  const handleChange = (nextLanguage: InterfaceLanguage) => {
-    storeInterfaceLanguage(nextLanguage);
-  };
-
-  return (
-    <label className="mt-5 block max-w-sm">
-      <span className="sr-only">{t("settings.languageLabel")}</span>
-      <select
-        suppressHydrationWarning
-        value={language}
-        onChange={(event) =>
-          handleChange(event.target.value as InterfaceLanguage)
-        }
-        className="min-h-11 w-full rounded-xl border border-[var(--w-border)] bg-[var(--w-surface)] px-3 text-sm text-[var(--w-foreground)] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
-      >
-        {INTERFACE_LANGUAGES.map((option) => (
-          <option key={option} value={option}>
-            {option === "English"
-              ? t("settings.englishDefault")
-              : option === "Chinese"
-                ? t("settings.chinese")
-                : option === "Malay"
-                  ? t("settings.malay")
-                  : t("settings.tamil")}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
 }
 
 export function SignOutButton() {
