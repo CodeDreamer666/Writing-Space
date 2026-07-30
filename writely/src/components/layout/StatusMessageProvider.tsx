@@ -8,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 
 type StatusMessageContextType = {
   showMessage: (message: string, isSuccess: boolean) => void;
@@ -35,7 +34,6 @@ export default function StatusMessageProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { t } = useUiLanguage();
   const [isSuccess, setIsSuccess] = useState<boolean | "IDLE">("IDLE");
   const [message, setMessage] = useState("");
 
@@ -85,7 +83,7 @@ export default function StatusMessageProvider({
               <button
                 type="button"
                 onClick={dismiss}
-                aria-label={t("common.close")}
+                aria-label="Close"
                 className="flex size-9 cursor-pointer items-center justify-center rounded-full text-neutral-400 transition-colors duration-200 hover:bg-neutral-800 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
                 ×

@@ -1,7 +1,6 @@
 "use client";
 
 import { useWritingAppearance } from "~/hooks/useWritingAppearance";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type {
   WritingEditorWidth,
   WritingFontFamily,
@@ -13,15 +12,12 @@ const controlClassName =
   "mt-2 min-h-11 w-full rounded-xl border border-[var(--w-border)] bg-[var(--w-surface)] px-3 text-sm text-[var(--w-foreground)] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]";
 
 export default function WritingAppearanceSettings() {
-  const { t } = useUiLanguage();
   const { appearance, updateAppearance } = useWritingAppearance();
 
   return (
     <div className="mt-6 grid gap-5 sm:grid-cols-2">
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">
-          {t("settings.writingFont")}
-        </span>
+        <span className="font-medium text-[var(--w-strong)]">Font family</span>
         <select
           value={appearance.fontFamily}
           onChange={(event) =>
@@ -31,16 +27,14 @@ export default function WritingAppearanceSettings() {
           }
           className={controlClassName}
         >
-          <option value="serif">{t("settings.fontSerif")}</option>
-          <option value="sans">{t("settings.fontSans")}</option>
-          <option value="accessible">{t("settings.fontAccessible")}</option>
+          <option value="serif">Serif: Source Serif 4 — Default</option>
+          <option value="sans">Sans serif: Inter</option>
+          <option value="accessible">Accessible: Atkinson Hyperlegible</option>
         </select>
       </label>
 
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">
-          {t("settings.writingTextSize")}
-        </span>
+        <span className="font-medium text-[var(--w-strong)]">Text size</span>
         <select
           value={appearance.textSize}
           onChange={(event) =>
@@ -50,17 +44,15 @@ export default function WritingAppearanceSettings() {
           }
           className={controlClassName}
         >
-          <option value="small">{t("settings.textSmall")}</option>
-          <option value="medium">{t("settings.textMedium")}</option>
-          <option value="large">{t("settings.textLarge")}</option>
-          <option value="extraLarge">{t("settings.textExtraLarge")}</option>
+          <option value="small">Small — 16px</option>
+          <option value="medium">Medium — 18px — Default</option>
+          <option value="large">Large — 20px</option>
+          <option value="extraLarge">Extra large — 22px</option>
         </select>
       </label>
 
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">
-          {t("settings.writingLineSpacing")}
-        </span>
+        <span className="font-medium text-[var(--w-strong)]">Line spacing</span>
         <select
           value={appearance.lineSpacing}
           onChange={(event) =>
@@ -70,18 +62,14 @@ export default function WritingAppearanceSettings() {
           }
           className={controlClassName}
         >
-          <option value="compact">{t("settings.spacingCompact")}</option>
-          <option value="comfortable">
-            {t("settings.spacingComfortable")}
-          </option>
-          <option value="spacious">{t("settings.spacingSpacious")}</option>
+          <option value="compact">Compact — 1.45</option>
+          <option value="comfortable">Comfortable — 1.65 — Default</option>
+          <option value="spacious">Spacious — 1.85</option>
         </select>
       </label>
 
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">
-          {t("settings.writingEditorWidth")}
-        </span>
+        <span className="font-medium text-[var(--w-strong)]">Editor width</span>
         <select
           value={appearance.editorWidth}
           onChange={(event) =>
@@ -91,9 +79,11 @@ export default function WritingAppearanceSettings() {
           }
           className={controlClassName}
         >
-          <option value="narrow">{t("settings.widthNarrow")}</option>
-          <option value="standard">{t("settings.widthStandard")}</option>
-          <option value="wide">{t("settings.widthWide")}</option>
+          <option value="narrow">Narrow — approximately 600px</option>
+          <option value="standard">
+            Standard — approximately 720px — Default
+          </option>
+          <option value="wide">Wide — approximately 860px</option>
         </select>
       </label>
     </div>

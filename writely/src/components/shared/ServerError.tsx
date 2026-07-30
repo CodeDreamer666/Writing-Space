@@ -1,11 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
-
 export default function ServerError() {
-  const { t } = useUiLanguage();
-
   return (
     <section className="fixed inset-0 z-9999 flex items-center justify-center bg-black px-4">
       <div className="w-full max-w-md rounded-3xl border border-neutral-800 bg-neutral-900 p-8 text-center">
@@ -27,11 +23,11 @@ export default function ServerError() {
         </div>
 
         <h2 className="mt-6 text-2xl font-semibold text-white">
-          {t("common.somethingWrong")}
+          Something went wrong
         </h2>
 
         <p className="mt-3 text-sm leading-7 text-neutral-400">
-          {t("common.pleaseTryAgain")}
+          Please try again.
         </p>
 
         <div className="mt-8 flex flex-col gap-3">
@@ -41,14 +37,14 @@ export default function ServerError() {
             }}
             className="h-11 cursor-pointer rounded-xl bg-white text-sm font-medium text-black transition-colors duration-200 hover:bg-white/80"
           >
-            {t("common.tryAgain")}
+            Try again
           </button>
 
           <Link
             href="/app"
             className="flex h-11 cursor-pointer items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 text-sm font-medium text-white transition-colors duration-200 hover:bg-neutral-800"
           >
-            {t("common.backHome")}
+            Back to Home
           </Link>
         </div>
       </div>

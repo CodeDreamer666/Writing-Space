@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type { SaveStatus } from "../hooks/useDocumentAutosave";
 
 type Props = {
@@ -17,7 +16,6 @@ export default function SaveStatusNotice({
   onRestoreRecovery,
   onDiscardRecovery,
 }: Props) {
-  const { t } = useUiLanguage();
   const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
 
   if (status !== "error" && status !== "conflict" && status !== "recovery") {
@@ -35,8 +33,8 @@ export default function SaveStatusNotice({
       >
         <p className="leading-relaxed">
           {isConfirmingDiscard
-            ? t("editor.recoveryDiscardConfirm")
-            : t("editor.recoveryFound")}
+            ? "Discard the unsaved browser recovery copy and keep the saved version? This cannot be undone."
+            : "Unsaved writing was found in this browser. Nothing has been replaced. Choose whether to restore it."}
         </p>
         <div className="flex shrink-0 flex-wrap gap-2">
           {isConfirmingDiscard ? (
@@ -46,14 +44,14 @@ export default function SaveStatusNotice({
                 onClick={() => setIsConfirmingDiscard(false)}
                 className="min-h-11 cursor-pointer rounded-lg border border-[#596B82] px-3 text-xs font-medium text-[#D5DFEB] hover:bg-[#1E2936]"
               >
-                {t("editor.goBack")}
+                Go back
               </button>
               <button
                 type="button"
                 onClick={onDiscardRecovery}
                 className="min-h-11 cursor-pointer rounded-lg bg-[#D5DFEB] px-3 text-xs font-medium text-[#151D27] hover:bg-[#E7EDF4]"
               >
-                {t("editor.discardRecovery")}
+                Discard recovery copy
               </button>
             </>
           ) : (
@@ -63,14 +61,14 @@ export default function SaveStatusNotice({
                 onClick={() => setIsConfirmingDiscard(true)}
                 className="min-h-11 cursor-pointer rounded-lg border border-[#596B82] px-3 text-xs font-medium text-[#D5DFEB] hover:bg-[#1E2936]"
               >
-                {t("editor.keepSaved")}
+                Keep saved version
               </button>
               <button
                 type="button"
                 onClick={onRestoreRecovery}
                 className="min-h-11 cursor-pointer rounded-lg bg-[#D5DFEB] px-3 text-xs font-medium text-[#151D27] hover:bg-[#E7EDF4]"
               >
-                {t("editor.restoreWriting")}
+                Restore writing
               </button>
             </>
           )}
@@ -87,9 +85,9 @@ export default function SaveStatusNotice({
       <p className="leading-relaxed">
         {isConflict
           ? isConfirmingDiscard
-            ? t("editor.conflictDiscardConfirm")
-            : t("editor.conflictFound")
-          : t("editor.saveError")}
+            ? "Discard these recovered browser edits and open the newer saved version? This cannot be undone."
+            : "A newer saved version exists. These recovered edits are still in this browser and have not overwritten it."
+          : "Writely could not save. Your latest edits are still kept in this browser."}
       </p>
       {isConflict && isConfirmingDiscard ? (
         <div className="flex shrink-0 flex-wrap gap-2">
@@ -98,14 +96,14 @@ export default function SaveStatusNotice({
             onClick={() => setIsConfirmingDiscard(false)}
             className="min-h-11 cursor-pointer rounded-lg border border-[#8D5A4E] px-3 text-xs font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]"
           >
-            {t("editor.keepRecovered")}
+            Keep recovered edits
           </button>
           <button
             type="button"
             onClick={onOpenSavedVersion}
             className="min-h-11 cursor-pointer rounded-lg bg-[#F1C6BA] px-3 text-xs font-medium text-[#211713] transition-colors hover:bg-[#F8DDD6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]"
           >
-            {t("editor.discardOpenSaved")}
+            Discard and open saved version
           </button>
         </div>
       ) : (
@@ -114,7 +112,7 @@ export default function SaveStatusNotice({
           onClick={isConflict ? () => setIsConfirmingDiscard(true) : onRetry}
           className="min-h-11 shrink-0 cursor-pointer rounded-lg border border-[#8D5A4E] px-3 text-xs font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]"
         >
-          {isConflict ? t("editor.viewSaved") : t("editor.retrySave")}
+          {isConflict ? "View saved version" : "Retry save"}
         </button>
       )}
     </aside>

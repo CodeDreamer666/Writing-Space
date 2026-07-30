@@ -1,7 +1,6 @@
 "use client";
 import { type Editor } from "@tiptap/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 
 const TOOLBAR_BUTTON_WIDTH = 40;
 const TOOLBAR_BUTTON_GAP = 4;
@@ -25,7 +24,6 @@ type ToolbarButton = {
 };
 
 export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
-  const { t } = useUiLanguage();
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ left: 0, top: 0 });
   const dismissedSelectionRef = useRef<string | null>(null);
@@ -115,25 +113,25 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
   const buttons: ToolbarButton[] = [
     {
       label: <b className="text-[13px] font-semibold">B</b>,
-      title: t("editor.toolbarBold"),
+      title: "Bold",
       action: () => editor.chain().focus().toggleBold().run(),
       isActive: editor.isActive("bold"),
     },
     {
       label: <i className="text-[13px] italic">I</i>,
-      title: t("editor.toolbarItalic"),
+      title: "Italic",
       action: () => editor.chain().focus().toggleItalic().run(),
       isActive: editor.isActive("italic"),
     },
     {
       label: <span className="text-[13px] font-semibold">H</span>,
-      title: t("editor.toolbarHeading"),
+      title: "Heading 2",
       action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
       isActive: editor.isActive("heading", { level: 2 }),
     },
     {
       label: <span className="text-base leading-none">≡</span>,
-      title: t("editor.toolbarList"),
+      title: "Bullet list",
       action: () => editor.chain().focus().toggleBulletList().run(),
       isActive: editor.isActive("bulletList"),
     },
@@ -153,7 +151,7 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
           <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z" />
         </svg>
       ),
-      title: t("editor.toolbarQuote"),
+      title: "Quote",
       action: () => editor.chain().focus().toggleBlockquote().run(),
       isActive: editor.isActive("blockquote"),
     },
@@ -162,7 +160,7 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
   if (aiEnabled) {
     buttons.push({
       label: <span className="text-[11px] font-semibold">AI</span>,
-      title: t("editor.toolbarAskAi"),
+      title: "Ask AI",
       action: onAiOpen,
     });
   }

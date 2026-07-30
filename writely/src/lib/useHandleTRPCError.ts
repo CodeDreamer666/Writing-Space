@@ -3,7 +3,6 @@
 import { TRPCClientError } from "@trpc/client";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type { AppRouter } from "~/server/api/root";
 
 type HandleTRPCErrorParams = {
@@ -19,11 +18,10 @@ function isTRPCClientError(
 
 export function useHandleTRPCError() {
   const { showMessage } = useStatusMessage();
-  const { t } = useUiLanguage();
 
   return function handleTRPCError({ error, router }: HandleTRPCErrorParams) {
     if (!isTRPCClientError(error)) {
-      showMessage(t("common.somethingWrong"), false);
+      showMessage("Something went wrong. Please try again.", false);
       return;
     }
 
@@ -36,18 +34,27 @@ export function useHandleTRPCError() {
         ...Object.values(zodError.fieldErrors).flat(),
       ].find((message): message is string => typeof message === "string");
 
-      showMessage(validationMessage ?? t("error.input"), false);
+      showMessage(
+        validationMessage ?? "Please check your input and try again.",
+        false,
+      );
       return;
     }
 
     if (!error.data) {
-      showMessage(t("error.connection"), false);
+      showMessage(
+        "We couldn't reach Writely. Check your connection and try again.",
+        false,
+      );
       return;
     }
 
     switch (code) {
       case "BAD_REQUEST":
-        showMessage(error.message || t("error.input"), false);
+        showMessage(
+          error.message || "Please check your input and try again.",
+          false,
+        );
         return;
 
       case "UNAUTHORIZED":
@@ -55,27 +62,39 @@ export function useHandleTRPCError() {
         return;
 
       case "FORBIDDEN":
-        showMessage(error.message || t("error.permission"), false);
+        showMessage(
+          error.message || "You do not have permission to do that.",
+          false,
+        );
         return;
 
       case "NOT_FOUND":
-        showMessage(error.message || t("error.notFound"), false);
+        showMessage(error.message || "We couldn't find that resource.", false);
         return;
 
       case "CONFLICT":
-        showMessage(error.message || t("error.conflict"), false);
+        showMessage(
+          error.message || "That changed elsewhere. Refresh and try again.",
+          false,
+        );
         return;
 
       case "TOO_MANY_REQUESTS":
-        showMessage(error.message || t("error.wait"), false);
+        showMessage(
+          error.message || "Please wait a moment before trying again.",
+          false,
+        );
         return;
 
       case "INTERNAL_SERVER_ERROR":
-        showMessage(error.message || t("error.unavailable"), false);
+        showMessage(
+          error.message || "This service is temporarily unavailable.",
+          false,
+        );
         return;
 
       default:
-        showMessage(t("common.somethingWrong"), false);
+        showMessage("Something went wrong. Please try again.", false);
     }
   };
 }

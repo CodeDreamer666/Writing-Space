@@ -7,7 +7,6 @@ import { SignInLegalNotice } from "~/components/layout/LegalLinks";
 import Loading from "~/components/shared/Loading";
 import LoadingIcon from "~/components/shared/LoadingIcon";
 import ServerError from "~/components/shared/ServerError";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { useWritelyShortcuts } from "~/hooks/useWritelyShortcuts";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { authClient } from "~/server/better-auth/client";
@@ -22,7 +21,6 @@ export default function DocsHome() {
   const utils = api.useUtils();
   const handleTRPCError = useHandleTRPCError();
   const { showMessage } = useStatusMessage();
-  const { t } = useUiLanguage();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const createRequestRef = useRef(false);
@@ -130,13 +128,16 @@ export default function DocsHome() {
         signInRequestRef.current = false;
         window.sessionStorage.removeItem(CREATE_AFTER_AUTH_KEY);
         setIsSigningIn(false);
-        showMessage(t("docs.signInError"), false);
+        showMessage(
+          "We couldn't start Google sign-in. Please try again.",
+          false,
+        );
       }
     } catch {
       signInRequestRef.current = false;
       window.sessionStorage.removeItem(CREATE_AFTER_AUTH_KEY);
       setIsSigningIn(false);
-      showMessage(t("docs.signInError"), false);
+      showMessage("We couldn't start Google sign-in. Please try again.", false);
     }
   };
 
@@ -183,7 +184,7 @@ export default function DocsHome() {
 
               <Link
                 href="/setting"
-                aria-label={t("docs.settings")}
+                aria-label="Settings and help"
                 className="flex size-10 items-center justify-center rounded-lg text-[var(--w-muted)] transition-colors hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
               >
                 <svg
@@ -212,7 +213,7 @@ export default function DocsHome() {
 
           <div className="flex items-center justify-between">
             <h1 className="max-w-full text-[clamp(2.25rem,12vw,3rem)] leading-[1.12] font-medium tracking-[-0.02em] text-[var(--w-foreground)] sm:text-5xl">
-              {t("docs.heading")}
+              What will you write today
               <span
                 aria-hidden="true"
                 className="animate-blink ml-1 inline-block h-[0.9em] w-0.5 translate-y-px rounded-[1px] bg-[var(--w-foreground)] align-middle motion-reduce:animate-none"
@@ -230,16 +231,16 @@ export default function DocsHome() {
               {isStartWritingPending ? (
                 <span className="flex items-center gap-2">
                   <LoadingIcon />
-                  <span>{t("docs.creating")}</span>
+                  <span>Creating...</span>
                 </span>
               ) : (
-                t("docs.startWriting")
+                "Start writing"
               )}
             </button>
           </div>
 
           <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-[var(--w-muted)]">
-            {t("docs.intro")}
+            A quiet space to think, write, and continue.
           </p>
           {!isAuthenticated && <SignInLegalNotice />}
         </section>
@@ -256,7 +257,7 @@ export default function DocsHome() {
                 id="recent-drafts"
                 className="mb-5 text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase"
               >
-                {t("docs.recent")}
+                Recent documents
               </h2>
 
               {!docs || docs.length === 0 ? (
@@ -289,10 +290,10 @@ export default function DocsHome() {
 
                       <div className="flex flex-col justify-center gap-1 text-left">
                         <p className="text-base font-medium text-[var(--w-foreground)]">
-                          {t("docs.emptyTitle")}
+                          Your writing space is ready
                         </p>
                         <p className="text-sm leading-relaxed text-[var(--w-subtle)]">
-                          {t("docs.emptyDescription")}
+                          Create your first draft and begin with a blank page.
                         </p>
                       </div>
                     </div>
@@ -305,7 +306,7 @@ export default function DocsHome() {
                       }}
                       className="mt-4 inline-flex min-h-10 w-full cursor-pointer items-center justify-center rounded-lg bg-[var(--w-foreground)] px-4 text-sm font-medium text-[var(--w-background)] transition-all duration-200 hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--w-foreground)] active:scale-[0.98] disabled:cursor-wait disabled:opacity-60"
                     >
-                      {t("docs.firstLine")}
+                      Write your first line
                     </button>
                   </div>
                 </div>

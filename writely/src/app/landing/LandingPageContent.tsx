@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LegalLinks } from "~/components/layout/LegalLinks";
-import { PUBLIC_COPY } from "~/lib/publicTranslations";
+import { PUBLIC_COPY } from "~/lib/publicCopy";
 import {
   AiRewriteDemo,
   AutosaveDemo,

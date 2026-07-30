@@ -15,6 +15,7 @@ import {
 } from "~/lib/writingLanguage";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { exportDocumentContent } from "~/server/documents/exportDocument";
+import { exportPdfDocument } from "~/server/documents/exportPdfDocument";
 import { exportRichDocument } from "~/server/documents/exportRichDocument";
 import type { JsonInputValue } from "~/types/json";
 import { WRITING_MODES } from "~/types/writing";
@@ -153,10 +154,20 @@ export const docsRouter = createTRPCRouter({
         });
       }
 
+      const user = await transaction.user.findUnique({
+        where: {
+          id: userId,
+        },
+        select: {
+          writingModePreference: true,
+        },
+      });
+
       return transaction.document.create({
         data: {
           userId,
           content: emptyDocumentContent,
+          writingMode: user?.writingModePreference ?? "Clear",
         },
       });
     });
@@ -231,24 +242,45 @@ export const docsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const result = await ctx.db.document.updateMany({
-        where: {
-          id: input.docId,
-          userId: ctx.session.user.id,
-          deletedAt: null,
-        },
-        data: {
-          writingMode: input.writingMode,
-        },
-      });
-
-      if (result.count === 0) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message:
-            "This document is unavailable or belongs to another account.",
+      await ctx.db.$transaction(async (transaction) => {
+        const document = await transaction.document.findFirst({
+          where: {
+            id: input.docId,
+            userId: ctx.session.user.id,
+            deletedAt: null,
+          },
+          select: {
+            id: true,
+          },
         });
-      }
+
+        if (!document) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message:
+              "This document is unavailable or belongs to another account.",
+          });
+        }
+
+        await transaction.document.updateMany({
+          where: {
+            userId: ctx.session.user.id,
+            deletedAt: null,
+          },
+          data: {
+            writingMode: input.writingMode,
+          },
+        });
+
+        await transaction.user.update({
+          where: {
+            id: ctx.session.user.id,
+          },
+          data: {
+            writingModePreference: input.writingMode,
+          },
+        });
+      });
 
       return { writingMode: input.writingMode };
     }),
@@ -370,7 +402,7 @@ export const docsRouter = createTRPCRouter({
     .input(
       z.object({
         docId: docIdSchema,
-        format: z.enum(["txt", "md", "docx"]),
+        format: z.enum(["txt", "md", "docx", "pdf"]),
       }),
     )
     .query(async ({ input, ctx }) => {
@@ -418,7 +450,10 @@ export const docsRouter = createTRPCRouter({
         };
       }
 
-      const exportedFile = await exportRichDocument(content, document.title);
+      const exportedFile =
+        input.format === "pdf"
+          ? await exportPdfDocument(content, document.title)
+          : await exportRichDocument(content, document.title);
 
       return {
         title: document.title,
@@ -426,7 +461,9 @@ export const docsRouter = createTRPCRouter({
         encoding: "base64" as const,
         format: input.format,
         mimeType:
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          input.format === "pdf"
+            ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       };
     }),
 });

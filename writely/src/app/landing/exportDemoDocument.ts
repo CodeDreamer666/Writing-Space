@@ -35,6 +35,7 @@ const mimeTypes: Record<ExportFormat, string> = {
   txt: "text/plain;charset=utf-8",
   md: "text/markdown;charset=utf-8",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  pdf: "application/pdf",
 };
 
 async function createDemoDocx() {
@@ -66,6 +67,60 @@ async function createDemoDocx() {
   return Packer.toBase64String(document);
 }
 
+async function createDemoPdf() {
+  const [{ default: pdfMake }, { default: pdfFonts }] = await Promise.all([
+    import("pdfmake/build/pdfmake"),
+    import("pdfmake/build/vfs_fonts"),
+  ]);
+
+  pdfMake.vfs = pdfFonts;
+
+  return new Promise<string>((resolve) => {
+    pdfMake
+      .createPdf({
+        info: {
+          title: DEMO_EXPORT_TITLE,
+          author: "Writely",
+          creator: "Writely",
+        },
+        pageSize: "A4",
+        pageMargins: [64, 64, 64, 64],
+        defaultStyle: {
+          font: "Roboto",
+          fontSize: 11,
+          lineHeight: 1.35,
+        },
+        content: [
+          {
+            text: DEMO_EXPORT_TITLE,
+            bold: true,
+            fontSize: 22,
+            margin: [0, 0, 0, 24],
+          },
+          {
+            text: "Project brief",
+            bold: true,
+            fontSize: 15,
+            margin: [0, 0, 0, 8],
+          },
+          {
+            text: "The draft is ready to share.",
+            margin: [0, 0, 0, 10],
+          },
+          {
+            text: [
+              { text: "Key ideas", bold: true },
+              { text: " stay clear; " },
+              { text: "your voice", italics: true },
+              { text: " remains." },
+            ],
+          },
+        ],
+      })
+      .getBase64(resolve);
+  });
+}
+
 export async function downloadDemoExport(format: ExportFormat) {
   if (format === "txt" || format === "md") {
     downloadExport({
@@ -78,9 +133,12 @@ export async function downloadDemoExport(format: ExportFormat) {
     return;
   }
 
+  const content =
+    format === "pdf" ? await createDemoPdf() : await createDemoDocx();
+
   downloadExport({
     title: DEMO_EXPORT_TITLE,
-    content: await createDemoDocx(),
+    content,
     encoding: "base64",
     format,
     mimeType: mimeTypes[format],

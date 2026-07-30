@@ -1,4 +1,4 @@
-const english = {
+const publicCopy = {
   landing: {
     homeLabel: "Writely home",
     privateSpace: "Your private writing space",
@@ -42,7 +42,7 @@ const english = {
     exportLabel: "Export",
     exportTitle: "Take the finished draft with you.",
     exportDescription:
-      "Move from writing to sharing with TXT, Markdown, and Word exports.",
+      "Move from writing to sharing with TXT, Markdown, Word, and PDF exports.",
     closingLabel: "One clear page. One thought at a time.",
     closingTitle: "Your next sentence deserves a quieter place.",
     closingDescription:
@@ -152,6 +152,6 @@ const english = {
   },
 };
 
-export type PublicCopy = typeof english;
+export type PublicCopy = typeof publicCopy;
 
-export const PUBLIC_COPY = english;
+export const PUBLIC_COPY = publicCopy;

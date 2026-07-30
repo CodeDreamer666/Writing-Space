@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import { clearAllLocalDrafts } from "~/features/editor/utils/localDraft";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
 
@@ -25,7 +24,6 @@ export function AuthenticatedAccount({
 export function SignOutButton() {
   const router = useRouter();
   const { showMessage } = useStatusMessage();
-  const { t } = useUiLanguage();
   const { data: session } = authClient.useSession();
   const requestRef = useRef(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -50,7 +48,7 @@ export function SignOutButton() {
     } catch {
       requestRef.current = false;
       setIsSigningOut(false);
-      showMessage(t("settings.signOutError"), false);
+      showMessage("Unable to sign out. Please try again.", false);
     }
   };
 
@@ -67,25 +65,27 @@ export function SignOutButton() {
       }}
       className="mt-5 min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 text-sm font-medium text-[var(--w-muted)] transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)] disabled:cursor-wait disabled:opacity-60"
     >
-      {isSigningOut ? t("settings.signingOut") : t("settings.signOut")}
+      {isSigningOut ? "Signing out…" : "Sign out"}
     </button>
   );
 }
 
 export function ClearRecoveryDataControl() {
   const { showMessage } = useStatusMessage();
-  const { t } = useUiLanguage();
 
   return (
     <button
       type="button"
       onClick={() => {
         clearAllLocalDrafts();
-        showMessage(t("settings.recoveryCleared"), true);
+        showMessage(
+          "Browser recovery copies have been cleared on this device.",
+          true,
+        );
       }}
       className="mt-5 min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 text-sm font-medium text-[var(--w-muted)] transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
     >
-      {t("settings.clearRecovery")}
+      Clear browser recovery copies
     </button>
   );
 }
@@ -93,7 +93,6 @@ export function ClearRecoveryDataControl() {
 export function DownloadAccountDataControl() {
   const utils = api.useUtils();
   const { showMessage } = useStatusMessage();
-  const { t } = useUiLanguage();
   const requestRef = useRef(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -117,9 +116,12 @@ export function DownloadAccountDataControl() {
       link.download = "writely-data-export.json";
       link.click();
       URL.revokeObjectURL(url);
-      showMessage(t("settings.exportReady"), true);
+      showMessage("Your Writely data export is ready.", true);
     } catch {
-      showMessage(t("settings.exportError"), false);
+      showMessage(
+        "Unable to prepare your data export. Please try again.",
+        false,
+      );
     } finally {
       requestRef.current = false;
       setIsDownloading(false);
@@ -129,7 +131,9 @@ export function DownloadAccountDataControl() {
   return (
     <div className="mt-8 border-t border-[var(--w-border-soft)] pt-6">
       <p className="text-[var(--w-strong)]">
-        {t("settings.accountExportDescription")}
+        Download your account details, documents, preferences, AI usage totals,
+        feedback, session details, and connected-account information as JSON.
+        Authentication tokens are excluded.
       </p>
       <button
         type="button"
@@ -139,9 +143,7 @@ export function DownloadAccountDataControl() {
         }}
         className="mt-4 min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 text-sm font-medium text-[var(--w-muted)] transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)] disabled:cursor-wait disabled:opacity-60"
       >
-        {isDownloading
-          ? t("settings.exportingData")
-          : t("settings.downloadData")}
+        {isDownloading ? "Preparing export…" : "Download my data"}
       </button>
     </div>
   );
@@ -150,7 +152,6 @@ export function DownloadAccountDataControl() {
 export function DeleteAccountControl() {
   const router = useRouter();
   const { showMessage } = useStatusMessage();
-  const { t } = useUiLanguage();
   const { data: session } = authClient.useSession();
   const requestRef = useRef(false);
   const [isConfirming, setIsConfirming] = useState(false);
@@ -177,7 +178,10 @@ export function DeleteAccountControl() {
     } catch {
       requestRef.current = false;
       setIsDeleting(false);
-      showMessage(t("settings.deleteAccountError"), false);
+      showMessage(
+        "Unable to delete your account. For security, sign out and sign in again, then retry.",
+        false,
+      );
     }
   };
 
@@ -189,14 +193,14 @@ export function DeleteAccountControl() {
     return (
       <div className="mt-8 border-t border-[var(--w-border-soft)] pt-6">
         <p className="text-[var(--w-strong)]">
-          {t("settings.deleteAccountDescription")}
+          Permanently delete your Writely account and all of its documents.
         </p>
         <button
           type="button"
           onClick={() => setIsConfirming(true)}
           className="mt-4 min-h-11 cursor-pointer rounded-xl border border-red-700/50 px-4 text-sm font-medium text-red-700 transition-colors hover:bg-red-500/10 dark:text-red-300"
         >
-          {t("settings.deleteAccount")}
+          Delete account
         </button>
       </div>
     );
@@ -213,10 +217,12 @@ export function DeleteAccountControl() {
         id="delete-account-title"
         className="font-medium text-[var(--w-foreground)]"
       >
-        {t("settings.deleteAccountConfirmTitle")}
+        Delete your Writely account?
       </h3>
       <p id="delete-account-description" className="mt-2">
-        {t("settings.deleteAccountConfirmDescription")}
+        This permanently deletes your documents, account data, and recovery
+        copies on this browser. This cannot be undone. You can sign in again
+        later with the same email to create a new, empty account.
       </p>
       <div className="mt-5 flex flex-wrap gap-3">
         <button
@@ -227,9 +233,7 @@ export function DeleteAccountControl() {
           }}
           className="min-h-11 cursor-pointer rounded-xl bg-red-700 px-4 text-sm font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-wait disabled:opacity-60"
         >
-          {isDeleting
-            ? t("settings.deletingAccount")
-            : t("settings.confirmDeleteAccount")}
+          {isDeleting ? "Deleting account…" : "Permanently delete account"}
         </button>
         <button
           type="button"
@@ -237,7 +241,7 @@ export function DeleteAccountControl() {
           onClick={() => setIsConfirming(false)}
           className="min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 text-sm font-medium text-[var(--w-muted)] transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)] disabled:cursor-wait disabled:opacity-60"
         >
-          {t("common.cancel")}
+          Cancel
         </button>
       </div>
     </div>

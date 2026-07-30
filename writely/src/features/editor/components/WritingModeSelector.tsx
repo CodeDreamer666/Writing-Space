@@ -1,6 +1,5 @@
 "use client";
 
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { WRITING_MODES, type WritingMode } from "~/types/writing";
 
 type Props = {
@@ -14,14 +13,13 @@ export default function WritingModeSelector({
   isSaving,
   onModeChange,
 }: Props) {
-  const { t } = useUiLanguage();
   const modeLabels: Record<WritingMode, string> = {
-    Clear: t("editor.modeClear"),
-    Natural: t("editor.modeNatural"),
-    Persuasive: t("editor.modePersuasive"),
-    Reflective: t("editor.modeReflective"),
-    Story: t("editor.modeStory"),
-    Argumentative: t("editor.modeArgumentative"),
+    Clear: "Clear",
+    Natural: "Natural",
+    Persuasive: "Persuasive",
+    Reflective: "Reflective",
+    Story: "Story",
+    Argumentative: "Argumentative",
   };
 
   return (
@@ -30,7 +28,7 @@ export default function WritingModeSelector({
         htmlFor="writing-mode"
         className="mb-2 block text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase"
       >
-        {t("editor.writingMode")}
+        Writing mode
       </label>
       <div className="relative">
         <select
@@ -38,7 +36,7 @@ export default function WritingModeSelector({
           value={selectedMode}
           disabled={isSaving}
           onChange={(event) => onModeChange(event.target.value as WritingMode)}
-          title={t("editor.writingMode")}
+          title="Writing mode"
           aria-describedby="writing-mode-help"
           className="h-11 w-full cursor-pointer appearance-none rounded-lg border border-[var(--w-border-soft)] bg-[var(--w-background)] px-3 pr-9 text-sm text-[var(--w-strong)] transition-colors outline-none hover:border-[var(--w-border)] hover:text-[var(--w-foreground)] focus:border-[var(--w-border)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)] disabled:cursor-wait disabled:opacity-60"
         >
@@ -56,7 +54,7 @@ export default function WritingModeSelector({
         id="writing-mode-help"
         className="mt-2 text-xs leading-relaxed text-[var(--w-subtle)]"
       >
-        {t("editor.modeHelp")}
+        Controls how AI adapts its suggestions across your documents.
       </p>
     </div>
   );

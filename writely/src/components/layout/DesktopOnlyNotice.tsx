@@ -1,10 +1,6 @@
 "use client";
 
-import { useUiLanguage } from "~/hooks/useUiLanguage";
-
 export default function DesktopOnlyNotice() {
-  const { t } = useUiLanguage();
-
   return (
     <main
       className="desktop-beta-notice fixed inset-0 z-[100] items-center justify-center bg-[var(--w-background)] px-6 text-center text-[var(--w-foreground)]"
@@ -31,16 +27,17 @@ export default function DesktopOnlyNotice() {
           </svg>
         </div>
         <p className="mt-6 text-xs font-medium tracking-[0.16em] text-[var(--w-subtle)] uppercase">
-          {t("common.writelyBeta")}
+          Writely beta
         </p>
         <h1
           id="desktop-only-title"
           className="mt-3 text-2xl font-medium tracking-[-0.03em]"
         >
-          {t("desktop.title")}
+          Designed for wider screens.
         </h1>
         <p className="mt-3 text-sm leading-6 text-[var(--w-muted)]">
-          {t("desktop.description")}
+          Writely is currently designed for laptops and desktops. Please open it
+          on a wider screen.
         </p>
       </section>
     </main>

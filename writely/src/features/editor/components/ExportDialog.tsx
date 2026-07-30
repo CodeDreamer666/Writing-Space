@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import type { ExportFormat } from "~/server/documents/exportDocument";
 
 type Props = {
@@ -17,7 +16,6 @@ export default function ExportDialog({
   onClose,
   onExport,
 }: Props) {
-  const { t } = useUiLanguage();
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -45,16 +43,21 @@ export default function ExportDialog({
     label: string;
     description: string;
   }> = [
-    { format: "txt", label: "TXT", description: t("editor.plainText") },
+    { format: "txt", label: "TXT", description: "Plain text" },
     {
       format: "md",
       label: "Markdown",
-      description: t("editor.portableFormatting"),
+      description: "Portable formatting",
     },
     {
       format: "docx",
       label: "Word",
-      description: t("editor.editableDocument"),
+      description: "Editable document",
+    },
+    {
+      format: "pdf",
+      label: "PDF",
+      description: "Formatted, ready-to-share document",
     },
   ];
 
@@ -62,7 +65,7 @@ export default function ExportDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
       <button
         type="button"
-        aria-label={t("editor.closeExport")}
+        aria-label="Close export dialog"
         onClick={onClose}
         className="absolute inset-0 cursor-default"
       />
@@ -111,20 +114,20 @@ export default function ExportDialog({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
-              {t("editor.exportCurrent")}
+              Current document
             </p>
             <h2
               id="export-title"
               className="mt-2 text-xl font-medium text-[var(--w-foreground)]"
             >
-              {t("editor.exportTitle")}
+              Export your writing
             </h2>
           </div>
           <button
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            aria-label={t("editor.closeExport")}
+            aria-label="Close export dialog"
             className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
           >
             ×
@@ -151,7 +154,12 @@ export default function ExportDialog({
         </div>
 
         <p className="mt-4 text-xs leading-5 text-[var(--w-subtle)]">
-          {t("editor.exportFormatting")}
+          Headings, lists, bold, italic, and line breaks are preserved where the
+          format supports them.
+        </p>
+        <p className="mt-2 text-xs leading-5 text-[var(--w-subtle)]">
+          PDF uses embedded Unicode-compatible fonts. Writely 2.0 guarantees
+          reliable PDF export for English only.
         </p>
       </section>
     </div>

@@ -4,6 +4,7 @@ const extensionLabels: Record<ExportFormat, string> = {
   txt: "txt",
   md: "md",
   docx: "docx",
+  pdf: "pdf",
 };
 
 export function createExportFilename(title: string, format: ExportFormat) {

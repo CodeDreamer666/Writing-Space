@@ -88,10 +88,6 @@ body {
   @apply flex flex-col;
 }
 
-body[data-focus-mode="true"] [data-beta-utilities] {
-  display: none;
-}
-
 .ProseMirror {
   color: var(--w-foreground);
 }

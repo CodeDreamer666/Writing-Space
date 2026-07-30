@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
-import { PUBLIC_COPY } from "~/lib/publicTranslations";
+import { PUBLIC_COPY } from "~/lib/publicCopy";
 
 const formatButtons = ["Bold", "Italic", "List"] as const;
-const exportFormats = ["TXT", "Markdown", "Word"] as const;
+const exportFormats = ["TXT", "Markdown", "Word", "PDF"] as const;
 const exportFormatValues = {
   TXT: "txt",
   Markdown: "md",
   Word: "docx",
+  PDF: "pdf",
 } as const;
 
 type AiAction = "improveClarity" | "makeConcise" | "improveFlow";
@@ -18,7 +18,6 @@ type FormatButton = (typeof formatButtons)[number];
 type SaveState = "saved" | "saving" | "recovered";
 
 export function EditorPreview() {
-  const { t } = useUiLanguage();
   const copy = PUBLIC_COPY.demo;
   const [activeFormats, setActiveFormats] = useState<FormatButton[]>([]);
   const formatLabels: Record<FormatButton, string> = {
@@ -49,11 +48,11 @@ export function EditorPreview() {
           <span className="flex size-6 items-center justify-center rounded-md bg-[var(--w-foreground)] text-[10px] font-semibold text-[var(--w-background)]">
             W
           </span>
-          {t("editor.untitled")}
+          Untitled
         </span>
         <span className="flex items-center gap-2">
           <span className="size-1.5 rounded-full bg-[var(--landing-accent)]" />
-          {t("editor.saved")}
+          Saved
         </span>
       </div>
 
@@ -106,7 +105,7 @@ export function EditorPreview() {
               })}
             </div>
             <span className="hidden text-[10px] text-[var(--w-subtle)] sm:inline">
-              {t("editor.words", { count: 38 })}
+              38 words
             </span>
           </div>
         </div>
@@ -116,7 +115,6 @@ export function EditorPreview() {
 }
 
 export function AiRewriteDemo() {
-  const { t } = useUiLanguage();
   const copy = PUBLIC_COPY.demo;
   const [selectedAction, setSelectedAction] = useState<AiAction>("makeConcise");
   const aiActions = {
@@ -149,7 +147,7 @@ export function AiRewriteDemo() {
       />
       <div className="border-t border-[var(--w-border-soft)] bg-[var(--w-background)]/45 p-5 lg:border-t-0 lg:border-l">
         <p className="text-[11px] font-medium tracking-widest text-[var(--w-subtle)] uppercase">
-          {t("ai.selectedLabel")}
+          Selected text
         </p>
         {(Object.keys(aiActions) as AiAction[]).map((action) => {
           const isSelected = action === selectedAction;
@@ -176,7 +174,6 @@ export function AiRewriteDemo() {
 }
 
 export function FocusModeDemo({ expanded = false }: { expanded?: boolean }) {
-  const { t } = useUiLanguage();
   const copy = PUBLIC_COPY.demo;
   const [isFocused, setIsFocused] = useState(false);
 
@@ -196,7 +193,7 @@ export function FocusModeDemo({ expanded = false }: { expanded?: boolean }) {
         </span>
         <span className="flex items-center gap-2 text-[var(--w-subtle)]">
           <span className="size-1.5 rounded-full bg-[var(--landing-accent)]" />
-          {t("editor.saved")}
+          Saved
         </span>
       </div>
 
@@ -241,7 +238,7 @@ export function FocusModeDemo({ expanded = false }: { expanded?: boolean }) {
               {isFocused ? copy.exitFocus : copy.enterFocus}
             </button>
             <span className="hidden text-[10px] text-[var(--w-subtle)] sm:inline">
-              {t("editor.words", { count: 51 })}
+              51 words
             </span>
           </div>
         </article>

@@ -1,5 +1,4 @@
 import LoadingIcon from "~/components/shared/LoadingIcon";
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 
 type Props = {
   isOpen: boolean;
@@ -20,8 +19,6 @@ export default function LeaveEditorModal({
   onLeave,
   onSaveAndLeave,
 }: Props) {
-  const { t } = useUiLanguage();
-
   if (!isOpen) {
     return null;
   }
@@ -40,10 +37,10 @@ export default function LeaveEditorModal({
           id="leave-editor-title"
           className="text-base font-medium text-[var(--w-foreground)]"
         >
-          {t("editor.leaveTitle")}
+          Save before leaving?
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-[var(--w-muted)]">
-          {t("editor.leaveDescription")}
+          Your latest edits are only kept after you save this draft.
         </p>
 
         <div className="mt-4 flex flex-col gap-4">
@@ -52,7 +49,7 @@ export default function LeaveEditorModal({
             onClick={onLeave}
             className="cursor-pointer rounded-xl border border-[var(--w-border)] py-3 text-sm text-[var(--w-strong)] transition-colors hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)] disabled:cursor-wait disabled:opacity-60"
           >
-            {t("editor.leavePage")}
+            Leave page
           </button>
           <button
             disabled={isProcessing}
@@ -62,10 +59,10 @@ export default function LeaveEditorModal({
             {isSaving ? (
               <>
                 <LoadingIcon />
-                <span>{t("editor.saving")}</span>
+                <span>Saving now…</span>
               </>
             ) : (
-              t("editor.saveDocument")
+              "Save document"
             )}
           </button>
         </div>
@@ -78,7 +75,7 @@ export default function LeaveEditorModal({
             onChange={(event) => onDontRemindAgainChange(event.target.checked)}
             className="size-4 rounded border-[var(--w-border)] bg-[var(--w-background)] accent-[var(--w-foreground)]"
           />
-          {t("editor.dontRemind")}
+          Don’t remind me again
         </label>
       </section>
     </div>

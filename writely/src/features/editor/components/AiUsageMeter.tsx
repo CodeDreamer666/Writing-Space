@@ -1,6 +1,5 @@
 "use client";
 
-import { useUiLanguage } from "~/hooks/useUiLanguage";
 import { DAILY_AI_TOKEN_LIMIT } from "~/lib/aiLimits";
 
 export function getAiRemainingPercentage(remainingTokens: number) {
@@ -20,22 +19,21 @@ export default function AiUsageMeter({
 }: {
   remainingTokens: number;
 }) {
-  const { t } = useUiLanguage();
   const remainingPercentage = getAiRemainingPercentage(remainingTokens);
 
   return (
     <div className="rounded-xl border border-[var(--w-border)] bg-[var(--w-surface-raised)] px-3.5 py-3">
       <div className="flex items-center justify-between gap-4 text-xs">
         <span className="font-medium text-[var(--w-strong)]">
-          {t("ai.usageToday")}
+          AI usage today
         </span>
         <span className="text-[var(--w-muted)]">
-          {t("ai.percentLeft", { count: remainingPercentage })}
+          {remainingPercentage}% left
         </span>
       </div>
       <div
         role="progressbar"
-        aria-label={t("ai.allowanceRemaining")}
+        aria-label="AI allowance remaining"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={remainingPercentage}
@@ -46,9 +44,7 @@ export default function AiUsageMeter({
           style={{ width: `${remainingPercentage}%` }}
         />
       </div>
-      <p className="mt-2 text-[11px] text-[var(--w-subtle)]">
-        {t("ai.resetsTomorrow")}
-      </p>
+      <p className="mt-2 text-[11px] text-[var(--w-subtle)]">Resets tomorrow</p>
     </div>
   );
 }

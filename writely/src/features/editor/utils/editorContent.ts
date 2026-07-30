@@ -1,6 +1,6 @@
 import type { JSONContent } from "@tiptap/core";
 
-export const DEFAULT_TITLE = "Untitled draft";
+export const DEFAULT_TITLE = "New Draft";
 
 const ENGLISH_WORD_PATTERN =
   /[\p{L}\p{N}]+(?:['’\u2010-\u2015-][\p{L}\p{N}]+)*/gu;
