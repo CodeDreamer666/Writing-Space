@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import Groq from "groq-sdk";
 import type { ChatCompletion } from "groq-sdk/resources/chat/completions";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
@@ -12,31 +13,25 @@ import {
   containsUnsupportedPictographs,
   UNSUPPORTED_PICTOGRAPH_MESSAGE,
 } from "~/lib/writingLanguage";
-import { getUtcUsageDate } from "~/server/ai/usageLimits";
 import {
   buildAiSystemMessage,
   getAiActionInstruction,
   getAiRetryInstruction,
 } from "~/server/ai/prompts";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { groq } from "~/server/grok";
 import { AI_ACTIONS } from "~/types/ai";
 import { WRITING_MODES } from "~/types/writing";
 
 const AI_REQUEST_TIMEOUT_MS = 45_000;
 const AI_REQUEST_LEASE_MS = 120_000;
 const AI_MESSAGE_TOKEN_OVERHEAD = 32;
+const groq = new Groq({ apiKey: env.GROQ_API_KEY });
 
-const rewriteActionSchema = z.enum([
-  "improveClarity",
-  "fixGrammar",
-  "makeNatural",
-  "makeStronger",
-  "makeConcise",
-  "improveFlow",
-  "improveWordChoice",
-  "removeRepetition",
-]);
+function getUtcUsageDate(now = new Date()) {
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+}
 
 function hasThreeOrFourSentences(value: string) {
   const sentences = value.trim().match(/[^.!?。！？]+[.!?。！？]+/gu);
@@ -266,17 +261,8 @@ export const aiRouter = createTRPCRouter({
             .trim()
             .min(1)
             .max(MAX_AI_SELECTION_CHARACTERS * 4),
-          instruction: z.string().trim().min(1).max(2_000).optional(),
         })
         .superRefine((input, validationContext) => {
-          if (input.action === "custom" && !input.instruction) {
-            validationContext.addIssue({
-              code: "custom",
-              path: ["instruction"],
-              message: "Enter an instruction before sending.",
-            });
-          }
-
           if (
             normalizePlainText(input.selectedText) !==
             normalizeRichText(input.selectedHtml)
@@ -313,11 +299,7 @@ export const aiRouter = createTRPCRouter({
         });
       }
 
-      const instruction =
-        input.action === "custom"
-          ? input.instruction!
-          : getAiActionInstruction(input.action);
-      const isRewrite = rewriteActionSchema.safeParse(input.action).success;
+      const instruction = getAiActionInstruction(input.action);
       const safeSelectedHtml = sanitizeRichText(input.selectedHtml);
 
       if (!hasRichTextContent(safeSelectedHtml)) {
@@ -327,10 +309,7 @@ export const aiRouter = createTRPCRouter({
         });
       }
 
-      const systemMessage = buildAiSystemMessage({
-        mode: input.mode,
-        isRewrite,
-      });
+      const systemMessage = buildAiSystemMessage(input.mode);
       const userMessage = `<target>\n${safeSelectedHtml}\n</target>\n\nInstruction: ${instruction}`;
 
       const requestId = randomUUID();
@@ -437,11 +416,9 @@ export const aiRouter = createTRPCRouter({
 
         let completion = await createCompletion(userMessage);
         let usableCompletion = readUsableCompletion(completion);
-        let rewrite = isRewrite
-          ? parseRewriteResponse(usableCompletion?.content ?? null)
-          : null;
+        let rewrite = parseRewriteResponse(usableCompletion?.content ?? null);
 
-        if (isRewrite && (!usableCompletion || !rewrite)) {
+        if (!usableCompletion || !rewrite) {
           const retryMessage = `${userMessage}\n\n${getAiRetryInstruction()}`;
           completion = await createCompletion(retryMessage);
           usableCompletion = readUsableCompletion(completion);
@@ -456,18 +433,11 @@ export const aiRouter = createTRPCRouter({
           });
         }
 
-        if (isRewrite && !rewrite) {
+        if (!rewrite) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message:
               "Writely AI returned an invalid response. Please try again.",
-          });
-        }
-
-        if (!isRewrite && !usableCompletion.content?.trim()) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Writely AI returned an empty response. Please try again.",
           });
         }
 
@@ -542,33 +512,18 @@ export const aiRouter = createTRPCRouter({
           DAILY_AI_TOKEN_LIMIT - response.tokensUsed,
         );
 
-        if (isRewrite) {
-          if (!response.rewrite) {
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message:
-                "Writely AI returned an invalid response. Please try again.",
-            });
-          }
-
-          return {
-            type: "rewrite" as const,
-            original: input.selectedText,
-            ...response.rewrite,
-            remainingTokens,
-          };
-        }
-
-        if (!response.content?.trim()) {
+        if (!response.rewrite) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "Writely AI returned an empty response. Please try again.",
+            message:
+              "Writely AI returned an invalid response. Please try again.",
           });
         }
 
         return {
-          type: "response" as const,
-          content: response.content.trim(),
+          type: "rewrite" as const,
+          original: input.selectedText,
+          ...response.rewrite,
           remainingTokens,
         };
       } catch (error) {

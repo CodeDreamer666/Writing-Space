@@ -18,7 +18,7 @@
     "lint:fix": "eslint . --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "test": "vitest run",
+    "test": "vitest run --configLoader runner --no-cache",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

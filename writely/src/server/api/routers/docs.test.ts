@@ -1,0 +1,448 @@
+import type { TRPCError } from "@trpc/server";
+import { describe, expect, it, vi } from "vitest";
+import {
+  MAX_DOCUMENT_CHARACTERS,
+  MAX_DOCUMENTS_PER_USER,
+} from "~/lib/documentLimits";
+import type { createTRPCContext } from "~/server/api/trpc";
+import { docsRouter, MAX_TITLE_LENGTH } from "./docs";
+
+type Context = Awaited<ReturnType<typeof createTRPCContext>>;
+
+const userId = "user-1";
+const docId = "8d40f4b8-9cf5-4c3f-87d9-66cc74ef535d";
+const content = {
+  type: "doc",
+  content: [{ type: "paragraph", content: [{ type: "text", text: "Hello" }] }],
+};
+
+function createDocumentDatabase() {
+  return {
+    count: vi.fn<(input: unknown) => Promise<unknown>>(),
+    create: vi.fn<(input: unknown) => Promise<unknown>>(),
+    deleteMany: vi.fn<(input: unknown) => Promise<unknown>>(),
+    findFirst: vi.fn<(input: unknown) => Promise<unknown>>(),
+    findMany: vi.fn<(input: unknown) => Promise<unknown>>(),
+    updateMany: vi.fn<(input: unknown) => Promise<unknown>>(),
+    updateManyAndReturn: vi.fn<(input: unknown) => Promise<unknown>>(),
+  };
+}
+
+function createCaller(
+  documentDatabase: ReturnType<typeof createDocumentDatabase>,
+  authenticated = true,
+) {
+  const context = {
+    db: {
+      document: documentDatabase,
+      $transaction: async (
+        callback: (transaction: {
+          document: typeof documentDatabase;
+          $queryRaw: () => Promise<unknown[]>;
+        }) => Promise<unknown>,
+      ) =>
+        callback({
+          document: documentDatabase,
+          $queryRaw: vi.fn().mockResolvedValue([]),
+        }),
+    },
+    headers: new Headers(),
+    session: authenticated
+      ? {
+          session: {
+            id: "session-1",
+            userId,
+            token: "token",
+            expiresAt: new Date(Date.now() + 60_000),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          user: {
+            id: userId,
+            name: "Writer",
+            email: "writer@example.com",
+            emailVerified: true,
+            image: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        }
+      : null,
+  } as unknown as Context;
+
+  return docsRouter.createCaller(context);
+}
+
+describe("docsRouter authorization", () => {
+  it("rejects document access without an authenticated session", async () => {
+    const database = createDocumentDatabase();
+    const caller = createCaller(database, false);
+
+    await expect(caller.getSelectedDoc({ docId })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(database.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("rejects unauthenticated document edits and deletions", async () => {
+    const database = createDocumentDatabase();
+    const caller = createCaller(database, false);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    await expect(caller.deleteDoc({ docId })).rejects.toMatchObject({
+      code: "UNAUTHORIZED",
+    });
+    expect(database.findFirst).not.toHaveBeenCalled();
+    expect(database.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("scopes document retrieval to the authenticated owner", async () => {
+    const database = createDocumentDatabase();
+    database.findFirst.mockResolvedValue({ id: docId, userId });
+    const caller = createCaller(database);
+
+    await caller.getSelectedDoc({ docId });
+
+    expect(database.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: docId,
+        userId,
+        deletedAt: null,
+      },
+    });
+  });
+
+  it("does not read another user's document", async () => {
+    const database = createDocumentDatabase();
+    database.findFirst.mockResolvedValue(null);
+    const caller = createCaller(database);
+
+    await expect(caller.getSelectedDoc({ docId })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("permanently deletes only a document owned by the authenticated user", async () => {
+    const database = createDocumentDatabase();
+    database.deleteMany.mockResolvedValue({ count: 1 });
+    const caller = createCaller(database);
+
+    await caller.deleteDoc({ docId });
+
+    const deleteInput = database.deleteMany.mock.calls[0]?.[0];
+
+    expect(deleteInput).toEqual({
+      where: {
+        id: docId,
+        userId,
+        deletedAt: null,
+      },
+    });
+  });
+
+  it("does not delete another user's document", async () => {
+    const database = createDocumentDatabase();
+    database.deleteMany.mockResolvedValue({ count: 0 });
+    const caller = createCaller(database);
+
+    await expect(caller.deleteDoc({ docId })).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+
+  it("does not edit another user's document", async () => {
+    const database = createDocumentDatabase();
+    database.findFirst.mockResolvedValue(null);
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("scopes document exports to the authenticated owner", async () => {
+    const database = createDocumentDatabase();
+    database.findFirst.mockResolvedValue(null);
+    const caller = createCaller(database);
+
+    await expect(
+      caller.exportDoc({ docId, format: "txt" }),
+    ).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+
+    expect(database.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: docId,
+        userId,
+        deletedAt: null,
+      },
+      select: {
+        title: true,
+        content: true,
+      },
+    });
+  });
+
+  it.each(["txt", "md", "docx"] as const)(
+    "exports an empty document as %s",
+    async (format) => {
+      const database = createDocumentDatabase();
+      database.findFirst.mockResolvedValue({
+        title: "Empty draft",
+        content: {
+          type: "doc",
+          content: [{ type: "paragraph" }],
+        },
+      });
+      const caller = createCaller(database);
+
+      const exportedDocument = await caller.exportDoc({ docId, format });
+
+      expect(exportedDocument).toMatchObject({
+        title: "Empty draft",
+        format,
+      });
+
+      if (format === "docx") {
+        expect(exportedDocument.encoding).toBe("base64");
+        expect(
+          Buffer.from(exportedDocument.content, "base64")
+            .subarray(0, 2)
+            .toString(),
+        ).toBe("PK");
+      } else {
+        expect(exportedDocument.encoding).toBe("utf8");
+        expect(exportedDocument.content.trim()).toBe("");
+      }
+    },
+  );
+});
+
+describe("docsRouter save safety", () => {
+  it("enforces the active document limit before creating another document", async () => {
+    const database = createDocumentDatabase();
+    database.count.mockResolvedValue(MAX_DOCUMENTS_PER_USER);
+    const caller = createCaller(database);
+
+    await expect(caller.createDoc()).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(database.create).not.toHaveBeenCalled();
+  });
+
+  it("updates only the matching owner and document version", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    database.findFirst.mockResolvedValue({
+      title: "Old title",
+      content,
+      updatedAt,
+      version: 3,
+    });
+    database.updateManyAndReturn.mockResolvedValue([
+      { title: "A title", updatedAt, version: 4 },
+    ]);
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 3,
+      }),
+    ).resolves.toEqual({ title: "A title", updatedAt, version: 4 });
+
+    const saveInput = database.updateManyAndReturn.mock.calls[0]?.[0];
+
+    expect(saveInput).toMatchObject({
+      where: {
+        id: docId,
+        userId,
+        deletedAt: null,
+        version: 3,
+      },
+      data: {
+        version: { increment: 1 },
+      },
+    });
+  });
+
+  it("reports a conflict instead of overwriting a newer version", async () => {
+    const database = createDocumentDatabase();
+    database.findFirst.mockResolvedValue({
+      title: "Newer title",
+      content,
+      updatedAt: new Date(),
+      version: 3,
+    });
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 2,
+      }),
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+    } satisfies Partial<TRPCError>);
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("returns the authoritative version without incrementing an identical save", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    database.findFirst.mockResolvedValue({
+      title: "A title",
+      content,
+      updatedAt,
+      version: 4,
+    });
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 3,
+      }),
+    ).resolves.toEqual({
+      title: "A title",
+      updatedAt,
+      version: 4,
+    });
+
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("treats JSON content as identical when stored object keys are reordered", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    const savedContent = {
+      type: "doc",
+      attrs: { second: 2, first: 1 },
+      content: [{ type: "paragraph" }],
+    };
+    const submittedContent = {
+      type: "doc",
+      attrs: { first: 1, second: 2 },
+      content: [{ type: "paragraph" }],
+    };
+    database.findFirst.mockResolvedValue({
+      title: "A title",
+      content: savedContent,
+      updatedAt,
+      version: 4,
+    });
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content: submittedContent,
+        version: 3,
+      }),
+    ).resolves.toMatchObject({ version: 4 });
+
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("accepts the authoritative result when concurrent saves write the same snapshot", async () => {
+    const database = createDocumentDatabase();
+    const updatedAt = new Date();
+    database.findFirst
+      .mockResolvedValueOnce({
+        title: "Old title",
+        content,
+        updatedAt,
+        version: 3,
+      })
+      .mockResolvedValueOnce({
+        title: "A title",
+        content,
+        updatedAt,
+        version: 4,
+      });
+    database.updateManyAndReturn.mockResolvedValue([]);
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content,
+        version: 3,
+      }),
+    ).resolves.toEqual({
+      title: "A title",
+      updatedAt,
+      version: 4,
+    });
+  });
+
+  it("rejects titles over the server limit", async () => {
+    const database = createDocumentDatabase();
+    const caller = createCaller(database);
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "x".repeat(MAX_TITLE_LENGTH + 1),
+        content,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+
+  it("rejects document text over the character limit", async () => {
+    const database = createDocumentDatabase();
+    const caller = createCaller(database);
+    const oversizedContent = {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "x".repeat(MAX_DOCUMENT_CHARACTERS + 1),
+            },
+          ],
+        },
+      ],
+    };
+
+    await expect(
+      caller.saveDoc({
+        docId,
+        title: "A title",
+        content: oversizedContent,
+        version: 0,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(database.updateManyAndReturn).not.toHaveBeenCalled();
+  });
+});

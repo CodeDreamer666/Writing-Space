@@ -75,7 +75,3 @@ export function exportDocumentContent(
 ): string {
   return `${renderNode(content, format).trimEnd()}\n`;
 }
-
-export function isDocumentEmpty(content: JSONContent): boolean {
-  return exportDocumentContent(content, "txt").trim().length === 0;
-}

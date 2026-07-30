@@ -13,7 +13,6 @@ export const accountRouter = createTRPCRouter({
         email: true,
         emailVerified: true,
         image: true,
-        leaveReminderDisabled: true,
         writingModePreference: true,
         createdAt: true,
         updatedAt: true,

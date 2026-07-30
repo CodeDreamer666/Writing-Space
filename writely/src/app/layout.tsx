@@ -1,9 +1,7 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
 import { Atkinson_Hyperlegible, Inter, Source_Serif_4 } from "next/font/google";
-import DesktopOnlyNotice from "~/components/layout/DesktopOnlyNotice";
 import StatusMessageProvider from "~/components/layout/StatusMessageProvider";
-import BetaUtilities from "~/components/layout/BetaUtilities";
 import ThemeProvider from "~/components/layout/ThemeProvider";
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -56,23 +54,17 @@ export default function RootLayout({
       lang="en"
       data-theme="dark"
       suppressHydrationWarning
-      className={`${inter.variable} ${sourceSerif.variable} ${atkinsonHyperlegible.variable} desktop-beta-locked`}
+      className={`${inter.variable} ${sourceSerif.variable} ${atkinsonHyperlegible.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${inter.className} desktop-beta-locked`}>
-        <div className="desktop-beta-app">
-          <ThemeProvider>
-            <StatusMessageProvider>
-              <TRPCReactProvider>
-                {children}
-                <BetaUtilities />
-              </TRPCReactProvider>
-            </StatusMessageProvider>
-          </ThemeProvider>
-        </div>
-        <DesktopOnlyNotice />
+      <body className={inter.className}>
+        <ThemeProvider>
+          <StatusMessageProvider>
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+          </StatusMessageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

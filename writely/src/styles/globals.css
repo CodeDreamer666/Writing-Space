@@ -152,31 +152,6 @@ body {
   color: var(--w-foreground);
 }
 
-.desktop-beta-app {
-  display: contents;
-}
-
-.desktop-beta-notice {
-  display: none;
-}
-
-@media (width < 64rem) {
-  html.desktop-beta-locked,
-  body.desktop-beta-locked {
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  .desktop-beta-app {
-    display: none;
-  }
-
-  .desktop-beta-notice {
-    display: flex;
-  }
-}
-
 ::selection {
   background: var(--w-selection);
   color: var(--w-foreground);

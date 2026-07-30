@@ -7,7 +7,6 @@ export const AI_ACTIONS = [
   "improveFlow",
   "improveWordChoice",
   "removeRepetition",
-  "custom",
 ] as const;
 
 export type AiAction = (typeof AI_ACTIONS)[number];

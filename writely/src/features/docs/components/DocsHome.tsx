@@ -7,14 +7,42 @@ import { SignInLegalNotice } from "~/components/layout/LegalLinks";
 import Loading from "~/components/shared/Loading";
 import LoadingIcon from "~/components/shared/LoadingIcon";
 import ServerError from "~/components/shared/ServerError";
-import { useWritelyShortcuts } from "~/hooks/useWritelyShortcuts";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
 import { clearLocalDraft } from "~/features/editor/utils/localDraft";
-import DocItem from "./DocItem";
 
 const CREATE_AFTER_AUTH_KEY = "writely:create-after-auth";
+
+function formatRelativeTime(date: Date | string) {
+  const now = new Date();
+  const then = new Date(date);
+  const minutes = Math.floor((now.getTime() - then.getTime()) / 60_000);
+
+  if (minutes <= 0) {
+    return "Just now";
+  }
+
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+
+  if (hours < 48) {
+    return "Yesterday";
+  }
+
+  return then.toLocaleDateString("en", {
+    month: "short",
+    day: "numeric",
+    year: then.getFullYear() === now.getFullYear() ? undefined : "numeric",
+  });
+}
 
 export default function DocsHome() {
   const router = useRouter();
@@ -23,6 +51,10 @@ export default function DocsHome() {
   const { showMessage } = useStatusMessage();
 
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const createRequestRef = useRef(false);
   const signInRequestRef = useRef(false);
   const { data: session, isPending: isSessionLoading } =
@@ -95,6 +127,7 @@ export default function DocsHome() {
     },
     onSuccess: (_result, { docId }) => {
       clearLocalDraft(docId);
+      setDocumentToDelete(null);
     },
     onError: (mutationError, _input, context) => {
       utils.docs.getUserDocs.setData(undefined, context?.previousDocuments);
@@ -153,12 +186,6 @@ export default function DocsHome() {
   const isStartWritingPending =
     isSessionLoading || isSigningIn || createDoc.isPending;
 
-  useWritelyShortcuts({
-    onCreateDocument: () => {
-      void handleStartWriting();
-    },
-  });
-
   if (isSessionLoading || (isAuthenticated && isLoading)) {
     return <Loading />;
   }
@@ -184,29 +211,9 @@ export default function DocsHome() {
 
               <Link
                 href="/setting"
-                aria-label="Settings and help"
-                className="flex size-10 items-center justify-center rounded-lg text-[var(--w-muted)] transition-colors hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
+                className="rounded-lg px-3 py-2 text-sm text-[var(--w-muted)] transition-colors hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)]"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="size-6"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.559.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.894.149c-.424.07-.764.383-.929.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.398.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.272-.806.108-1.204-.165-.397-.506-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894Z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                  />
-                </svg>
+                Settings
               </Link>
             </div>
           </div>
@@ -313,14 +320,43 @@ export default function DocsHome() {
               ) : (
                 <ul className="flex flex-col gap-1">
                   {docs.map(({ title, id, updatedAt }) => (
-                    <DocItem
+                    <li
                       key={id}
-                      title={title}
-                      id={id}
-                      updatedAt={updatedAt}
-                      isDeleting={deleteDoc.isPending}
-                      onDelete={(docId) => deleteDoc.mutate({ docId })}
-                    />
+                      className="group flex items-center rounded-xl hover:bg-[var(--w-surface-raised)]"
+                    >
+                      <Link
+                        href={`/app/${id}`}
+                        className="min-w-0 flex-1 rounded-xl px-3 py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
+                      >
+                        <p className="truncate text-sm font-medium text-[var(--w-strong)]">
+                          {title}
+                        </p>
+                        <p className="mt-1 text-xs text-[var(--w-subtle)]">
+                          {formatRelativeTime(updatedAt)}
+                        </p>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setDocumentToDelete({ id, title })}
+                        aria-label={`Delete ${title}`}
+                        className="mr-2 flex size-11 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.5}
+                          className="size-4"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m14.7 9-.35 9m-4.7 0L9.3 9m9.9-3.2L18.2 19.7a2.25 2.25 0 0 1-2.25 2.05H8.05A2.25 2.25 0 0 1 5.8 19.7L4.8 5.8m14.4 0H4.8m3.7 0V4.5A2.25 2.25 0 0 1 10.75 2.25h2.5A2.25 2.25 0 0 1 15.5 4.5v1.3"
+                          />
+                        </svg>
+                      </button>
+                    </li>
                   ))}
                 </ul>
               )}
@@ -328,6 +364,65 @@ export default function DocsHome() {
           </>
         )}
       </div>
+
+      {documentToDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !deleteDoc.isPending) {
+              setDocumentToDelete(null);
+            }
+          }}
+        >
+          <button
+            type="button"
+            disabled={deleteDoc.isPending}
+            aria-label="Cancel document deletion"
+            onClick={() => setDocumentToDelete(null)}
+            className="absolute inset-0 cursor-default disabled:cursor-wait"
+          />
+          <section
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-document-title"
+            aria-describedby="delete-document-description"
+            className="relative w-full max-w-sm rounded-2xl border border-[#4B2E2A] bg-[var(--w-surface)] p-6"
+          >
+            <h2
+              id="delete-document-title"
+              className="text-base font-medium text-[var(--w-foreground)]"
+            >
+              Delete &quot;{documentToDelete.title}&quot;?
+            </h2>
+            <p
+              id="delete-document-description"
+              className="mt-2 text-sm leading-6 text-[var(--w-muted)]"
+            >
+              This permanently removes the draft from every signed-in device.
+            </p>
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                autoFocus
+                disabled={deleteDoc.isPending}
+                onClick={() => setDocumentToDelete(null)}
+                className="min-h-11 w-full cursor-pointer rounded-xl text-sm text-[var(--w-muted)] hover:bg-[var(--w-border-soft)] disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteDoc.isPending}
+                onClick={() => deleteDoc.mutate({ docId: documentToDelete.id })}
+                className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#D85E50] text-sm font-medium text-white hover:bg-[#EA6C5E] disabled:cursor-wait disabled:opacity-60"
+              >
+                {deleteDoc.isPending && <LoadingIcon />}
+                {deleteDoc.isPending ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

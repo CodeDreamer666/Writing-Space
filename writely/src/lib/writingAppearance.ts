@@ -71,7 +71,7 @@ function includesValue<T extends string>(
   return typeof value === "string" && values.includes(value as T);
 }
 
-export function parseWritingAppearance(value: unknown): WritingAppearance {
+function parseWritingAppearance(value: unknown): WritingAppearance {
   if (!value || typeof value !== "object") {
     return DEFAULT_WRITING_APPEARANCE;
   }

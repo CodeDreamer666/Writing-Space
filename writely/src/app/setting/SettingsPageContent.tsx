@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import ThemeSelector from "~/components/shared/ThemeSelector";
+import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
+import { useTheme } from "~/components/layout/ThemeProvider";
+import { clearAllLocalDrafts } from "~/features/editor/utils/localDraft";
 import {
   DAILY_AI_TOKEN_LIMIT,
   MAX_AI_SELECTION_CHARACTERS,
@@ -10,23 +12,20 @@ import {
   MAX_DOCUMENT_CHARACTERS,
   MAX_DOCUMENTS_PER_USER,
 } from "~/lib/documentLimits";
-import {
-  AuthenticatedAccount,
-  ClearRecoveryDataControl,
-  DeleteAccountControl,
-  DownloadAccountDataControl,
-  SignOutButton,
-} from "./SettingsControls";
+import { THEMES, type Theme } from "~/lib/theme";
+import AccountSettings from "./SettingsControls";
 import FeedbackSettings from "./FeedbackSettings";
 import WritingAppearanceSettings from "./WritingAppearanceSettings";
 
-const shortcutKeys = [
-  ["Ctrl/Cmd + Alt + N", "Create document"],
-  ["Ctrl/Cmd + Alt + E", "Open export"],
-  ["Esc", "Close active panels"],
-] as const;
-
 export default function SettingsPageContent() {
+  const { theme, setTheme } = useTheme();
+  const { showMessage } = useStatusMessage();
+  const themeLabels: Record<Theme, string> = {
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+  };
+
   return (
     <main className="min-h-screen bg-[var(--w-background)] px-6 py-10 text-[var(--w-foreground)] sm:px-8 sm:py-14">
       <article className="mx-auto max-w-3xl pb-8">
@@ -56,7 +55,27 @@ export default function SettingsPageContent() {
           <SettingsSection title="Theme">
             <p>Choose Light, Dark, or System.</p>
             <div className="mt-5">
-              <ThemeSelector />
+              <fieldset>
+                <legend className="sr-only">Choose a theme</legend>
+                <div className="grid max-w-md grid-cols-3 gap-2 rounded-xl border border-[var(--w-border)] bg-[var(--w-surface)] p-1.5">
+                  {THEMES.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      suppressHydrationWarning
+                      aria-pressed={theme === option}
+                      onClick={() => setTheme(option)}
+                      className={`min-h-10 cursor-pointer rounded-lg px-3 text-sm font-medium transition-colors ${
+                        theme === option
+                          ? "bg-[var(--w-foreground)] text-[var(--w-background)]"
+                          : "text-[var(--w-muted)] hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
+                      }`}
+                    >
+                      {themeLabels[option]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
             </div>
             <p className="mt-4 text-xs text-[var(--w-subtle)]">
               System follows your device setting.
@@ -72,22 +91,6 @@ export default function SettingsPageContent() {
             </p>
           </SettingsSection>
 
-          <SettingsSection title="Keyboard shortcuts">
-            <dl className="mt-6 divide-y divide-[var(--w-border-soft)] border-y border-[var(--w-border-soft)]">
-              {shortcutKeys.map(([keys, description]) => (
-                <div
-                  key={keys}
-                  className="flex items-center justify-between gap-6 py-3 text-sm"
-                >
-                  <dt className="text-[var(--w-strong)]">{description}</dt>
-                  <dd className="shrink-0 rounded border border-[var(--w-border)] bg-[var(--w-surface)] px-2 py-1 font-mono text-xs text-[var(--w-muted)]">
-                    {keys}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </SettingsSection>
-
           <SettingsSection title="Autosave">
             <p>
               Writely saves while you type and shows Saving…, Saved, or Save
@@ -97,7 +100,19 @@ export default function SettingsPageContent() {
               A temporary browser recovery copy helps protect recent writing
               when saving fails or the tab closes unexpectedly.
             </p>
-            <ClearRecoveryDataControl />
+            <button
+              type="button"
+              onClick={() => {
+                clearAllLocalDrafts();
+                showMessage(
+                  "Browser recovery copies have been cleared on this device.",
+                  true,
+                );
+              }}
+              className="mt-5 min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 text-sm font-medium text-[var(--w-muted)] transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
+            >
+              Clear browser recovery copies
+            </button>
           </SettingsSection>
 
           <SettingsSection title="AI usage">
@@ -178,14 +193,7 @@ export default function SettingsPageContent() {
             </SettingsSection>
           </div>
 
-          <AuthenticatedAccount>
-            <SettingsSection title="Account">
-              <p>Sign out of Writely on this device.</p>
-              <SignOutButton />
-              <DownloadAccountDataControl />
-              <DeleteAccountControl />
-            </SettingsSection>
-          </AuthenticatedAccount>
+          <AccountSettings />
         </div>
       </article>
     </main>

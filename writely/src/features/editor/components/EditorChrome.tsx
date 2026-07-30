@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import type { SaveStatus } from "../hooks/useDocumentAutosave";
 import Link from "next/link";
+import { useEffect } from "react";
+import type { SaveStatus } from "../hooks/useDocumentAutosave";
 
 type Props = {
     isOpen: boolean;
@@ -54,13 +54,6 @@ export default function EditorChrome({
     onTitleChange,
     onExport,
 }: Props) {
-    const [isEditingTitle, setIsEditingTitle] = useState(false);
-    
-    const menuButtonRef = useRef<HTMLButtonElement>(null);
-    const titleInputRef = useRef<HTMLInputElement>(null);
-    const titleButtonRef = useRef<HTMLButtonElement>(null);
-    const originalTitleRef = useRef(title);
-
     useEffect(() => {
         if (!isOpen) {
             return;
@@ -69,17 +62,7 @@ export default function EditorChrome({
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === "Escape") {
                 event.preventDefault();
-
-                if (isEditingTitle) {
-                    event.stopImmediatePropagation();
-                    onTitleChange(originalTitleRef.current);
-                    setIsEditingTitle(false);
-                    window.setTimeout(() => titleButtonRef.current?.focus(), 0);
-                    return;
-                }
-
                 onClose();
-                menuButtonRef.current?.focus();
             }
         };
 
@@ -88,29 +71,11 @@ export default function EditorChrome({
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [isEditingTitle, isOpen, onClose, onTitleChange]);
-
-    useEffect(() => {
-        if (isEditingTitle) {
-            titleInputRef.current?.focus();
-        }
-    }, [isEditingTitle]);
-
-    const closeAndRun = (action: () => void) => {
-        setIsEditingTitle(false);
-        onClose();
-        action();
-    };
-
-    const closeSidebar = () => {
-        setIsEditingTitle(false);
-        onClose();
-    };
+    }, [isOpen, onClose]);
 
     return (
         <>
             <button
-                ref={menuButtonRef}
                 type="button"
                 onClick={onOpen}
                 aria-label="Open document menu"
@@ -142,7 +107,7 @@ export default function EditorChrome({
 
             <button
                 type="button"
-                onClick={closeSidebar}
+                onClick={onClose}
                 aria-label="Close document menu"
                 tabIndex={isOpen ? 0 : -1}
                 className={`fixed inset-0 z-40 cursor-default bg-black/45 transition-opacity duration-[210ms] ease-out ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
@@ -162,7 +127,7 @@ export default function EditorChrome({
                     </p>
                     <button
                         type="button"
-                        onClick={closeSidebar}
+                        onClick={onClose}
                         aria-label="Close document menu"
                         className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-[var(--w-muted)] hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)]"
                     >
@@ -185,7 +150,7 @@ export default function EditorChrome({
                         aria-label="Draft title"
                         maxLength={200}
                         disabled={saveStatus === "recovery"}
-                        className="min-h-10 w-full bg-transparent px-0 py-1 text-left text-base leading-6 text-[var(--w-foreground)] outline-none placeholder:text-[var(--w-placeholder)] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="min-h-10 w-full appearance-none !border-0 bg-transparent px-0 py-1 text-left text-base leading-6 text-[var(--w-foreground)] !shadow-none !outline-none !ring-0 placeholder:text-[var(--w-placeholder)] focus:!border-0 focus:!shadow-none focus:!outline-none focus:!ring-0 disabled:cursor-not-allowed disabled:opacity-60"
                     />
                 </div>
 
@@ -227,7 +192,10 @@ export default function EditorChrome({
                     <button
                         type="button"
                         disabled={isExporting}
-                        onClick={() => closeAndRun(onExport)}
+                        onClick={() => {
+                            onClose();
+                            onExport();
+                        }}
                         className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-[var(--w-border)] bg-[var(--w-border-soft)] px-3 text-left text-sm font-medium text-[var(--w-strong)] transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
                     >
                         <svg

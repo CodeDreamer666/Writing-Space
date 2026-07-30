@@ -17,10 +17,22 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { exportDocumentContent } from "~/server/documents/exportDocument";
 import { exportPdfDocument } from "~/server/documents/exportPdfDocument";
 import { exportRichDocument } from "~/server/documents/exportRichDocument";
-import type { JsonInputValue } from "~/types/json";
 import { WRITING_MODES } from "~/types/writing";
 
-export const MAX_DOCUMENT_BYTES = 1_000_000;
+type JsonInputObject = {
+  readonly [key: string]: JsonInputValue | null | undefined;
+};
+
+type JsonInputArray = readonly (JsonInputValue | null)[];
+
+type JsonInputValue =
+  | string
+  | number
+  | boolean
+  | JsonInputObject
+  | JsonInputArray;
+
+const MAX_DOCUMENT_BYTES = 1_000_000;
 export const MAX_TITLE_LENGTH = MAX_DOCUMENT_TITLE_LENGTH;
 
 const docIdSchema = z.string().uuid();
@@ -85,7 +97,7 @@ function containsUnsafeUrl(value: JsonInputValue | null): boolean {
   );
 }
 
-export const editorContentSchema = jsonSchema
+const editorContentSchema = jsonSchema
   .refine(
     (content) =>
       typeof content === "object" &&
