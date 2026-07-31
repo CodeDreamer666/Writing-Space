@@ -3,6 +3,7 @@ import type { JSONContent } from "@tiptap/core";
 export const MAX_DOCUMENTS_PER_USER = 20;
 export const MAX_DOCUMENT_CHARACTERS = 50_000;
 export const MAX_DOCUMENT_TITLE_LENGTH = 200;
+export const MAX_INITIAL_DRAFT_CHARACTERS = 1_000;
 
 export function countDocumentCharacters(content: JSONContent): number {
   const ownTextLength =

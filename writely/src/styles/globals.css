@@ -36,16 +36,6 @@
   --w-selection: #cbd5e1;
 }
 
-.landing-page {
-  --landing-accent: #d5a06f;
-  --landing-accent-soft: #211a15;
-}
-
-:root[data-theme="light"] .landing-page {
-  --landing-accent: #9a5f32;
-  --landing-accent-soft: #efe3d7;
-}
-
 @keyframes blink {
   0%,
   100% {
@@ -67,21 +57,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-@keyframes savePulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-.landing-save-cycle {
-  animation: savePulse 3s ease-in-out infinite;
 }
 
 body {
@@ -150,6 +125,10 @@ body {
 body {
   background: var(--w-background);
   color: var(--w-foreground);
+}
+
+body:has([data-writely-landing-page]) {
+  background: #050606;
 }
 
 ::selection {

@@ -107,22 +107,20 @@ export default function AccountSettings() {
 
   return (
     <section className="py-10">
-      <h2 className="text-xl font-medium text-[var(--w-foreground)]">
-        Account
-      </h2>
-      <div className="mt-3 text-sm leading-7 text-[var(--w-muted)]">
+      <h2 className="text-xl font-medium text-(--w-foreground)">Account</h2>
+      <div className="mt-3 text-sm leading-7 text-(--w-muted)">
         <p>Sign out of Writely on this device.</p>
         <button
           type="button"
           disabled={isBusy}
           onClick={() => void signOut()}
-          className="mt-5 min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 font-medium transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)] disabled:cursor-wait disabled:opacity-60"
+          className="mt-5 min-h-11 cursor-pointer rounded-xl border border-(--w-border) px-4 font-medium transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) disabled:cursor-wait disabled:opacity-60"
         >
           {activeAction === "signOut" ? "Signing out…" : "Sign out"}
         </button>
 
-        <div className="mt-8 border-t border-[var(--w-border-soft)] pt-6">
-          <p className="text-[var(--w-strong)]">
+        <div className="mt-8 border-t border-(--w-border-soft) pt-6">
+          <p className="text-(--w-strong)">
             Download your account details, documents, preferences, AI usage
             totals, feedback, sessions, and connected-account information as
             JSON. Authentication tokens are excluded.
@@ -131,7 +129,7 @@ export default function AccountSettings() {
             type="button"
             disabled={isBusy}
             onClick={() => void downloadData()}
-            className="mt-4 min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 font-medium transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)] disabled:cursor-wait disabled:opacity-60"
+            className="mt-4 min-h-11 cursor-pointer rounded-xl border border-(--w-border) px-4 font-medium transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) disabled:cursor-wait disabled:opacity-60"
           >
             {activeAction === "download"
               ? "Preparing export…"
@@ -139,8 +137,8 @@ export default function AccountSettings() {
           </button>
         </div>
 
-        <div className="mt-8 border-t border-[var(--w-border-soft)] pt-6">
-          <p className="text-[var(--w-strong)]">
+        <div className="mt-8 border-t border-(--w-border-soft) pt-6">
+          <p className="text-(--w-strong)">
             Permanently delete your Writely account and all of its documents.
           </p>
 
@@ -162,7 +160,7 @@ export default function AccountSettings() {
             >
               <h3
                 id="delete-account-title"
-                className="font-medium text-[var(--w-foreground)]"
+                className="font-medium text-(--w-foreground)"
               >
                 Delete your Writely account?
               </h3>
@@ -185,7 +183,7 @@ export default function AccountSettings() {
                   type="button"
                   disabled={isBusy}
                   onClick={() => setIsConfirmingDelete(false)}
-                  className="min-h-11 cursor-pointer rounded-xl border border-[var(--w-border)] px-4 font-medium transition-colors hover:bg-[var(--w-surface-raised)] hover:text-[var(--w-foreground)] disabled:opacity-60"
+                  className="min-h-11 cursor-pointer rounded-xl border border-(--w-border) px-4 font-medium transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) disabled:opacity-60"
                 >
                   Cancel
                 </button>

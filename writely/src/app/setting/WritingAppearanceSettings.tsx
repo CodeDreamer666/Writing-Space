@@ -1,5 +1,4 @@
 "use client";
-
 import { useWritingAppearance } from "~/hooks/useWritingAppearance";
 import type {
   WritingEditorWidth,
@@ -9,7 +8,7 @@ import type {
 } from "~/lib/writingAppearance";
 
 const controlClassName =
-  "mt-2 min-h-11 w-full rounded-xl border border-[var(--w-border)] bg-[var(--w-surface)] px-3 text-sm text-[var(--w-foreground)] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]";
+  "mt-2 min-h-11 w-full rounded-xl border border-(--w-border) bg-(--w-surface) px-3 text-sm text-(--w-foreground) outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)";
 
 export default function WritingAppearanceSettings() {
   const { appearance, updateAppearance } = useWritingAppearance();
@@ -17,7 +16,7 @@ export default function WritingAppearanceSettings() {
   return (
     <div className="mt-6 grid gap-5 sm:grid-cols-2">
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">Font family</span>
+        <span className="font-medium text-(--w-strong)">Font family</span>
         <select
           value={appearance.fontFamily}
           onChange={(event) =>
@@ -34,7 +33,7 @@ export default function WritingAppearanceSettings() {
       </label>
 
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">Text size</span>
+        <span className="font-medium text-(--w-strong)">Text size</span>
         <select
           value={appearance.textSize}
           onChange={(event) =>
@@ -52,7 +51,7 @@ export default function WritingAppearanceSettings() {
       </label>
 
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">Line spacing</span>
+        <span className="font-medium text-(--w-strong)">Line spacing</span>
         <select
           value={appearance.lineSpacing}
           onChange={(event) =>
@@ -69,7 +68,7 @@ export default function WritingAppearanceSettings() {
       </label>
 
       <label className="block">
-        <span className="font-medium text-[var(--w-strong)]">Editor width</span>
+        <span className="font-medium text-(--w-strong)">Editor width</span>
         <select
           value={appearance.editorWidth}
           onChange={(event) =>

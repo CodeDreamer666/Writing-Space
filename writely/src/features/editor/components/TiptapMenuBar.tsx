@@ -178,7 +178,7 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
       aria-hidden={!isVisible}
       inert={!isVisible}
     >
-      <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-[var(--w-border)] bg-[var(--w-surface-raised)]/95 p-1 shadow-2xl backdrop-blur-xl">
+      <div className="pointer-events-auto flex items-center gap-1 rounded-xl border border-(--w-border) bg-(--w-surface-raised)/95 p-1 shadow-2xl backdrop-blur-xl">
         {buttons.map((button) => (
           <button
             key={button.title}
@@ -187,10 +187,10 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
             aria-label={button.title}
             onMouseDown={(event) => event.preventDefault()}
             onClick={button.action}
-            className={`flex size-10 cursor-pointer items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)] active:scale-95 ${
+            className={`flex size-10 cursor-pointer items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted) active:scale-95 ${
               button.isActive
-                ? "bg-[var(--w-foreground)] text-[var(--w-background)]"
-                : "text-[var(--w-muted)] hover:bg-[var(--w-border-soft)] hover:text-[var(--w-foreground)]"
+                ? "bg-(--w-foreground) text-(--w-background)"
+                : "text-(--w-muted) hover:bg-(--w-border-soft) hover:text-(--w-foreground)"
             }`}
           >
             {button.label}

@@ -18,7 +18,7 @@ export function LegalLinks({ className = "" }: { className?: string }) {
         <Link
           key={link.href}
           href={link.href}
-          className="transition-colors hover:text-[var(--w-foreground)]"
+          className="transition-colors hover:text-(--w-foreground)"
         >
           {link.label}
         </Link>
@@ -31,20 +31,20 @@ export function SignInLegalNotice() {
   return (
     <div
       data-sign-in-legal-notice
-      className="mt-6 text-xs leading-6 text-[var(--w-subtle)]"
+      className="mt-6 text-xs leading-6 text-(--w-subtle)"
     >
       <p>
         By continuing, you agree to the{" "}
         <Link
           href="/terms"
-          className="underline decoration-[var(--w-border)] underline-offset-4 hover:text-[var(--w-foreground)]"
+          className="underline decoration-(--w-border) underline-offset-4 hover:text-(--w-foreground)"
         >
           Terms of Use
         </Link>{" "}
         and acknowledge the{" "}
         <Link
           href="/privacy"
-          className="underline decoration-[var(--w-border)] underline-offset-4 hover:text-[var(--w-foreground)]"
+          className="underline decoration-(--w-border) underline-offset-4 hover:text-(--w-foreground)"
         >
           Privacy Notice
         </Link>

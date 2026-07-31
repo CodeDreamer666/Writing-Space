@@ -39,20 +39,20 @@ function isWritingMode(value: string): value is WritingMode {
 
 function DocumentUnavailable() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[var(--w-background)] px-6 text-[var(--w-foreground)]">
+    <main className="flex min-h-screen items-center justify-center bg-(--w-background) px-6 text-(--w-foreground)">
       <section className="w-full max-w-md text-center">
-        <p className="text-xs font-medium tracking-[0.12em] text-[var(--w-subtle)] uppercase">
+        <p className="text-xs font-medium tracking-[0.12em] text-(--w-subtle) uppercase">
           Draft unavailable
         </p>
         <h1 className="mt-4 text-3xl font-medium tracking-tight">
           This writing could not be opened.
         </h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--w-muted)]">
+        <p className="mt-3 text-sm leading-7 text-(--w-muted)">
           It may have been deleted, or it may belong to another account.
         </p>
         <Link
           href="/app"
-          className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--w-foreground)] px-5 text-sm font-medium text-[var(--w-background)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--w-muted)]"
+          className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-(--w-foreground) px-5 text-sm font-medium text-(--w-background) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)"
         >
           Back to drafts
         </Link>
@@ -97,7 +97,7 @@ function EditorRuntime({
       attributes: {
         "aria-label": "Draft content",
         class:
-          "min-h-[48vh] outline-none text-[var(--w-strong)] transition-colors duration-200 focus:text-[var(--w-foreground)]",
+          "min-h-[48vh] outline-none text-(--w-strong) transition-colors duration-200 focus:text-(--w-foreground)",
         role: "textbox",
       },
     },
@@ -240,7 +240,7 @@ function EditorExperience({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--w-background)] text-[var(--w-foreground)] transition-colors duration-300">
+    <div className="min-h-screen bg-(--w-background) text-(--w-foreground) transition-colors duration-300">
       <div className="w-full">
         <EditorChrome
           isOpen={isMenuOpen}
