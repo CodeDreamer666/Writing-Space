@@ -136,7 +136,12 @@ export default function SettingsPage() {
                   true,
                 );
               }}
-              className="mt-5 min-h-11 cursor-pointer rounded-xl border border-(--w-border) px-4 text-sm font-medium text-(--w-muted) transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground)"
+              className={[
+                "mt-5 min-h-11 cursor-pointer rounded-xl",
+                "border border-(--w-border) px-4 text-sm",
+                "font-medium text-(--w-muted) transition-colors hover:bg-(--w-surface-raised)",
+                "hover:text-(--w-foreground)",
+              ].join(" ")}
             >
               Clear browser recovery copies
             </button>
@@ -243,7 +248,13 @@ export default function SettingsPage() {
                   rows={6}
                   required
                   placeholder="Tell us about your experience…"
-                  className="mt-2 w-full resize-none rounded-xl border border-(--w-border) bg-(--w-surface) px-3 py-3 text-sm leading-6 text-(--w-foreground) ring-0 outline-none placeholder:text-(--w-subtle) focus:border-0 focus:border-(--w-strong) focus:ring-0 focus:outline-none"
+                  className={[
+                    "mt-2 w-full resize-none rounded-xl",
+                    "border border-(--w-border) bg-(--w-surface) px-3",
+                    "py-3 text-sm leading-6 text-(--w-foreground)",
+                    "ring-0 outline-none placeholder:text-(--w-subtle) focus:border-0",
+                    "focus:border-(--w-strong) focus:ring-0 focus:outline-none",
+                  ].join(" ")}
                 />
                 <div className="mt-2 flex items-center justify-between gap-4">
                   <span className="text-xs text-(--w-subtle)">

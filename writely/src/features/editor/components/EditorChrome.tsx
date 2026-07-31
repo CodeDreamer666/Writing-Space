@@ -81,7 +81,13 @@ export default function EditorChrome({
         aria-label="Open document menu"
         aria-expanded={isOpen}
         aria-controls="editor-sidebar"
-        className="fixed top-4 left-4 z-30 flex size-10 cursor-pointer items-center justify-center rounded-lg text-(--w-muted) hover:bg-(--w-surface-raised) hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted) sm:top-5 sm:left-6"
+        className={[
+          "fixed top-4 left-4 z-30",
+          "flex size-10 cursor-pointer items-center",
+          "justify-center rounded-lg text-(--w-muted) hover:bg-(--w-surface-raised)",
+          "hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)",
+          "sm:top-5 sm:left-6",
+        ].join(" ")}
       >
         <svg
           width="18"
@@ -153,7 +159,14 @@ export default function EditorChrome({
             aria-label="Draft title"
             maxLength={200}
             disabled={saveStatus === "recovery"}
-            className="min-h-10 w-full appearance-none border-0! bg-transparent px-0 py-1 text-left text-base leading-6 text-(--w-foreground) shadow-none! ring-0! outline-none! placeholder:text-(--w-placeholder) focus:border-0! focus:shadow-none! focus:ring-0! focus:outline-none! disabled:cursor-not-allowed disabled:opacity-60"
+            className={[
+              "min-h-10 w-full appearance-none border-0!",
+              "bg-transparent px-0 py-1 text-left",
+              "text-base leading-6 text-(--w-foreground) shadow-none!",
+              "ring-0! outline-none! placeholder:text-(--w-placeholder) focus:border-0!",
+              "focus:shadow-none! focus:ring-0! focus:outline-none! disabled:cursor-not-allowed",
+              "disabled:opacity-60",
+            ].join(" ")}
           />
         </div>
 
@@ -199,7 +212,14 @@ export default function EditorChrome({
               onClose();
               onExport();
             }}
-            className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-(--w-border) bg-(--w-border-soft) px-3 text-left text-sm font-medium text-(--w-strong) transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)"
+            className={[
+              "flex min-h-11 w-full cursor-pointer",
+              "items-center gap-2.5 rounded-lg border",
+              "border-(--w-border) bg-(--w-border-soft) px-3 text-left",
+              "text-sm font-medium text-(--w-strong) transition-colors",
+              "hover:bg-(--w-surface-raised) hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2",
+              "focus-visible:outline-(--w-muted)",
+            ].join(" ")}
           >
             <svg
               width="15"
@@ -220,7 +240,14 @@ export default function EditorChrome({
           </button>
           <Link
             href="/app"
-            className="flex min-h-11 w-full cursor-pointer items-center gap-2.5 rounded-lg border border-(--w-border) bg-(--w-border-soft) px-3 text-left text-sm font-medium text-(--w-strong) transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)"
+            className={[
+              "flex min-h-11 w-full cursor-pointer",
+              "items-center gap-2.5 rounded-lg border",
+              "border-(--w-border) bg-(--w-border-soft) px-3 text-left",
+              "text-sm font-medium text-(--w-strong) transition-colors",
+              "hover:bg-(--w-surface-raised) hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2",
+              "focus-visible:outline-(--w-muted)",
+            ].join(" ")}
           >
             <svg
               width="15"

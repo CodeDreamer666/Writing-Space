@@ -94,14 +94,24 @@ export default function SaveStatusNotice({
           <button
             type="button"
             onClick={() => setIsConfirmingDiscard(false)}
-            className="min-h-11 cursor-pointer rounded-lg border border-[#8D5A4E] px-3 text-xs font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]"
+            className={[
+              "min-h-11 cursor-pointer rounded-lg border",
+              "border-[#8D5A4E] px-3 text-xs font-medium",
+              "text-[#F8DDD6] transition-colors hover:bg-[#3A241F] focus-visible:outline-2",
+              "focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]",
+            ].join(" ")}
           >
             Keep recovered edits
           </button>
           <button
             type="button"
             onClick={onOpenSavedVersion}
-            className="min-h-11 cursor-pointer rounded-lg bg-[#F1C6BA] px-3 text-xs font-medium text-[#211713] transition-colors hover:bg-[#F8DDD6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]"
+            className={[
+              "min-h-11 cursor-pointer rounded-lg bg-[#F1C6BA]",
+              "px-3 text-xs font-medium text-[#211713]",
+              "transition-colors hover:bg-[#F8DDD6] focus-visible:outline-2 focus-visible:outline-offset-2",
+              "focus-visible:outline-[#F1C6BA]",
+            ].join(" ")}
           >
             Discard and open saved version
           </button>
@@ -110,7 +120,12 @@ export default function SaveStatusNotice({
         <button
           type="button"
           onClick={isConflict ? () => setIsConfirmingDiscard(true) : onRetry}
-          className="min-h-11 shrink-0 cursor-pointer rounded-lg border border-[#8D5A4E] px-3 text-xs font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]"
+          className={[
+            "min-h-11 shrink-0 cursor-pointer rounded-lg",
+            "border border-[#8D5A4E] px-3 text-xs",
+            "font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F]",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]",
+          ].join(" ")}
         >
           {isConflict ? "View saved version" : "Retry save"}
         </button>

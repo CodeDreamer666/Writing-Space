@@ -52,7 +52,12 @@ function DocumentUnavailable() {
         </p>
         <Link
           href="/app"
-          className="mt-7 inline-flex min-h-11 items-center justify-center rounded-xl bg-(--w-foreground) px-5 text-sm font-medium text-(--w-background) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)"
+          className={[
+            "mt-7 inline-flex min-h-11 items-center",
+            "justify-center rounded-xl bg-(--w-foreground) px-5",
+            "text-sm font-medium text-(--w-background) focus-visible:outline-2",
+            "focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)",
+          ].join(" ")}
         >
           Back to drafts
         </Link>

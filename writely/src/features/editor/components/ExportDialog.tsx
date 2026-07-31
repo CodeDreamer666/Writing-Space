@@ -84,7 +84,11 @@ export default function ExportDialog({
               type="button"
               disabled={isExporting}
               onClick={() => onExport(format)}
-              className="cursor-pointer rounded-xl border border-(--w-border) bg-(--w-background) px-4 py-4 text-left transition-colors hover:bg-(--w-surface-raised) disabled:cursor-wait disabled:opacity-60"
+              className={[
+                "cursor-pointer rounded-xl border border-(--w-border)",
+                "bg-(--w-background) px-4 py-4 text-left",
+                "transition-colors hover:bg-(--w-surface-raised) disabled:cursor-wait disabled:opacity-60",
+              ].join(" ")}
             >
               <span className="block text-sm font-medium text-(--w-foreground)">
                 {label}

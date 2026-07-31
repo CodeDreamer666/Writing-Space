@@ -314,7 +314,12 @@ export default function AiWritingPanel({
                 onChange={(event) =>
                   changeWritingMode(event.target.value as WritingMode)
                 }
-                className="h-11 w-full cursor-pointer rounded-lg border border-(--w-border-soft) bg-(--w-background) px-3 text-sm text-(--w-strong) outline-none hover:border-(--w-border) disabled:cursor-wait disabled:opacity-60"
+                className={[
+                  "h-11 w-full cursor-pointer rounded-lg",
+                  "border border-(--w-border-soft) bg-(--w-background) px-3",
+                  "text-sm text-(--w-strong) outline-none hover:border-(--w-border)",
+                  "disabled:cursor-wait disabled:opacity-60",
+                ].join(" ")}
               >
                 {WRITING_MODES.map((writingMode) => (
                   <option key={writingMode} value={writingMode}>
@@ -396,7 +401,13 @@ export default function AiWritingPanel({
                       isSelectionOverLimit ||
                       !aiEnabled
                     }
-                    className="group flex cursor-pointer items-center justify-between rounded-xl border border-(--w-border-soft) bg-(--w-background) px-3.5 py-3 text-left transition-colors duration-200 hover:border-(--w-border) hover:bg-(--w-surface-raised) disabled:cursor-not-allowed disabled:opacity-50"
+                    className={[
+                      "group flex cursor-pointer items-center",
+                      "justify-between rounded-xl border border-(--w-border-soft)",
+                      "bg-(--w-background) px-3.5 py-3 text-left",
+                      "transition-colors duration-200 hover:border-(--w-border) hover:bg-(--w-surface-raised)",
+                      "disabled:cursor-not-allowed disabled:opacity-50",
+                    ].join(" ")}
                   >
                     <span className="min-w-0">
                       <span className="block text-sm font-medium text-(--w-strong)">
@@ -459,7 +470,13 @@ export default function AiWritingPanel({
                         Improved version
                       </p>
                       <div
-                        className="mt-2 text-sm leading-relaxed text-(--w-foreground) [&_h1]:mt-4 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_li]:ml-5 [&_ol]:my-2 [&_ol]:list-decimal [&_p]:whitespace-pre-wrap [&_ul]:my-2 [&_ul]:list-disc"
+                        className={[
+                          "mt-2 text-sm leading-relaxed text-(--w-foreground)",
+                          "[&_h1]:mt-4 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:mt-4",
+                          "[&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:text-lg",
+                          "[&_h3]:font-semibold [&_li]:ml-5 [&_ol]:my-2 [&_ol]:list-decimal",
+                          "[&_p]:whitespace-pre-wrap [&_ul]:my-2 [&_ul]:list-disc",
+                        ].join(" ")}
                         dangerouslySetInnerHTML={{
                           __html: result.response.improved,
                         }}

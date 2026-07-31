@@ -114,7 +114,12 @@ export default function AccountSettings() {
           type="button"
           disabled={isBusy}
           onClick={() => void signOut()}
-          className="mt-5 min-h-11 cursor-pointer rounded-xl border border-(--w-border) px-4 font-medium transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) disabled:cursor-wait disabled:opacity-60"
+          className={[
+            "mt-5 min-h-11 cursor-pointer rounded-xl",
+            "border border-(--w-border) px-4 font-medium",
+            "transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) disabled:cursor-wait",
+            "disabled:opacity-60",
+          ].join(" ")}
         >
           {activeAction === "signOut" ? "Signing out…" : "Sign out"}
         </button>
@@ -129,7 +134,12 @@ export default function AccountSettings() {
             type="button"
             disabled={isBusy}
             onClick={() => void downloadData()}
-            className="mt-4 min-h-11 cursor-pointer rounded-xl border border-(--w-border) px-4 font-medium transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) disabled:cursor-wait disabled:opacity-60"
+            className={[
+              "mt-4 min-h-11 cursor-pointer rounded-xl",
+              "border border-(--w-border) px-4 font-medium",
+              "transition-colors hover:bg-(--w-surface-raised) hover:text-(--w-foreground) disabled:cursor-wait",
+              "disabled:opacity-60",
+            ].join(" ")}
           >
             {activeAction === "download"
               ? "Preparing export…"
