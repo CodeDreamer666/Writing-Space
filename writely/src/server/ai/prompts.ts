@@ -14,10 +14,6 @@ const actionInstructions: Record<AiAction, string> = {
     "Rewrite the target to remove repetition and unnecessary wording while preserving its meaning.",
   improveFlow:
     "Rewrite the target so its sentences connect more smoothly and naturally while preserving its meaning.",
-  improveWordChoice:
-    "Rewrite the target with more precise, effective word choices while preserving its meaning, voice, and level of formality.",
-  removeRepetition:
-    "Rewrite the target to remove repeated words, phrases, and ideas while preserving all distinct meaning and the writer's voice.",
 };
 
 const rewriteOutputInstructions = `Return exactly one valid JSON object and nothing else.

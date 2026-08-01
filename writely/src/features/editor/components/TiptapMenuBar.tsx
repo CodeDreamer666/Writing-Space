@@ -187,8 +187,8 @@ export default function TiptapMenuBar({ editor, aiEnabled, onAiOpen }: Props) {
                         onMouseDown={(event) => event.preventDefault()}
                         onClick={button.action}
                         className={`flex size-10 cursor-pointer items-center justify-center rounded-lg transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted) active:scale-95 ${button.isActive
-                                ? "bg-(--w-foreground) text-(--w-background)"
-                                : "text-(--w-muted) hover:bg-(--w-border-soft) hover:text-(--w-foreground)"
+                            ? "bg-(--w-foreground) text-(--w-background)"
+                            : "text-(--w-muted) hover:bg-(--w-border-soft) hover:text-(--w-foreground)"
                             }`}
                     >
                         {button.label}

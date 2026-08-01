@@ -48,6 +48,27 @@ function formatRelativeTime(date: Date | string) {
     });
 }
 
+function DocumentIcon({ className }: { className: string }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.5}
+            className={className}
+            aria-hidden="true"
+        >
+            <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M14.5 3.75H6.75A1.75 1.75 0 0 0 5 5.5v13A1.75 1.75 0 0 0 6.75 20.25h10.5A1.75 1.75 0 0 0 19 18.5v-9.25L14.5 3.75Z"
+            />
+            <path strokeLinecap="round" d="M14 3.75V10h5" />
+            <path strokeLinecap="round" d="M8.5 14h7M8.5 17h4" />
+        </svg>
+    );
+}
+
 export default function DocsHome() {
     const router = useRouter();
     const utils = api.useUtils();
@@ -236,7 +257,7 @@ export default function DocsHome() {
 
                             <Link
                                 href="/setting"
-                                className="rounded-lg px-3 py-2 text-sm text-(--w-muted) transition-colors hover:bg-(--w-border-soft) hover:text-(--w-foreground)"
+                                className="rounded-lg px-3 py-2 text-sm text-(--w-muted) transition-colors hover:text-(--w-foreground)"
                             >
                                 Settings
                             </Link>
@@ -381,11 +402,13 @@ export default function DocsHome() {
                                                 href={`/app/${id}`}
                                                 className="min-w-0 flex-1 rounded-xl px-3 py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)"
                                             >
-                                                <p className="truncate text-sm font-medium text-(--w-strong)">
-                                                    {title}
+                                                <p className="flex min-w-0 items-center gap-2 truncate text-sm font-medium text-(--w-strong)">
+                                                    <DocumentIcon className="size-3.5 shrink-0 text-(--w-muted)" />
+                                                    <span className="truncate">{title}</span>
                                                 </p>
-                                                <p className="mt-1 text-xs text-(--w-subtle)">
-                                                    {formatRelativeTime(updatedAt)}
+                                                <p className="mt-1 flex items-center gap-1.5 text-xs text-(--w-subtle)">
+                                                    <DocumentIcon className="size-3 shrink-0" />
+                                                    <span>{formatRelativeTime(updatedAt)}</span>
                                                 </p>
                                             </Link>
                                             <button
