@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const accountRouter = createTRPCRouter({
-    deleleAccount: protectedProcedure.mutation(async ({ ctx }) => {
+    deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
         const userId = ctx.session.user.id;
 
         const user = await ctx.db.user.findUnique({

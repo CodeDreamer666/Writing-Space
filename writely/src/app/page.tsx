@@ -82,8 +82,20 @@ export default function LandingPageContent() {
     const router = useRouter();
     const { data: session, isPending: isSessionPending } = authClient.useSession();
 
-    const [isSigningIn, setIsSigningIn] = useState(false);
     const [demoChoice, setDemoChoice] = useState<DemoChoice>("suggestion");
+
+    const handleStartWriting = async () => {
+        if (!session) {
+            await authClient.signIn.social({
+                provider: "google",
+                callbackURL: "/app",
+                errorCallbackURL: "/",
+            });
+            return;
+        }
+
+        router.push("/app");
+    };
 
     return (
         <main
@@ -136,18 +148,8 @@ export default function LandingPageContent() {
                                 clearly. AI only sees what you choose—never your whole document.
                             </p>
                             <ActionButton
-                                onClick={async () => {
-                                    if (!session) {
-                                        return await authClient.signIn.social({
-                                            provider: "google",
-                                            callbackURL: "/app",
-                                            errorCallbackURL: "/",
-                                        });
-                                    }
-
-                                    return router.push("/app")
-                                }}
-                                disabled={isSessionPending || isSigningIn}
+                                onClick={handleStartWriting}
+                                disabled={isSessionPending}
                             >
                                 Start writing
                             </ActionButton>
@@ -616,18 +618,8 @@ export default function LandingPageContent() {
                             </span>
                         </h2>
                         <ActionButton
-                            onClick={async () => {
-                                if (!session) {
-                                    return await authClient.signIn.social({
-                                        provider: "google",
-                                        callbackURL: "/app",
-                                        errorCallbackURL: "/",
-                                    });
-                                }
-
-                                return router.push("/app")
-                            }}
-                            disabled={isSessionPending || isSigningIn}
+                            onClick={handleStartWriting}
+                            disabled={isSessionPending}
                         >
                             Start writing
                         </ActionButton>

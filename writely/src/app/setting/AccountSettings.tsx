@@ -18,7 +18,7 @@ export default function AccountSettings() {
         return null;
     }
 
-    const deleteAccount = api.account.deleleAccount.useMutation({
+    const deleteAccount = api.account.deleteAccount.useMutation({
         onSuccess: () => {
             setIsConfirmingDelete(false);
             router.replace("/")
@@ -33,7 +33,7 @@ export default function AccountSettings() {
         <section className="py-10">
             <h2 className="text-xl font-medium text-(--w-foreground)">Account</h2>
             <div className="mt-3 text-sm leading-7 text-(--w-muted)">
-                <div className="flex justify-between items-center">
+                <div className="flex max-sm:flex-col max-sm:gap-2 sm:justify-between sm:items-center">
                     <p>Sign out of Writely on this device.</p>
                     <button
                         type="button"
@@ -62,7 +62,7 @@ export default function AccountSettings() {
                     </button>
                 </div>
 
-                <div className="mt-8 border-t border-(--w-border-soft) pt-6 flex justify-between items-center">
+                <div className="mt-8 flex max-sm:flex-col max-sm:gap-2 sm:justify-between sm:items-center border-t border-(--w-border-soft) pt-6">
                     <p className="text-(--w-muted)">
                         Permanently delete your Writely account and all of its documents.
                     </p>

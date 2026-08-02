@@ -48,7 +48,6 @@ export default function DocsHome() {
     const utils = api.useUtils();
     const handleTRPCError = useHandleTRPCError();
 
-    const [isSigningIn, setIsSigningIn] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState<{
         id: string;
         title: string;
@@ -122,8 +121,7 @@ export default function DocsHome() {
         });
     };
 
-    const isStartWritingPending =
-        isSessionLoading || isSigningIn || createDoc.isPending;
+    const isStartWritingPending = isSessionLoading || createDoc.isPending;
 
     if (isSessionLoading || (session?.user && isLoading)) {
         return <Loading />;
@@ -177,7 +175,7 @@ export default function DocsHome() {
                                 await handleStartWriting();
                             }}
                             className={[
-                                "min-h-12 cursor-pointer rounded-xl bg-(--w-foreground)",
+                                "min-h-12 hidden md:block cursor-pointer rounded-xl bg-(--w-foreground)",
                                 "px-6 text-sm font-medium text-(--w-background)",
                                 "transition-all duration-200 hover:opacity-85 focus-visible:outline-2",
                                 "focus-visible:outline-offset-4 focus-visible:outline-(--w-foreground) active:scale-[0.98] disabled:cursor-wait",
@@ -198,6 +196,30 @@ export default function DocsHome() {
                     <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-(--w-muted)">
                         A quiet space to think, write, and continue.
                     </p>
+
+                    <button
+                        type="button"
+                        disabled={isStartWritingPending}
+                        onClick={async () => {
+                            await handleStartWriting();
+                        }}
+                        className={[
+                            "min-h-12 block md:hidden w-full mt-6 cursor-pointer rounded-xl bg-(--w-foreground)",
+                            "px-6 text-sm font-medium text-(--w-background)",
+                            "transition-all duration-200 hover:opacity-85 focus-visible:outline-2",
+                            "focus-visible:outline-offset-4 focus-visible:outline-(--w-foreground) active:scale-[0.98] disabled:cursor-wait",
+                            "disabled:opacity-60",
+                        ].join(" ")}
+                    >
+                        {isStartWritingPending ? (
+                            <span className="flex items-center gap-2">
+                                <LoadingIcon />
+                                <span>Creating...</span>
+                            </span>
+                        ) : (
+                            "Start writing"
+                        )}
+                    </button>
                 </section>
 
                 {session?.user && (

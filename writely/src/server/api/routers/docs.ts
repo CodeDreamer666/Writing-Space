@@ -34,6 +34,10 @@ type JsonInputValue =
     | JsonInputArray;
 
 const MAX_DOCUMENT_BYTES = 1_000_000;
+const DOCUMENT_NOT_FOUND_MESSAGE =
+    "This document is unavailable or belongs to another account.";
+const DOCUMENT_CONFLICT_MESSAGE =
+    "A newer saved version exists. Your recovered writing is still safe in this browser.";
 export const MAX_TITLE_LENGTH = MAX_DOCUMENT_TITLE_LENGTH;
 
 const docIdSchema = z.string().uuid();
@@ -157,6 +161,20 @@ function hasSameDocumentSnapshot(
     );
 }
 
+function createDocumentNotFoundError() {
+    return new TRPCError({
+        code: "NOT_FOUND",
+        message: DOCUMENT_NOT_FOUND_MESSAGE,
+    });
+}
+
+function createDocumentConflictError() {
+    return new TRPCError({
+        code: "CONFLICT",
+        message: DOCUMENT_CONFLICT_MESSAGE,
+    });
+}
+
 export const docsRouter = createTRPCRouter({
     createDoc: protectedProcedure
         .input(
@@ -249,11 +267,7 @@ export const docsRouter = createTRPCRouter({
             });
 
             if (!document) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message:
-                        "This document is unavailable or belongs to another account.",
-                });
+                throw createDocumentNotFoundError();
             }
 
             return document;
@@ -271,11 +285,7 @@ export const docsRouter = createTRPCRouter({
             });
 
             if (result.count === 0) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message:
-                        "This document is unavailable or belongs to another account.",
-                });
+                throw createDocumentNotFoundError();
             }
 
             return { success: true };
@@ -302,11 +312,7 @@ export const docsRouter = createTRPCRouter({
                 });
 
                 if (!document) {
-                    throw new TRPCError({
-                        code: "NOT_FOUND",
-                        message:
-                            "This document is unavailable or belongs to another account.",
-                    });
+                    throw createDocumentNotFoundError();
                 }
 
                 await transaction.document.updateMany({
@@ -357,11 +363,7 @@ export const docsRouter = createTRPCRouter({
             });
 
             if (!existingDocument) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message:
-                        "This document is unavailable or belongs to another account.",
-                });
+                throw createDocumentNotFoundError();
             }
 
             if (hasSameDocumentSnapshot(existingDocument, input)) {
@@ -373,11 +375,7 @@ export const docsRouter = createTRPCRouter({
             }
 
             if (existingDocument.version !== input.version) {
-                throw new TRPCError({
-                    code: "CONFLICT",
-                    message:
-                        "A newer saved version exists. Your recovered writing is still safe in this browser.",
-                });
+                throw createDocumentConflictError();
             }
 
             const updatedDocuments = await ctx.db.document.updateManyAndReturn({
@@ -423,11 +421,7 @@ export const docsRouter = createTRPCRouter({
             });
 
             if (!latestDocument) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message:
-                        "This document is unavailable or belongs to another account.",
-                });
+                throw createDocumentNotFoundError();
             }
 
             if (hasSameDocumentSnapshot(latestDocument, input)) {
@@ -438,11 +432,7 @@ export const docsRouter = createTRPCRouter({
                 };
             }
 
-            throw new TRPCError({
-                code: "CONFLICT",
-                message:
-                    "A newer saved version exists. Your recovered writing is still safe in this browser.",
-            });
+            throw createDocumentConflictError();
         }),
 
     exportDoc: protectedProcedure
@@ -466,11 +456,7 @@ export const docsRouter = createTRPCRouter({
             });
 
             if (!document) {
-                throw new TRPCError({
-                    code: "NOT_FOUND",
-                    message:
-                        "This document is unavailable or belongs to another account.",
-                });
+                throw createDocumentNotFoundError();
             }
 
             const parsedContent = editorContentSchema.safeParse(document.content);

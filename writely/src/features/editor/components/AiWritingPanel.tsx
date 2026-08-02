@@ -179,9 +179,9 @@ export default function AiWritingPanel({
                 selectedHtml: context.selectedHtml,
             },
             {
-                onSuccess: async (response) => {
+                onSuccess: (response) => {
                     setResult({ action, context, response });
-                    await utils.ai.getStatus.invalidate();
+                    void utils.ai.getStatus.invalidate();
                 },
 
                 onError: (error) => {

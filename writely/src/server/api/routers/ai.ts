@@ -502,28 +502,15 @@ export const aiRouter = createTRPCRouter({
                     },
                 );
 
-                const response = {
-                    content: usableCompletion.content,
-                    rewrite,
-                    tokensUsed: updatedTokensUsed,
-                };
                 const remainingTokens = Math.max(
                     0,
-                    DAILY_AI_TOKEN_LIMIT - response.tokensUsed,
+                    DAILY_AI_TOKEN_LIMIT - updatedTokensUsed,
                 );
-
-                if (!response.rewrite) {
-                    throw new TRPCError({
-                        code: "INTERNAL_SERVER_ERROR",
-                        message:
-                            "Writely AI returned an invalid response. Please try again.",
-                    });
-                }
 
                 return {
                     type: "rewrite" as const,
                     original: input.selectedText,
-                    ...response.rewrite,
+                    ...rewrite,
                     remainingTokens,
                 };
             } catch (error) {
