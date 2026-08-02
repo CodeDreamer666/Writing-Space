@@ -175,7 +175,7 @@ export default function LandingPageContent() {
                         <div
                             aria-label="A Writely editor showing tools for selected text"
                             className={[
-                                "relative h-[350px] w-full max-w-[768px] sm:h-[480px] lg:h-[520px]",
+                                "relative h-[350px] w-full min-w-0 max-w-[768px] sm:h-[480px] lg:h-[520px]",
                                 "justify-self-end overflow-hidden rounded-2xl border",
                                 "border-[#44413c] [box-shadow:inset_0_1px_rgb(255_255_255/2%),0_36px_90px_rgb(0_0_0/26%)] [background:radial-gradient(circle_at_58%_44%,rgb(41_38_34/34%),transparent_49%),linear-gradient(110deg,rgb(16_16_15/94%),rgb(25_24_22/93%))]",
                             ].join(" ")}
@@ -297,7 +297,7 @@ export default function LandingPageContent() {
 
                     <div className="mt-10 grid min-w-0 grid-cols-1 gap-6 sm:mt-16 sm:gap-10 xl:grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)_32px_minmax(0,1fr)] xl:gap-3">
                         <article
-                            className={`relative grid min-h-[320px] grid-rows-[1fr_auto_1fr] rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
+                            className={`relative grid min-w-0 min-h-[320px] grid-rows-[1fr_auto_1fr] rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
                         >
                             <div className="row-start-2 flex w-full items-center justify-center">
                                 <p className="max-w-[380px] [font-family:var(--font-source-serif),Georgia,serif] text-[clamp(1.25rem,2vw,1.55rem)] leading-[1.45] tracking-[-0.02em] text-[#ece9e5]">
@@ -320,7 +320,7 @@ export default function LandingPageContent() {
                         </span>
 
                         <article
-                            className={`relative grid min-h-[320px] grid-rows-[1fr_auto_1fr] rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
+                            className={`relative grid min-w-0 min-h-[320px] grid-rows-[1fr_auto_1fr] rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
                         >
                             <SelectionToolbar className="absolute top-6 left-1/2 z-4 h-[60px] w-[min(309px,calc(100%-24px))] -translate-x-1/2 gap-3 px-3 sm:gap-6 sm:px-4 [&_.landing-aiTool]:h-9" />
 
@@ -374,7 +374,7 @@ export default function LandingPageContent() {
                         </span>
 
                         <article
-                            className={`grid min-h-[320px] grid-rows-[auto_1fr_auto] gap-0 rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
+                            className={`grid min-w-0 min-h-[320px] grid-rows-[auto_1fr_auto] gap-0 rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
                         >
                             <p className="m-0 flex items-center gap-2 text-[13px] text-(--landing-accent) [&_svg]:h-[18px] [&_svg]:w-[18px] [&_svg]:stroke-[1.4]">
                                 Writely suggests
@@ -488,8 +488,8 @@ export default function LandingPageContent() {
                 ].join(" ")}
             >
                 <div className="relative z-3 mx-auto w-full max-w-[1480px] px-5 sm:px-8 lg:px-12 xl:px-16">
-                    <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:grid-cols-[minmax(280px,0.65fr)_minmax(0,1.35fr)] xl:gap-16">
-                        <div className="max-w-[520px] xl:pt-6">
+                    <div className="grid w-full min-w-0 max-w-full grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:grid-cols-[minmax(280px,0.65fr)_minmax(0,1.35fr)] xl:gap-16">
+                        <div className="max-w-[520px] min-w-0 xl:pt-6">
                             <h2 className="m-0 max-w-[520px] font-(family-name:--font-source-serif) text-[clamp(2.75rem,4.5vw,4.25rem)] leading-[1.12] font-normal tracking-[-0.04em]">
                                 <span className="block">Built around</span>
 
@@ -509,7 +509,7 @@ export default function LandingPageContent() {
                             </p>
                         </div>
 
-                        <div className="overflow-hidden rounded-2xl border border-[#373430] bg-[rgb(13_14_13/54%)]">
+                        <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-[#373430] bg-[rgb(13_14_13/54%)]">
                             <table className="w-full table-fixed border-collapse">
                                 <caption className="sr-only">
                                     Comparison between typical document editors and Writely
@@ -519,14 +519,14 @@ export default function LandingPageContent() {
                                     <tr className="border-b border-[#302e2b] text-left text-[11px] font-medium tracking-[0.12em] text-[#8f8a84] uppercase sm:text-xs">
                                         <th
                                             scope="col"
-                                            className="w-1/2 px-4 py-5 font-medium sm:px-5"
+                                            className="w-1/2 wrap-break-word px-4 py-5 font-medium whitespace-normal sm:px-5"
                                         >
                                             Typical document editor
                                         </th>
 
                                         <th
                                             scope="col"
-                                            className="w-1/2 border-l border-[#302e2b] px-4 py-5 font-medium text-(--landing-accent) sm:px-5"
+                                            className="w-1/2 wrap-break-word border-l border-[#302e2b] px-4 py-5 font-medium whitespace-normal text-(--landing-accent) sm:px-5"
                                         >
                                             Writely
                                         </th>
@@ -680,7 +680,7 @@ function SelectionToolbar({ className }: { className?: string }) {
         <div
             aria-hidden="true"
             className={[
-                "landing-toolbar flex min-w-0 items-center justify-between",
+                "landing-toolbar flex min-w-0 max-w-full items-center justify-between",
                 "h-[56px] gap-3 px-4 py-2 sm:gap-6 sm:px-5",
                 "rounded-xl border border-[#363430]",
                 "bg-[linear-gradient(180deg,rgb(32_31_29/98%),rgb(25_24_22/98%)),#1c1b19]",
