@@ -1,5 +1,4 @@
 "use client";
-
 import { TRPCClientError } from "@trpc/client";
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
