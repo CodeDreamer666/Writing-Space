@@ -5,7 +5,6 @@ export const AI_ACTIONS = [
   "makeStronger",
   "makeConcise",
   "improveFlow",
-  "custom",
 ] as const;
 
 export type AiAction = (typeof AI_ACTIONS)[number];

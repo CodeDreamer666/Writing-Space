@@ -35,6 +35,7 @@ model User {
   email                 String
   emailVerified         Boolean        @default(false)
   leaveReminderDisabled Boolean        @default(false)
+  writingModePreference String         @default("Clear")
   image                 String? //@db.Text
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @default(now()) @updatedAt

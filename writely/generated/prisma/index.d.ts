@@ -2639,6 +2639,7 @@ export namespace Prisma {
     email: string | null
     emailVerified: boolean | null
     leaveReminderDisabled: boolean | null
+    writingModePreference: string | null
     image: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -2650,6 +2651,7 @@ export namespace Prisma {
     email: string | null
     emailVerified: boolean | null
     leaveReminderDisabled: boolean | null
+    writingModePreference: string | null
     image: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -2661,6 +2663,7 @@ export namespace Prisma {
     email: number
     emailVerified: number
     leaveReminderDisabled: number
+    writingModePreference: number
     image: number
     createdAt: number
     updatedAt: number
@@ -2674,6 +2677,7 @@ export namespace Prisma {
     email?: true
     emailVerified?: true
     leaveReminderDisabled?: true
+    writingModePreference?: true
     image?: true
     createdAt?: true
     updatedAt?: true
@@ -2685,6 +2689,7 @@ export namespace Prisma {
     email?: true
     emailVerified?: true
     leaveReminderDisabled?: true
+    writingModePreference?: true
     image?: true
     createdAt?: true
     updatedAt?: true
@@ -2696,6 +2701,7 @@ export namespace Prisma {
     email?: true
     emailVerified?: true
     leaveReminderDisabled?: true
+    writingModePreference?: true
     image?: true
     createdAt?: true
     updatedAt?: true
@@ -2780,6 +2786,7 @@ export namespace Prisma {
     email: string
     emailVerified: boolean
     leaveReminderDisabled: boolean
+    writingModePreference: string
     image: string | null
     createdAt: Date
     updatedAt: Date
@@ -2808,6 +2815,7 @@ export namespace Prisma {
     email?: boolean
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: boolean
     image?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -2825,6 +2833,7 @@ export namespace Prisma {
     email?: boolean
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: boolean
     image?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -2836,6 +2845,7 @@ export namespace Prisma {
     email?: boolean
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: boolean
     image?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -2847,12 +2857,13 @@ export namespace Prisma {
     email?: boolean
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: boolean
     image?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "leaveReminderDisabled" | "image" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "email" | "emailVerified" | "leaveReminderDisabled" | "writingModePreference" | "image" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sessions?: boolean | User$sessionsArgs<ExtArgs>
     documents?: boolean | User$documentsArgs<ExtArgs>
@@ -2879,6 +2890,7 @@ export namespace Prisma {
       email: string
       emailVerified: boolean
       leaveReminderDisabled: boolean
+      writingModePreference: string
       image: string | null
       createdAt: Date
       updatedAt: Date
@@ -3315,6 +3327,7 @@ export namespace Prisma {
     readonly email: FieldRef<"User", 'String'>
     readonly emailVerified: FieldRef<"User", 'Boolean'>
     readonly leaveReminderDisabled: FieldRef<"User", 'Boolean'>
+    readonly writingModePreference: FieldRef<"User", 'String'>
     readonly image: FieldRef<"User", 'String'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
@@ -9313,6 +9326,7 @@ export namespace Prisma {
     email: 'email',
     emailVerified: 'emailVerified',
     leaveReminderDisabled: 'leaveReminderDisabled',
+    writingModePreference: 'writingModePreference',
     image: 'image',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -9599,6 +9613,7 @@ export namespace Prisma {
     email?: StringFilter<"User"> | string
     emailVerified?: BoolFilter<"User"> | boolean
     leaveReminderDisabled?: BoolFilter<"User"> | boolean
+    writingModePreference?: StringFilter<"User"> | string
     image?: StringNullableFilter<"User"> | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
@@ -9615,6 +9630,7 @@ export namespace Prisma {
     email?: SortOrder
     emailVerified?: SortOrder
     leaveReminderDisabled?: SortOrder
+    writingModePreference?: SortOrder
     image?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -9634,6 +9650,7 @@ export namespace Prisma {
     name?: StringFilter<"User"> | string
     emailVerified?: BoolFilter<"User"> | boolean
     leaveReminderDisabled?: BoolFilter<"User"> | boolean
+    writingModePreference?: StringFilter<"User"> | string
     image?: StringNullableFilter<"User"> | string | null
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
@@ -9650,6 +9667,7 @@ export namespace Prisma {
     email?: SortOrder
     emailVerified?: SortOrder
     leaveReminderDisabled?: SortOrder
+    writingModePreference?: SortOrder
     image?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -9667,6 +9685,7 @@ export namespace Prisma {
     email?: StringWithAggregatesFilter<"User"> | string
     emailVerified?: BoolWithAggregatesFilter<"User"> | boolean
     leaveReminderDisabled?: BoolWithAggregatesFilter<"User"> | boolean
+    writingModePreference?: StringWithAggregatesFilter<"User"> | string
     image?: StringNullableWithAggregatesFilter<"User"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -10091,6 +10110,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -10107,6 +10127,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -10123,6 +10144,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10139,6 +10161,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10155,6 +10178,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -10166,6 +10190,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10177,6 +10202,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10822,6 +10848,7 @@ export namespace Prisma {
     email?: SortOrder
     emailVerified?: SortOrder
     leaveReminderDisabled?: SortOrder
+    writingModePreference?: SortOrder
     image?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -10833,6 +10860,7 @@ export namespace Prisma {
     email?: SortOrder
     emailVerified?: SortOrder
     leaveReminderDisabled?: SortOrder
+    writingModePreference?: SortOrder
     image?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -10844,6 +10872,7 @@ export namespace Prisma {
     email?: SortOrder
     emailVerified?: SortOrder
     leaveReminderDisabled?: SortOrder
+    writingModePreference?: SortOrder
     image?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -11552,6 +11581,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -11567,6 +11597,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -11598,6 +11629,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11613,6 +11645,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11925,6 +11958,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -11940,6 +11974,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -11971,6 +12006,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -11986,6 +12022,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12001,6 +12038,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -12016,6 +12054,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -12047,6 +12086,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12062,6 +12102,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12077,6 +12118,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -12092,6 +12134,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -12123,6 +12166,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12138,6 +12182,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12153,6 +12198,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -12168,6 +12214,7 @@ export namespace Prisma {
     email: string
     emailVerified?: boolean
     leaveReminderDisabled?: boolean
+    writingModePreference?: string
     image?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -12199,6 +12246,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -12214,6 +12262,7 @@ export namespace Prisma {
     email?: StringFieldUpdateOperationsInput | string
     emailVerified?: BoolFieldUpdateOperationsInput | boolean
     leaveReminderDisabled?: BoolFieldUpdateOperationsInput | boolean
+    writingModePreference?: StringFieldUpdateOperationsInput | string
     image?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

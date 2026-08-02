@@ -1,14 +1,21 @@
 import type { JSONContent } from "@tiptap/core";
 
-export const DEFAULT_TITLE = "Untitled draft";
+export const DEFAULT_TITLE = "New Draft";
+
+const ENGLISH_WORD_PATTERN =
+  /[\p{L}\p{N}]+(?:['’\u2010-\u2015-][\p{L}\p{N}]+)*/gu;
 
 export function countWords(text: string): number {
-  return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
+  return text.match(ENGLISH_WORD_PATTERN)?.length ?? 0;
 }
 
 export function readingTime(words: number): string {
-  const mins = Math.max(1, Math.ceil(words / 200));
-  return mins === 1 ? "~1 min read" : `~${mins} min read`;
+  if (words < 240) {
+    return "Less than 1 min read";
+  }
+
+  const minutes = Math.ceil(words / 240);
+  return minutes === 1 ? "1 min read" : `${minutes} min read`;
 }
 
 export function isEditorContent(content: unknown): content is JSONContent {

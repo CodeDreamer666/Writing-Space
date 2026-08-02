@@ -1,6 +1,6 @@
 import type { JSONContent } from "@tiptap/core";
 
-export type ExportFormat = "txt" | "md" | "docx";
+export type ExportFormat = "txt" | "md" | "docx" | "pdf";
 export type TextExportFormat = Extract<ExportFormat, "txt" | "md">;
 
 function children(node: JSONContent, format: TextExportFormat): string {
@@ -74,8 +74,4 @@ export function exportDocumentContent(
   format: TextExportFormat,
 ): string {
   return `${renderNode(content, format).trimEnd()}\n`;
-}
-
-export function isDocumentEmpty(content: JSONContent): boolean {
-  return exportDocumentContent(content, "txt").trim().length === 0;
 }

@@ -2,7 +2,7 @@
 
 @theme {
   --font-sans:
-    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+    var(--font-inter), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --animate-blink: blink 1s step-end infinite;
 }
@@ -36,16 +36,6 @@
   --w-selection: #cbd5e1;
 }
 
-.landing-page {
-  --landing-accent: #d5a06f;
-  --landing-accent-soft: #211a15;
-}
-
-:root[data-theme="light"] .landing-page {
-  --landing-accent: #9a5f32;
-  --landing-accent-soft: #efe3d7;
-}
-
 @keyframes blink {
   0%,
   100% {
@@ -69,27 +59,8 @@
   }
 }
 
-@keyframes savePulse {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-.landing-save-cycle {
-  animation: savePulse 3s ease-in-out infinite;
-}
-
 body {
-    @apply flex flex-col
-}
-
-body[data-focus-mode="true"] [data-beta-utilities] {
-  display: none;
+  @apply flex flex-col;
 }
 
 .ProseMirror {
@@ -120,7 +91,7 @@ body[data-focus-mode="true"] [data-beta-utilities] {
 }
 
 .ProseMirror p {
-  line-height: 1.8;
+  line-height: inherit;
 }
 
 .ProseMirror ul {
@@ -156,29 +127,8 @@ body {
   color: var(--w-foreground);
 }
 
-.desktop-beta-app {
-  display: contents;
-}
-
-.desktop-beta-notice {
-  display: none;
-}
-
-@media (width < 64rem) {
-  html.desktop-beta-locked,
-  body.desktop-beta-locked {
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
-
-  .desktop-beta-app {
-    display: none;
-  }
-
-  .desktop-beta-notice {
-    display: flex;
-  }
+body:has([data-writely-landing-page]) {
+  background: #050606;
 }
 
 ::selection {
