@@ -1,69 +1,72 @@
 # Writely
 
-Writely is a calm, private writing workspace for drafting, formatting, refining, and exporting documents. It combines automatic saving and browser recovery with optional AI assistance that works only on text the writer selects.
+Writely is a calm writing workspace for drafting, formatting, refining, and exporting documents. It combines automatic saving and browser recovery with optional AI assistance that works only on text the writer selects.
 
-Writely is currently a desktop beta. The application is available at viewport widths of 1024px and above; narrower screens show a desktop-only notice instead of a mobile interface.
+Writely 2.0 has an English interface and officially guarantees writing and export support for English. Other languages can be entered, but are not part of the current support guarantee.
 
 ## Current functionality
 
-### Authentication
+### Authentication and account
 
 - Google sign-in through Better Auth
-- Direct return to the writing workspace after authentication
-- Account-aware landing navigation: **Sign in** when signed out and **Open app** when authenticated
+- Auth-aware entry points that open the workspace for signed-in users and start Google sign-in for signed-out users
 - Sign out from Settings & Help
-- The Account section is hidden when no authenticated session exists
+- Permanent account deletion with an explicit confirmation step
+- Account deletion removes the account, its documents, related server data, and browser recovery copies on the current device
 
 ### Documents
 
-- Create documents from the drafts page or with a keyboard shortcut
-- Open and switch between recent documents
+- Create a blank document from the workspace
+- View recent documents with relative update times
+- Open documents through direct URLs
 - Edit document titles
-- Use direct document URLs, browser navigation, and refresh safely
-- Delete documents through a confirmation step
+- Delete documents through a confirmation dialog
 - Friendly unavailable state for missing, deleted, or inaccessible documents
 - Maximum of 20 active documents per account
 - Maximum of 50,000 text characters per document
 - Maximum title length of 200 characters
 
+All document reads, updates, deletions, and exports are restricted to the authenticated owner.
+
 ### Editor
 
 - Paragraphs
 - Heading 2
-- Bold
-- Italic
+- Bold and italic text
 - Bullet lists
 - Blockquotes
-- Floating selection toolbar
-- Word count, character count, and estimated reading time
-- Writing modes: Clear, Natural, Persuasive, Reflective, Story, Professional, and Argumentative
-- Tested writing support for English, Chinese, Malay, and Tamil
-- Normal punctuation, numbers, and useful symbols are supported
-- Emoji and decorative pictographs are blocked with a visible validation message
+- Floating formatting toolbar for selected text
+- Word count, character count, and estimated reading time at approximately 240 words per minute
+- Writing modes: Clear, Natural, Persuasive, Reflective, Story, and Argumentative
+- Normal punctuation, numbers, and useful symbols
+- Visible validation when emoji or decorative pictographs are entered
+
+### Writing appearance
+
+Editor-only appearance preferences are stored in the browser and include:
+
+- Source Serif 4, Inter, or Atkinson Hyperlegible
+- 16px, 18px, 20px, or 22px text
+- Compact, comfortable, or spacious line spacing
+- Narrow, standard, or wide editor width
+- Light, Dark, and System themes
+
+These preferences change the writing experience without changing exported document formatting.
 
 ### Autosave and recovery
 
-- Automatic saving while writing
-- Visible unsaved, saving, saved, failed, recovery, and conflict states outside Focus Mode
-- Temporary browser recovery copy for recent unsaved writing
-- Explicit restore-or-discard decisions when a recovery copy is found
-- Version-conflict handling for documents edited in multiple tabs
+- Automatic saving after changes
+- Visible unsaved, saving, saved, failed, recovery, and conflict states
+- A temporary browser recovery copy for recent unsaved writing
+- Explicit restore-or-discard choices when a recovery copy differs from the saved document
+- Version-conflict protection for documents edited in multiple tabs
 - A stale tab cannot silently overwrite a newer saved version
 
-Focus Mode intentionally hides save-status text. Autosave continues working while Focus Mode is active.
-
-### Focus Mode
-
-- Enter or exit with the Focus/Exit focus button
-- Toggle with `Ctrl/Cmd + Alt + F`
-- Keeps the title, editor, formatting toolbar, and writing behavior available
-- Hides non-essential navigation and utility UI
-
-`Esc` does not exit Focus Mode. It closes active menus, dialogs, the export panel, the AI panel, and the floating selection toolbar where applicable.
+Browser recovery copies expire after 30 days. The database remains the authoritative saved copy.
 
 ### Writely AI
 
-AI is optional and can be disabled globally with `AI_ENABLED="false"`.
+AI is optional and can be disabled globally with `AI_ENABLED="false"` without disabling writing or saving.
 
 Available rewrite actions:
 
@@ -74,20 +77,20 @@ Available rewrite actions:
 - Make more concise
 - Improve flow
 
-AI behavior and limits:
+AI behaviour and limits:
 
 - AI runs only after the writer selects text and chooses an action
 - Only the selected text and its supported formatting are sent to the AI provider
-- Responses follow the language and language variety of the selected writing
-- The writer compares the original and improved versions before replacing anything
-- Supported formatting is preserved through rewrite replacement
-- Maximum selection size: 1,000 characters
-- Daily allowance: 5,000 provider tokens per account
+- The selected document must belong to the authenticated user
+- The writer compares the original and improved versions before accepting or keeping the original
+- Supported formatting is preserved when an accepted rewrite replaces the selection
+- Maximum selection size: 1,500 characters
+- Daily allowance: 8,000 provider tokens per account, reset by UTC date
 - One AI request can run at a time per account
-- Failed, invalid, or rejected responses do not reduce the visible allowance
+- Failed, invalid, rejected, or over-limit responses do not reduce the allowance
 - The remaining-allowance meter updates after successful requests
 
-Writely currently uses Groq with `llama-3.3-70b-versatile`.
+Writely currently uses Groq with `llama-3.3-70b-versatile`. The database records daily token usage and request-lock metadata, not selected text, prompts, or AI responses.
 
 ### Export
 
@@ -96,53 +99,44 @@ Supported formats:
 - TXT (`.txt`)
 - Markdown (`.md`)
 - Word (`.docx`)
+- PDF (`.pdf`)
 
-Empty documents can be exported as valid empty files. Markdown and Word preserve headings, lists, bold, italic, blockquotes, and line breaks where the format supports them. PDF export is not part of the current product.
+Empty documents can be exported as valid files. Rich exports preserve headings, lists, bold, italic, blockquotes, and line breaks where the format supports them. PDF files use embedded Unicode-compatible fonts, but Writely 2.0 guarantees reliable PDF export only for English.
 
-### Preferences and public pages
+### Settings and feedback
 
-- Light, Dark, and System themes
-- Interface languages: English, Chinese, Malay, and Tamil
-- Interface-language selection changes the interface only; it does not set the AI response language
-- Public landing page with local, non-persistent product demonstrations
-- Settings & Help page
-- Plain-language Privacy page
-- Beta-feedback dialog; submitting feedback requires authentication
+The authenticated Settings & Help page includes theme and writing-appearance controls, current product limits, autosave and language guidance, a feedback form, sign out, and account deletion.
 
-## Keyboard shortcuts
+Feedback is trimmed and validated on the server:
 
-| Action                           | Shortcut             |
-| -------------------------------- | -------------------- |
-| Create document                  | `Ctrl/Cmd + Alt + N` |
-| Toggle Focus Mode                | `Ctrl/Cmd + Alt + F` |
-| Open export                      | `Ctrl/Cmd + Alt + E` |
-| Close the active panel or dialog | `Esc`                |
-
-The shortcuts use `Ctrl` on Windows/Linux and `Cmd` on macOS. They are not triggered while typing in unrelated form fields.
+- 10 to 2,000 characters
+- Authentication required
+- One submission per user every 60 seconds
+- Input remains available when submission fails and clears after success
 
 ## Main routes
 
-| Route                | Purpose                            |
-| -------------------- | ---------------------------------- |
-| `/landing`           | Public product landing page        |
-| `/`                  | Draft list and document creation   |
-| `/[docId]`           | Writing editor                     |
-| `/setting`           | Settings & Help                    |
-| `/privacy`           | Plain-language privacy information |
-| `/api/auth/[...all]` | Better Auth endpoints              |
-| `/api/trpc/[trpc]`   | tRPC API                           |
+| Route                | Purpose                                   |
+| -------------------- | ----------------------------------------- |
+| `/`                  | Public landing page                       |
+| `/app`               | Auth-aware workspace and recent documents |
+| `/app/[docId]`       | Authenticated document editor             |
+| `/setting`           | Authenticated Settings & Help             |
+| `/api/auth/[...all]` | Better Auth endpoints                     |
+| `/api/trpc/[trpc]`   | tRPC API                                  |
 
 ## Technology
 
 - Next.js 16 and React 19
 - TypeScript
-- Tailwind CSS
-- T3-style tRPC client and server APIs
-- Prisma with PostgreSQL
+- Tailwind CSS 4
+- tRPC and TanStack Query
+- Prisma 7 with PostgreSQL
 - Better Auth with Google OAuth
 - Tiptap
 - Groq SDK
 - `docx` for Word exports
+- `pdfmake` for PDF exports
 - Vitest and jsdom
 
 ## Local development
@@ -177,9 +171,9 @@ GROQ_API_KEY=""
 AI_ENABLED="true"
 ```
 
-In production, `BETTER_AUTH_SECRET` must contain at least 32 characters. Configure the Google OAuth application for the local and deployed Better Auth URLs.
+In production, `BETTER_AUTH_SECRET` must contain at least 32 characters. Configure the Google OAuth application for the local and deployed Better Auth callback URLs.
 
-If AI should be unavailable while the rest of Writely remains usable, set:
+To keep Writely available without AI, set:
 
 ```dotenv
 AI_ENABLED="false"
@@ -218,6 +212,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run format:write` | Format supported source files with Prettier                       |
 | `npm run db:migrate`   | Apply pending Prisma migrations                                   |
 | `npm run db:generate`  | Create/apply a development migration and regenerate Prisma        |
+| `npm run db:push`      | Push the Prisma schema without creating a migration               |
 | `npm run db:studio`    | Open Prisma Studio                                                |
 | `npm run build`        | Apply production migrations and create a Next.js production build |
 | `npm run start`        | Start an existing production build                                |
@@ -228,15 +223,16 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```text
 src/
-  app/                         Next.js routes and public pages
-  components/                  Shared layout and UI
-  features/docs/               Draft-list behavior
+  app/                         Landing, workspace, editor, settings, and API routes
+  components/                  Shared status, theme, loading, and error UI
+  features/docs/               Document-creation browser state
   features/editor/             Editor, autosave, recovery, AI, and export UI
-  hooks/                       Shared browser behavior and shortcuts
-  lib/                         Limits, translations, validation, and utilities
-  server/api/routers/          tRPC routers
+  hooks/                       Writing-appearance browser behaviour
+  lib/                         Limits, validation, themes, and utilities
+  server/ai/                   AI instructions and response requirements
+  server/api/routers/          Authenticated tRPC procedures
   server/better-auth/          Authentication configuration
-  server/documents/            TXT, Markdown, and Word export generation
+  server/documents/            TXT, Markdown, Word, and PDF generation
 prisma/
   migrations/                  Database migrations
   schema.prisma                PostgreSQL data model
@@ -250,15 +246,15 @@ Before handing off or deploying a change, run:
 npm test
 npm run check
 npm run format:check
+npm run build
 ```
 
-For release verification, also test the deployed authenticated flow: Google sign-in, document creation, autosave/recovery, Focus Mode, a minimal AI request, all three export formats, Settings sign out, and signed-out Settings.
+The production build applies database migrations, so use a deliberate test or deployment database. For release verification, also test the real authenticated journey: Google sign-in, document creation, autosave and recovery, multi-tab conflict handling, all six AI actions, all four export formats, feedback submission, sign out, and account deletion in a disposable account.
 
 ## Current product boundaries
 
-- Desktop only at 1024px and wider
-- No mobile or tablet layout below 1024px
-- No PDF export
-- No collaborative or social writing features
+- The interface and official writing-support guarantee are English only
+- No collaborative, shared, or social writing features
 - No AI request without an explicit text selection and action
-- Focus Mode exits only through Exit focus or `Ctrl/Cmd + Alt + F`
+- No automatic replacement of writing with an AI response
+- PDF reliability is guaranteed only for English
