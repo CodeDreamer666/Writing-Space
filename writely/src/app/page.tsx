@@ -1,6 +1,7 @@
 "use client";
+
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { authClient } from "~/server/better-auth/client";
 
 const steps = [
@@ -22,6 +23,7 @@ const steps = [
             "Compare the suggestion with your words and choose with confidence",
     },
 ];
+
 const comparisonRows = [
     {
         typical: "Tools visible before writing",
@@ -39,52 +41,22 @@ const comparisonRows = [
         typical: "Designed around formatting the document",
         writely: "Designed around developing the thought",
     },
-] as const;
-
-const trustItems = [
-    {
-        icon: "shield-check",
-        title: "Safe as you write",
-        children: "Autosave and browser recovery",
-    },
-    {
-        icon: "lock",
-        title: "Private by design",
-        children: " AI receives selected text only",
-    },
-    {
-        icon: "download",
-        title: "Yours to take",
-        children: "Export whenever you need",
-    },
 ];
 
-type DemoChoice = "suggestion" | "original";
+const trustItems = [
+    { title: "Safe as you write", body: "Autosave and browser recovery" },
+    { title: "Private by design", body: "AI receives selected text only" },
+    { title: "Yours to take", body: "Export whenever you need" },
+];
 
-type LandingIconName =
-    | "ai"
-    | "align"
-    | "arrow"
-    | "bolt"
-    | "cloud"
-    | "document"
-    | "download"
-    | "folder"
-    | "format"
-    | "lock"
-    | "menu"
-    | "shield"
-    | "shield-check"
-    | "sparkle"
-    | "toolbar";
-
-export default function LandingPageContent() {
+export default function LandingPage() {
     const router = useRouter();
-    const { data: session, isPending: isSessionPending } = authClient.useSession();
+    const { data: session, isPending } = authClient.useSession();
+    const [demoChoice, setDemoChoice] = useState<"suggestion" | "original">(
+        "suggestion",
+    );
 
-    const [demoChoice, setDemoChoice] = useState<DemoChoice>("suggestion");
-
-    const handleStartWriting = async () => {
+    const startWriting = async () => {
         if (!session) {
             await authClient.signIn.social({
                 provider: "google",
@@ -100,728 +72,259 @@ export default function LandingPageContent() {
     return (
         <main
             data-writely-landing-page
-            className={[
-                "min-w-0 overflow-x-clip",
-                "[font-family:var(--font-inter),ui-sans-serif,system-ui,sans-serif]",
-                "text-(--landing-text) scheme-dark",
-                "[--landing-accent-bright:#e3aa6a] [--landing-accent-ink:#16110c]",
-                "[--landing-accent:#cf965c] [--landing-background:#050606]",
-                "[--landing-border-soft:#262522] [--landing-border:#393631]",
-                "[--landing-muted:#9a9996] [--landing-panel-soft:rgb(18_17_15/86%)]",
-                "[--landing-panel:rgb(21_20_18/94%)] [--landing-subtle:#76736f]",
-                "[--landing-text:#f2f0ed] [background:var(--landing-background)]",
-                "**:box-border [&_*::after]:box-border [&_*::before]:box-border",
-                "[&_:where(button,a)]:[-webkit-tap-highlight-color:transparent]",
-                "[&_:where(button,a,textarea)]:font-[inherit]",
-                "[&_a:focus-visible]:[outline:2px_solid_var(--landing-accent-bright)]",
-                "[&_a:focus-visible]:outline-offset-4",
-                "[&_button:focus-visible]:[outline:2px_solid_var(--landing-accent-bright)]",
-                "[&_button:focus-visible]:outline-offset-4",
-                "[&_textarea:focus-visible]:[outline:2px_solid_var(--landing-accent-bright)]",
-                "[&_textarea:focus-visible]:outline-offset-4",
-            ].join(" ")}
+            className="min-h-screen bg-(--w-background) text-(--w-foreground)"
         >
-            <section
-                aria-labelledby="landing-hero-title"
-                className={[
-                    "relative py-12 [background:radial-gradient(ellipse_70%_24%_at_52%_91%,rgb(150_103_61/20%),transparent_72%),radial-gradient(circle_at_43%_38%,#151411_0,#090a09_38%,#040505_82%)] [&::after]:pointer-events-none",
-                    "[&::after]:absolute [&::after]:inset-0 [&::after]:z-2 [&::after]:[content:'']",
-                    "[&::after]:[background:linear-gradient(90deg,rgb(0_0_0/30%),transparent_22%,transparent_76%,rgb(0_0_0/28%)),linear-gradient(180deg,rgb(0_0_0/22%),transparent_34%,transparent_78%,rgb(0_0_0/20%))] [&::before]:pointer-events-none [&::before]:absolute [&::before]:inset-0",
-                    "[&::before]:z-1 [&::before]:bg-[radial-gradient(circle_at_17%_31%,rgb(255_255_255/28%)_0_0.55px,transparent_0.7px),radial-gradient(circle_at_73%_64%,rgb(255_255_255/22%)_0_0.45px,transparent_0.65px)] [&::before]:bg-size-[4px_4px,5px_5px] [&::before]:bg-position-[0_0,7px_11px]",
-                    "[&::before]:opacity-[0.09] [&::before]:mix-blend-soft-light [&::before]:[content:'']",
-                ].join(" ")}
-            >
-                <div className="relative z-4 mx-auto w-full max-w-[1480px] px-5 sm:px-8 lg:px-12 xl:px-16">
-                    <div className="grid min-w-0 items-center gap-12 sm:gap-16 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] xl:gap-20">
-                        <div className="relative z-5 max-w-[560px] min-w-0 xl:py-8 [&_.landing-actionButton]:mt-10">
-                            <h2
-                                className={[
-                                    "max-w-[560px] [font-family:var(--font-source-serif),Georgia,serif] text-[clamp(2.5rem,11vw,4.5rem)] leading-[1.08]",
-                                    "font-normal tracking-[-0.04em] [&_em]:text-(--landing-accent) [&_em]:not-italic",
-                                    "[&_span]:block",
-                                ].join(" ")}
-                            >
-                                A <em>Quieter</em> place to <em>Write</em>
-                            </h2>
-                            <p className="landing-heroDescription mt-8 max-w-[520px] text-base leading-8 tracking-[-0.01em] text-[#aaa8a4] sm:text-[18px] sm:leading-9">
-                                Writely keeps everything out of your way so you can think
-                                clearly. AI only sees what you choose—never your whole document.
-                            </p>
-                            <ActionButton
-                                onClick={handleStartWriting}
-                                disabled={isSessionPending}
-                            >
-                                Start writing
-                            </ActionButton>
-                            <div
-                                className={[
-                                    "max-sm:hidden mt-8 flex flex-wrap",
-                                    "items-center gap-x-4 gap-y-3 text-[14px]",
-                                    "text-[#aaa7a1] [&_span]:inline-flex [&_span]:items-center [&_span]:gap-2",
-                                    "[&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-[1.45] [&_svg]:text-(--landing-accent)",
-                                ].join(" ")}
-                            >
-                                <span>Free during beta</span>
-                                <span
-                                    aria-hidden="true"
-                                    className="text-[#5c5853]"
-                                >
-                                    ·
-                                </span>
-                                <span>Autosaved automatically</span>
-                            </div>
-                        </div>
+            <header className="flex items-center justify-between border-b border-(--w-border-soft) px-5 py-5 sm:px-10 sm:py-7">
+                <div className="flex items-baseline gap-3.5">
+                    <span className="font-mono-label text-[13px] tracking-[0.34em] uppercase">
+                        Writely
+                    </span>
+                    <span className="font-mono-label text-[10px] tracking-[0.2em] text-(--w-subtle) uppercase">
+                        beta
+                    </span>
+                </div>
+                <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => void startWriting()}
+                    className="font-mono-label cursor-pointer border-0 border-b border-(--w-border) bg-transparent px-0 py-1 text-[11px] tracking-[0.18em] uppercase hover:border-(--w-foreground) disabled:cursor-wait disabled:opacity-60"
+                >
+                    Start writing
+                </button>
+            </header>
 
-                        <div
-                            aria-label="A Writely editor showing tools for selected text"
-                            className={[
-                                "relative h-[350px] w-full min-w-0 max-w-[768px] sm:h-[480px] lg:h-[520px]",
-                                "justify-self-end overflow-hidden rounded-2xl border",
-                                "border-[#44413c] [box-shadow:inset_0_1px_rgb(255_255_255/2%),0_36px_90px_rgb(0_0_0/26%)] [background:radial-gradient(circle_at_58%_44%,rgb(41_38_34/34%),transparent_49%),linear-gradient(110deg,rgb(16_16_15/94%),rgb(25_24_22/93%))]",
-                            ].join(" ")}
+            <section className="grid border-b border-(--w-border-soft) lg:grid-cols-2">
+                <div className="flex flex-col justify-center border-b border-(--w-border-soft) px-5 py-12 sm:px-10">
+                    <p className="font-mono-label mb-10 text-[11px] tracking-[0.2em] text-(--w-subtle) uppercase">
+                        01 — The page
+                    </p>
+                    <h1 className="font-display text-[clamp(3rem,6.4vw,6.5rem)] leading-[0.98] font-light tracking-[-0.03em] text-balance">
+                        A quieter place
+                        <br />
+                        <em>to write</em>
+                    </h1>
+                    <p className="mt-9 max-w-[42ch] text-[17px] leading-[1.7] text-(--w-muted)">
+                        Writely keeps everything out of your way so you can think clearly.
+                        AI only sees what you choose—never your whole document.
+                    </p>
+                    <div className="mt-11 flex flex-wrap items-center gap-5">
+                        <PrimaryButton
+                            disabled={isPending}
+                            onClick={() => void startWriting()}
                         >
-                            <div className="absolute top-6 right-5 left-5 flex items-center justify-between text-[14px] text-[#9d9994] sm:top-10 sm:right-10 sm:left-10 sm:text-base">
-                                <span
-                                    aria-hidden="true"
-                                    className="inline-flex h-[28px] w-[28px] items-center justify-center [&_svg]:h-[25px] [&_svg]:w-[25px] [&_svg]:stroke-[1.2]"
-                                >
-                                    <LandingIcon name="menu" />
-                                </span>
-                                <span
-                                    className={[
-                                        "landing-savedStatus inline-flex items-center gap-[13px]",
-                                        "[&_>_span]:h-[8px] [&_>_span]:w-[8px] [&_>_span]:rounded-[999px] [&_>_span]:[box-shadow:0_0_12px_rgb(0_185_128/24%)]",
-                                        "[&_>_span]:[background:#00b980]",
-                                    ].join(" ")}
-                                >
-                                    <span aria-hidden="true" />
-                                    Saved
-                                </span>
-                            </div>
-                            <SelectionToolbar className="absolute top-[24%] left-[5%] w-[90%] max-w-[371px] gap-3 px-3 sm:top-[30%] sm:left-[7%] sm:w-[min(371px,86%)] sm:gap-[30px] sm:px-5" />
-                            <p
-                                className={[
-                                    "landing-heroEditorSentence absolute top-[44%] left-[5%] sm:top-[45%] sm:left-[7%]",
-                                    "m-0 w-[90%] max-w-[720px] [font-family:var(--font-source-serif),Georgia,serif] sm:w-[86%]",
-                                    "text-[clamp(1.25rem,6.5vw,2.1rem)] leading-normal font-normal tracking-tight sm:text-[clamp(1.45rem,3.2vw,2.1rem)]",
-                                    "text-[#f0ede9]",
-                                ].join(" ")}
-                            >
+                            Start writing
+                        </PrimaryButton>
+                        <span className="font-mono-label text-[11px] tracking-[0.14em] text-(--w-subtle) uppercase">
+                            Free during beta · Autosaved
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-center bg-(--w-surface) px-5 py-12 sm:px-10 sm:py-14">
+                    <div className="w-full max-w-[520px] border border-(--w-border) bg-(--w-background)">
+                        <div className="flex items-center justify-between border-b border-(--w-border-soft) px-[18px] py-3.5">
+                            <span className="flex w-4 flex-col gap-[3px]" aria-hidden="true">
+                                <i className="h-px bg-(--w-foreground)" />
+                                <i className="h-px bg-(--w-foreground)" />
+                                <i className="h-px bg-(--w-foreground)" />
+                            </span>
+                            <span className="font-mono-label text-[10px] tracking-[0.18em] text-(--w-subtle) uppercase">
+                                Saved
+                            </span>
+                        </div>
+                        <div className="px-5 py-9 sm:px-7 sm:pt-[46px] sm:pb-[34px]">
+                            <ToolbarPreview />
+                            <p className="font-display text-[clamp(1.3rem,2.4vw,1.85rem)] leading-[1.45] font-light">
                                 The first clear sentence gives{" "}
-                                <span
-                                    className={[
-                                        "landing-selectedText landing-selectionStart relative z-1",
-                                        "[box-decoration-break:clone] text-[#d9a264]",
-                                        "[box-shadow:0_0_18px_rgb(196_130_64/8%)] [-webkit-box-decoration-break:clone]",
-                                        "[background:rgb(143_95_48/35%)]",
-                                        "[&::after]:absolute [&::after]:top-[-0.2em] [&::after]:left-[-5px] [&::after]:z-3",
-                                        "[&::after]:h-[11px] [&::after]:w-[11px] [&::after]:rounded-[999px]",
-                                        "[&::after]:[box-shadow:0_1px_4px_rgb(0_0_0/40%)] [&::after]:[content:'']",
-                                        "[&::after]:[background:#dda362]",
-                                        "[&::before]:absolute [&::before]:top-[-0.08em] [&::before]:-left-px [&::before]:z-2",
-                                        "[&::before]:h-[1.08em] [&::before]:w-[2px] [&::before]:[content:'']",
-                                        "[&::before]:[background:#d99d5e]",
-                                    ].join(" ")}
-                                >
-                                    the rest of the{" "}
-                                </span>
-                                <span
-                                    className={[
-                                        "landing-selectedText landing-selectionEnd relative z-1",
-                                        "[box-decoration-break:clone] text-[#d9a264]",
-                                        "[box-shadow:0_0_18px_rgb(196_130_64/8%)] [-webkit-box-decoration-break:clone]",
-                                        "[background:rgb(143_95_48/35%)]",
-                                        "[&::after]:absolute [&::after]:-right-px [&::after]:bottom-[-0.08em] [&::after]:z-2",
-                                        "[&::after]:h-[1.08em] [&::after]:w-[2px] [&::after]:[content:'']",
-                                        "[&::after]:[background:#d99d5e]",
-                                        "[&::before]:absolute [&::before]:right-[-5px] [&::before]:bottom-[-0.2em] [&::before]:z-3",
-                                        "[&::before]:h-[11px] [&::before]:w-[11px] [&::before]:rounded-[999px]",
-                                        "[&::before]:[box-shadow:0_1px_4px_rgb(0_0_0/40%)] [&::before]:[content:'']",
-                                        "[&::before]:[background:#dda362]",
-                                    ].join(" ")}
-                                >
-                                    thought
+                                <span className="bg-(--w-foreground) px-0.5 text-(--w-background)">
+                                    the rest of the thought
                                 </span>{" "}
                                 somewhere to go.
                             </p>
-                            <p
-                                className={[
-                                    "landing-panelPrivacy absolute right-4 bottom-6",
-                                    "left-4 m-0 flex items-center sm:right-5 sm:bottom-10 sm:left-5",
-                                    "justify-center gap-3 text-center text-[13px]",
-                                    "leading-6 text-[#8f8b86] sm:text-[14px]",
-                                    "[&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 [&_svg]:stroke-[1.35]",
-                                    "[&_svg]:text-[#a77b4d]",
-                                ].join(" ")}
-                            >
-                                AI only receives the selected passage.
-                            </p>
                         </div>
+                        <p className="font-mono-label border-t border-(--w-border-soft) px-[18px] py-4 text-center text-[10px] tracking-[0.14em] uppercase">
+                            AI only receives the selected passage
+                        </p>
                     </div>
                 </div>
             </section>
 
-            <section
-                aria-labelledby="how-it-works-title"
-                className={[
-                    "relative py-16",
-                    "[background:radial-gradient(ellipse_70%_24%_at_50%_91%,rgb(150_103_61/20%),transparent_74%),radial-gradient(circle_at_52%_42%,#131311_0,#080908_46%,#040505_82%)]",
-                    "[&::after]:pointer-events-none [&::after]:absolute [&::after]:inset-0 [&::after]:z-2",
-                    "[&::after]:[content:''] [&::after]:[background:linear-gradient(90deg,rgb(0_0_0/30%),transparent_22%,transparent_76%,rgb(0_0_0/28%)),linear-gradient(180deg,rgb(0_0_0/22%),transparent_34%,transparent_78%,rgb(0_0_0/20%))]",
-                    "[&::before]:pointer-events-none [&::before]:absolute [&::before]:inset-0 [&::before]:z-1",
-                    "[&::before]:bg-[radial-gradient(circle_at_17%_31%,rgb(255_255_255/28%)_0_0.55px,transparent_0.7px),radial-gradient(circle_at_73%_64%,rgb(255_255_255/22%)_0_0.45px,transparent_0.65px)]",
-                    "[&::before]:bg-size-[4px_4px,5px_5px] [&::before]:bg-position-[0_0,7px_11px]",
-                    "[&::before]:opacity-[0.09] [&::before]:mix-blend-soft-light [&::before]:[content:'']",
-                ].join(" ")}
-            >
-                <div className="relative z-4 mx-auto w-full max-w-[1480px] px-5 sm:px-8 lg:px-12 xl:px-16">
-                    <div className="max-w-[760px]">
-                        <p className="text-[15px] font-semibold tracking-[0.18em] text-(--landing-accent-bright) uppercase">
-                            How it works
-                        </p>
-                        <h2
-                            className={[
-                                "mt-5 max-w-[760px] [font-family:var(--font-source-serif),Georgia,serif] text-[clamp(2.8rem,4.5vw,4rem)]",
-                                "leading-[1.08] font-normal tracking-[-0.04em] [&_em]:text-(--landing-accent)",
-                                "[&_em]:not-italic",
-                            ].join(" ")}
-                        >
-                            The interface waits for <em>you</em>
-                        </h2>
-                        <p className="mt-6 text-base leading-8 text-[#aaa8a4] sm:text-[18px] sm:leading-9">
-                            Writely stays out of your way—until you need it
-                            <br />
-                            Then it helps you say it, clearly
-                        </p>
-                    </div>
-
-                    <div className="mt-10 grid min-w-0 grid-cols-1 gap-6 sm:mt-16 sm:gap-10 xl:grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)_32px_minmax(0,1fr)] xl:gap-3">
+            <section className="border-b border-(--w-border-soft) px-5 py-16 sm:px-10 sm:py-[88px]">
+                <p className="font-mono-label mb-10 text-[11px] tracking-[0.2em] text-(--w-subtle) uppercase">
+                    02 — How it works
+                </p>
+                <h2 className="font-display max-w-[20ch] text-[clamp(2.2rem,4.4vw,4rem)] leading-[1.04] font-light tracking-[-0.03em]">
+                    The interface waits for <em>you</em>
+                </h2>
+                <p className="mt-3 max-w-[48ch] text-[17px] leading-[1.7] text-(--w-muted)">
+                    Writely stays out of your way—until you need it. Then it helps you say
+                    it, clearly.
+                </p>
+                <div className="mt-12 grid border-t border-(--w-border-soft) sm:mt-16 lg:grid-cols-3">
+                    {steps.map((step) => (
                         <article
-                            className={`relative grid min-w-0 min-h-[320px] grid-rows-[1fr_auto_1fr] rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
+                            key={step.number}
+                            className="border-b border-(--w-border-soft) py-8 lg:border-r lg:border-b-0 lg:pr-8 last:lg:border-r-0 [&+article]:lg:pl-8"
                         >
-                            <div className="row-start-2 flex w-full items-center justify-center">
-                                <p className="max-w-[380px] [font-family:var(--font-source-serif),Georgia,serif] text-[clamp(1.25rem,2vw,1.55rem)] leading-[1.45] tracking-[-0.02em] text-[#ece9e5]">
-                                    A small idea becomes clearer when the page leaves it alone
-                                </p>
-                            </div>
-
-                            <div className="row-start-3 flex w-full items-end">
-                                <p className="flex items-center gap-3 text-[14px] text-[#918d87] [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 [&_svg]:stroke-[1.4] [&_svg]:text-[#b07d47]">
-                                    Your words, your pace
-                                </p>
-                            </div>
-                        </article>
-
-                        <span
-                            aria-hidden="true"
-                            className="hidden items-center justify-center text-[30px] font-extralight text-(--landing-accent-bright) xl:flex"
-                        >
-                            →
-                        </span>
-
-                        <article
-                            className={`relative grid min-w-0 min-h-[320px] grid-rows-[1fr_auto_1fr] rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
-                        >
-                            <SelectionToolbar className="absolute top-6 left-1/2 z-4 h-[60px] w-[min(309px,calc(100%-24px))] -translate-x-1/2 gap-3 px-3 sm:gap-6 sm:px-4 [&_.landing-aiTool]:h-9" />
-
-                            <div className="row-start-2 flex w-full items-center justify-center">
-                                <p
-                                    className={[
-                                        "[font-family:var(--font-source-serif),Georgia,serif] text-[clamp(1.25rem,2vw,1.55rem)] leading-normal font-normal",
-                                        "tracking-[-0.02em] text-[#ece9e5] [&_em]:text-(--landing-accent) [&_em]:not-italic",
-                                    ].join(" ")}
-                                >
-                                    A small idea{" "}
-                                    <span
-                                        className={[
-                                            "relative z-1 [box-decoration-break:clone] text-[#d9a264]",
-                                            "[box-shadow:0_0_18px_rgb(196_130_64/8%)] [-webkit-box-decoration-break:clone] [background:rgb(143_95_48/35%)] [&::after]:absolute",
-                                            "[&::after]:top-[-0.2em] [&::after]:left-[-5px] [&::after]:z-3 [&::after]:h-[11px]",
-                                            "[&::after]:w-[11px] [&::after]:rounded-[999px] [&::after]:[box-shadow:0_1px_4px_rgb(0_0_0/40%)] [&::after]:[content:'']",
-                                            "[&::after]:[background:#dda362] [&::before]:absolute [&::before]:top-[-0.08em] [&::before]:-left-px",
-                                            "[&::before]:z-2 [&::before]:h-[1.08em] [&::before]:w-[2px] [&::before]:[content:'']",
-                                            "[&::before]:[background:#d99d5e]",
-                                        ].join(" ")}
-                                    >
-                                        becomes clearer when the page leaves it alone
-                                    </span>
-                                    <span
-                                        className={[
-                                            "relative z-1 [box-decoration-break:clone] text-[#d9a264]",
-                                            "[box-shadow:0_0_18px_rgb(196_130_64/8%)] [-webkit-box-decoration-break:clone] [background:rgb(143_95_48/35%)] [&::after]:absolute",
-                                            "[&::after]:-right-px [&::after]:bottom-[-0.08em] [&::after]:z-2 [&::after]:h-[1.08em]",
-                                            "[&::after]:w-[2px] [&::after]:[content:''] [&::after]:[background:#d99d5e] [&::before]:absolute",
-                                            "[&::before]:right-[-5px] [&::before]:bottom-[-0.2em] [&::before]:z-3 [&::before]:h-[11px]",
-                                            "[&::before]:w-[11px] [&::before]:rounded-[999px] [&::before]:[box-shadow:0_1px_4px_rgb(0_0_0/40%)] [&::before]:[content:'']",
-                                            "[&::before]:[background:#dda362]",
-                                        ].join(" ")}
-                                    />
-                                </p>
-                            </div>
-
-                            <div className="row-start-3 flex w-full items-end">
-                                <p className="flex items-center gap-3 text-[14px] text-[#918d87] [&_svg]:h-5 [&_svg]:w-5 [&_svg]:shrink-0 [&_svg]:stroke-[1.4] [&_svg]:text-[#b07d47]">
-                                    Text selected
-                                </p>
-                            </div>
-                        </article>
-
-                        <span
-                            aria-hidden="true"
-                            className="hidden items-center justify-center text-[30px] font-extralight text-(--landing-accent-bright) xl:flex"
-                        >
-                            →
-                        </span>
-
-                        <article
-                            className={`grid min-w-0 min-h-[320px] grid-rows-[auto_1fr_auto] gap-0 rounded-2xl border border-[#3a3733] bg-[radial-gradient(circle_at_60%_44%,rgb(50_45_39/22%),transparent_52%),linear-gradient(110deg,rgb(15_16_15/93%),rgb(22_21_19/91%))] p-5 shadow-[inset_0_1px_rgb(255_255_255/2%)] sm:min-h-[360px] sm:p-8`}
-                        >
-                            <p className="m-0 flex items-center gap-2 text-[13px] text-(--landing-accent) [&_svg]:h-[18px] [&_svg]:w-[18px] [&_svg]:stroke-[1.4]">
-                                Writely suggests
-                            </p>
-                            <div className="flex items-center">
-                                {demoChoice === "suggestion" ? (
-                                    <p
-                                        className={[
-                                            "m-0 [font-family:var(--font-source-serif),Georgia,serif] text-[clamp(1.25rem,2vw,1.55rem)] leading-normal",
-                                            "font-normal tracking-[-0.02em] text-[#ece9e5] [&_em]:text-(--landing-accent)",
-                                            "[&_em]:not-italic",
-                                        ].join(" ")}
-                                    >
-                                        A small idea becomes clearer when the page{" "}
-                                        <em>steps aside and lets it breathe</em>
-                                    </p>
-                                ) : (
-                                    <p
-                                        className={[
-                                            "m-0 [font-family:var(--font-source-serif),Georgia,serif] text-[clamp(1.25rem,2vw,1.55rem)] leading-normal",
-                                            "font-normal tracking-[-0.02em] text-[#ece9e5] [&_em]:text-(--landing-accent)",
-                                            "[&_em]:not-italic",
-                                        ].join(" ")}
-                                    >
-                                        A small idea becomes clearer when the page leaves it alone
-                                    </p>
-                                )}
-                            </div>
-                            <div>
-                                <div
-                                    role="group"
-                                    aria-label="Choose the final text"
-                                    className="relative grid h-12 w-full max-w-[336px] grid-cols-2 overflow-hidden rounded-[10px] border border-[#3f3b36] bg-[#211f1c]"
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className={`pointer-events-none absolute inset-y-0 left-0 w-1/2 rounded-[9px] bg-[linear-gradient(110deg,#ca843a,#e0a45c)] transition-transform duration-250 ease-out ${demoChoice === "original"
-                                            ? "translate-x-full"
-                                            : "translate-x-0"
-                                            }`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setDemoChoice("suggestion")}
-                                        aria-pressed={demoChoice === "suggestion"}
-                                        className={[
-                                            "relative z-1 cursor-pointer rounded-[9px]",
-                                            "border-0 bg-transparent px-3 text-[14px]",
-                                            "text-[#7d7975] transition-[background-color,color] duration-250 focus-visible:outline-2",
-                                            "focus-visible:outline-offset-[-3px] focus-visible:outline-[#f4b769] aria-pressed:text-[#1b140d]",
-                                        ].join(" ")}
-                                    >
-                                        Use suggestion
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDemoChoice("original")}
-                                        aria-pressed={demoChoice === "original"}
-                                        className={[
-                                            "relative z-1 cursor-pointer rounded-[9px]",
-                                            "border-0 bg-transparent px-3 text-[14px]",
-                                            "text-[#7d7975] transition-[background-color,color] duration-250 focus-visible:outline-2",
-                                            "focus-visible:outline-offset-[-3px] focus-visible:outline-[#f4b769] aria-pressed:text-[#1b140d]",
-                                        ].join(" ")}
-                                    >
-                                        Keep mine
-                                    </button>
-                                </div>
-                            </div>
-                        </article>
-                    </div>
-
-                    <ol
-                        className={[
-                            "mt-12 grid grid-cols-1 gap-10 sm:mt-16",
-                            "p-0 [list-style:none] lg:grid-cols-3 lg:gap-12",
-                            "[&_li]:min-w-0 [&_li_>_p]:mt-5 [&_li_>_p]:max-w-[360px] [&_li_>_p]:pl-11",
-                            "[&_li_>_p]:text-base [&_li_>_p]:leading-8 [&_li_>_p]:text-[#99958f]",
-                        ].join(" ")}
-                    >
-                        {steps.map((step) => {
-                            return (
-                                <li key={step.number}>
-                                    <div
-                                        className={[
-                                            "landing-stepHeading flex items-baseline gap-5",
-                                            "[&_>_span]:[font-family:var(--font-source-serif),Georgia,serif] [&_>_span]:text-base [&_>_span]:text-(--landing-accent) [&_>_span]:italic",
-                                            "[&_h3]:m-0 [&_h3]:[font-family:var(--font-source-serif),Georgia,serif] [&_h3]:text-[28px] [&_h3]:leading-none",
-                                            "[&_h3]:font-normal",
-                                        ].join(" ")}
-                                    >
-                                        <span>{step.number}</span>
-                                        <h3>{step.title}</h3>
-                                    </div>
-                                    <p>{step.description}</p>
-                                </li>
-                            );
-                        })}
-                    </ol>
-                </div>
-            </section>
-
-            <section
-                aria-labelledby="comparison-title"
-                className={[
-                    "relative py-16 [background:radial-gradient(ellipse_70%_24%_at_52%_91%,rgb(150_103_61/20%),transparent_72%),radial-gradient(circle_at_43%_38%,#151411_0,#090a09_38%,#040505_82%)] before:pointer-events-none before:absolute",
-                    "before:inset-0 before:z-1 before:bg-[radial-gradient(circle_at_17%_31%,rgb(255_255_255/28%)_0_0.55px,transparent_0.7px),radial-gradient(circle_at_73%_64%,rgb(255_255_255/22%)_0_0.45px,transparent_0.65px)] before:bg-size-[4px_4px,5px_5px]",
-                    "before:bg-position-[0_0,7px_11px] before:opacity-[0.09] before:mix-blend-soft-light before:content-['']",
-                    "after:pointer-events-none after:absolute after:inset-0 after:z-2",
-                    "after:bg-[linear-gradient(90deg,rgb(0_0_0/30%),transparent_22%,transparent_76%,rgb(0_0_0/28%)),linear-gradient(180deg,rgb(0_0_0/22%),transparent_34%,transparent_78%,rgb(0_0_0/20%))] after:content-['']",
-                ].join(" ")}
-            >
-                <div className="relative z-3 mx-auto w-full max-w-[1480px] px-5 sm:px-8 lg:px-12 xl:px-16">
-                    <div className="grid w-full min-w-0 max-w-full grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14 xl:grid-cols-[minmax(280px,0.65fr)_minmax(0,1.35fr)] xl:gap-16">
-                        <div className="max-w-[520px] min-w-0 xl:pt-6">
-                            <h2 className="m-0 max-w-[520px] font-(family-name:--font-source-serif) text-[clamp(2.75rem,4.5vw,4.25rem)] leading-[1.12] font-normal tracking-[-0.04em]">
-                                <span className="block">Built around</span>
-
-                                <span className="block">
-                                    the{" "}
-                                    <em className="text-(--landing-accent) not-italic">
-                                        thought
-                                    </em>
-                                    , not the toolbar
+                            <div className="flex items-baseline gap-[18px]">
+                                <span className="font-mono-label text-[11px] tracking-[0.16em] text-(--w-subtle)">
+                                    {step.number}
                                 </span>
-                            </h2>
-
-                            <p className="mt-7 max-w-[500px] text-base leading-8 text-[#aaa8a4] sm:text-[17px] sm:leading-9">
-                                Writely keeps everything out of your way so you can think
-                                clearly. AI only sees the text you deliberately select, never
-                                your entire document.
+                                <h3 className="font-display text-[30px] leading-none font-normal">
+                                    {step.title}
+                                </h3>
+                            </div>
+                            <p className="mt-5 ml-[41px] max-w-[34ch] text-[15px] leading-[1.75] text-(--w-muted)">
+                                {step.description}
                             </p>
-                        </div>
-
-                        <div className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-[#373430] bg-[rgb(13_14_13/54%)]">
-                            <table className="w-full table-fixed border-collapse">
-                                <caption className="sr-only">
-                                    Comparison between typical document editors and Writely
-                                </caption>
-
-                                <thead>
-                                    <tr className="border-b border-[#302e2b] text-left text-[11px] font-medium tracking-[0.12em] text-[#8f8a84] uppercase sm:text-xs">
-                                        <th
-                                            scope="col"
-                                            className="w-1/2 wrap-break-word px-4 py-5 font-medium whitespace-normal sm:px-5"
-                                        >
-                                            Typical document editor
-                                        </th>
-
-                                        <th
-                                            scope="col"
-                                            className="w-1/2 wrap-break-word border-l border-[#302e2b] px-4 py-5 font-medium whitespace-normal text-(--landing-accent) sm:px-5"
-                                        >
-                                            Writely
-                                        </th>
-                                    </tr>
-                                </thead>
-
-                                <tbody>
-                                    {comparisonRows.map((row) => (
-                                        <tr
-                                            key={row.typical}
-                                            className="border-b border-[#302e2b] text-sm leading-6 last:border-b-0 sm:text-base"
-                                        >
-                                            <td className="px-4 py-5 align-middle wrap-break-word text-[#aaa6a1] sm:px-5 sm:py-6">
-                                                {row.typical}
-                                            </td>
-
-                                            <td className="border-l border-[#302e2b] px-4 py-5 align-middle wrap-break-word text-[#f0ede9] sm:px-5 sm:py-6">
-                                                {row.writely}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div className="mt-12 grid min-w-0 grid-cols-1 overflow-hidden rounded-2xl border border-[#383531] bg-[rgb(12_13_12/56%)] lg:grid-cols-3">
-                        {trustItems.map((item) => {
-                            return (
-                                <div
-                                    key={item.title}
-                                    className={[
-                                        "landing-trustItem relative flex min-w-0",
-                                        "items-center gap-5 p-6 sm:p-8",
-                                        "lg:min-h-[150px] lg:px-7 xl:px-9 [&_p]:m-0",
-                                        "[&_p]:min-w-0 [&_p_>_span]:mt-2 [&_p_>_span]:block [&_p_>_span]:text-[14px]",
-                                        "[&_p_>_span]:leading-6 [&_p_>_span]:text-[#99958f] [&_strong]:block [&_strong]:[font-family:var(--font-source-serif),Georgia,serif]",
-                                        "[&_strong]:text-[clamp(1.2rem,1.8vw,1.45rem)] [&_strong]:leading-[1.2] [&_strong]:font-normal [&_strong]:text-[#eae6e1]",
-                                        "[&+.landing-trustItem::before]:absolute [&+.landing-trustItem::before]:top-0 [&+.landing-trustItem::before]:right-6 [&+.landing-trustItem::before]:left-6",
-                                        "[&+.landing-trustItem::before]:h-px [&+.landing-trustItem::before]:bg-[#373430] [&+.landing-trustItem::before]:[content:''] lg:[&+.landing-trustItem::before]:top-8",
-                                        "lg:[&+.landing-trustItem::before]:right-auto lg:[&+.landing-trustItem::before]:bottom-8 lg:[&+.landing-trustItem::before]:left-0 lg:[&+.landing-trustItem::before]:h-auto",
-                                        "lg:[&+.landing-trustItem::before]:w-px",
-                                    ].join(" ")}
-                                >
-                                    <span className="landing-trustIcon flex h-12 w-12 shrink-0 items-center justify-center text-(--landing-accent) [&_svg]:h-11 [&_svg]:w-11 [&_svg]:stroke-[1.25]">
-                                        <LandingIcon name={item.icon as LandingIconName} />
-                                    </span>
-                                    <p>
-                                        <strong>{item.title}</strong>
-                                        <span>{item.children}</span>
-                                    </p>
-                                </div>
-                            );
-                        })}
+                        </article>
+                    ))}
+                </div>
+                <div className="mt-12 border border-(--w-border) bg-(--w-surface) px-5 py-8 sm:mt-16 sm:px-8 sm:py-9">
+                    <p className="font-mono-label mb-6 text-[11px] tracking-[0.18em] text-(--w-subtle) uppercase">
+                        Writely suggests
+                    </p>
+                    <p className="font-display min-h-[2.8em] max-w-[32ch] text-[clamp(1.3rem,2.6vw,2rem)] leading-[1.4] font-light">
+                        {demoChoice === "suggestion"
+                            ? "A small idea becomes clearer when the page steps aside and lets it breathe"
+                            : "A small idea becomes clearer when the page leaves it alone"}
+                    </p>
+                    <div className="mt-8 flex w-fit border border-(--w-border)">
+                        <ChoiceButton
+                            active={demoChoice === "suggestion"}
+                            onClick={() => setDemoChoice("suggestion")}
+                        >
+                            Use suggestion
+                        </ChoiceButton>
+                        <ChoiceButton
+                            active={demoChoice === "original"}
+                            onClick={() => setDemoChoice("original")}
+                        >
+                            Keep mine
+                        </ChoiceButton>
                     </div>
                 </div>
             </section>
 
-            <section
-                aria-labelledby="final-cta-title"
-                className={[
-                    "relative pb-12 [background:radial-gradient(ellipse_68%_30%_at_51%_69%,rgb(147_101_60/24%),transparent_69%),radial-gradient(circle_at_50%_42%,#151411_0,#090a09_43%,#040505_83%)]",
-                    "[&::after]:pointer-events-none [&::after]:absolute [&::after]:inset-0 [&::after]:z-2",
-                    "[&::after]:[content:''] [&::after]:[background:linear-gradient(90deg,rgb(0_0_0/30%),transparent_22%,transparent_76%,rgb(0_0_0/28%)),linear-gradient(180deg,rgb(0_0_0/22%),transparent_34%,transparent_78%,rgb(0_0_0/20%))] [&::before]:pointer-events-none [&::before]:absolute",
-                    "[&::before]:inset-0 [&::before]:z-1 [&::before]:bg-[radial-gradient(circle_at_17%_31%,rgb(255_255_255/28%)_0_0.55px,transparent_0.7px),radial-gradient(circle_at_73%_64%,rgb(255_255_255/22%)_0_0.45px,transparent_0.65px)] [&::before]:bg-size-[4px_4px,5px_5px]",
-                    "[&::before]:bg-position-[0_0,7px_11px] [&::before]:opacity-[0.09] [&::before]:mix-blend-soft-light [&::before]:[content:'']",
-                ].join(" ")}
-            >
-                <div className="landing-shell relative z-4 mx-auto w-full max-w-[1480px] px-5 sm:px-8 lg:px-12 xl:px-16">
-                    <div
-                        className={[
-                            "landing-finalContent relative z-5 flex",
-                            "min-h-[400px] flex-col items-center justify-center",
-                            "py-10 text-center sm:min-h-[480px] sm:py-12 lg:min-h-[540px] [&_.landing-actionButton]:mt-10",
-                            "[&_.landing-actionButton]:w-[min(282px,100%)]",
-                        ].join(" ")}
-                    >
-                        <h2
-                            id="final-cta-title"
-                            className={[
-                                "landing-finalTitle m-0 max-w-[920px] [font-family:var(--font-source-serif),Georgia,serif]",
-                                "text-[clamp(2.8rem,5vw,4.5rem)] leading-[1.15] font-normal tracking-[-0.04em]",
-                                "[&_em]:text-(--landing-accent) [&_em]:not-italic [&_span]:block",
-                            ].join(" ")}
-                        >
-                            <span>Your next sentence</span>
-                            <span>
-                                deserves some <em>space</em>
-                            </span>
-                        </h2>
-                        <ActionButton
-                            onClick={handleStartWriting}
-                            disabled={isSessionPending}
-                        >
-                            Start writing
-                        </ActionButton>
-                        <div
-                            className={[
-                                "landing-finalAssurances mt-8 flex flex-wrap",
-                                "items-center justify-center gap-x-4 gap-y-3",
-                                "text-[14px] text-[#b1a18f] [&_span]:inline-flex [&_span]:items-center",
-                                "[&_span]:gap-2 [&_svg]:h-5 [&_svg]:w-5 [&_svg]:stroke-[1.45]",
-                                "[&_svg]:text-(--landing-accent)",
-                            ].join(" ")}
-                        >
-                            <span>Free during beta</span>
-                            <span aria-hidden="true">·</span>
-                            <span>Autosaved automatically</span>
-                        </div>
+            <section className="border-b border-(--w-border-soft) px-5 py-16 sm:px-10 sm:py-[88px]">
+                <p className="font-mono-label mb-10 text-[11px] tracking-[0.2em] text-(--w-subtle) uppercase">
+                    03 — The difference
+                </p>
+                <h2 className="font-display mb-14 max-w-[24ch] text-[clamp(2.2rem,4.4vw,4rem)] leading-[1.04] font-light tracking-[-0.03em]">
+                    Built around the <em>thought</em>, not the toolbar
+                </h2>
+                <div className="border-t border-(--w-foreground)">
+                    <div className="grid grid-cols-2 border-b border-(--w-border-soft)">
+                        <p className="font-mono-label py-4 pr-4 text-[10px] tracking-[0.18em] text-(--w-subtle) uppercase sm:pr-6">
+                            Typical document editor
+                        </p>
+                        <p className="font-mono-label border-l border-(--w-border-soft) py-4 pl-4 text-[10px] tracking-[0.18em] uppercase sm:pl-6">
+                            Writely
+                        </p>
                     </div>
+                    {comparisonRows.map((row) => (
+                        <div
+                            key={row.typical}
+                            className="grid grid-cols-2 border-b border-(--w-border-soft)"
+                        >
+                            <p className="py-5 pr-4 text-sm leading-[1.6] text-(--w-subtle) sm:py-[26px] sm:pr-6 sm:text-base">
+                                {row.typical}
+                            </p>
+                            <p className="border-l border-(--w-border-soft) py-5 pl-4 text-sm leading-[1.6] sm:py-[26px] sm:pl-6 sm:text-base">
+                                {row.writely}
+                            </p>
+                        </div>
+                    ))}
                 </div>
+                <div className="mt-14 grid gap-9 lg:grid-cols-3 lg:gap-8">
+                    {trustItems.map((item) => (
+                        <div key={item.title}>
+                            <h3 className="font-display mb-2.5 text-[22px] leading-[1.2] font-normal">
+                                {item.title}
+                            </h3>
+                            <p className="text-sm leading-[1.7] text-(--w-muted)">
+                                {item.body}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            <section className="px-5 py-24 text-center sm:px-10 sm:py-[140px]">
+                <h2 className="font-display mx-auto max-w-[18ch] text-[clamp(2.6rem,6vw,5.5rem)] leading-[1.02] font-light tracking-[-0.03em]">
+                    Your next sentence deserves some <em>space</em>
+                </h2>
+                <div className="mt-12">
+                    <PrimaryButton
+                        disabled={isPending}
+                        onClick={() => void startWriting()}
+                    >
+                        Start writing
+                    </PrimaryButton>
+                </div>
+                <p className="font-mono-label mt-[26px] text-[11px] tracking-[0.14em] uppercase">
+                    Free during beta · Autosaved automatically
+                </p>
             </section>
         </main>
     );
 }
 
-function ActionButton({
+function PrimaryButton({
     children,
     disabled,
     onClick,
 }: {
-    children: ReactNode;
+    children: React.ReactNode;
     disabled: boolean;
     onClick: () => void;
 }) {
     return (
         <button
             type="button"
-            onClick={onClick}
             disabled={disabled}
-            className={[
-                "landing-actionButton inline-flex h-[62px] w-[min(260px,100%)]",
-                "mt-10 cursor-pointer items-center justify-center gap-4 px-6",
-                "rounded-[9px] border border-[rgb(244_183_105/55%)]",
-                "[background:linear-gradient(105deg,#cb8536,#e7ab63_58%,#d58e3f)]",
-                "text-[17px] font-medium text-[#20160e]",
-                "shadow-[inset_0_1px_rgb(255_224_175/42%),0_18px_42px_rgb(121_70_28/22%)]",
-                "transition-[filter,transform] duration-150",
-                "disabled:cursor-wait motion-reduce:transition-none",
-                "[&_svg]:h-[22px] [&_svg]:w-[22px] [&_svg]:stroke-[1.6]",
-                "[&:hover]:-translate-y-px [&:hover]:brightness-110",
-            ].join(" ")}
+            onClick={onClick}
+            className="h-14 cursor-pointer border-0 bg-(--w-foreground) px-[34px] text-[15px] font-medium text-(--w-background) hover:opacity-80 disabled:cursor-wait disabled:opacity-60"
         >
             {children}
         </button>
     );
 }
 
-function SelectionToolbar({ className }: { className?: string }) {
+function ChoiceButton({
+    active,
+    children,
+    onClick,
+}: {
+    active: boolean;
+    children: React.ReactNode;
+    onClick: () => void;
+}) {
     return (
-        <div
-            aria-hidden="true"
-            className={[
-                "landing-toolbar flex min-w-0 max-w-full items-center justify-between",
-                "h-[56px] gap-3 px-4 py-2 sm:gap-6 sm:px-5",
-                "rounded-xl border border-[#363430]",
-                "bg-[linear-gradient(180deg,rgb(32_31_29/98%),rgb(25_24_22/98%)),#1c1b19]",
-                "[font-family:var(--font-inter),sans-serif] text-[14px] leading-none text-[#ece9e4]",
-                "shadow-[inset_0_1px_rgb(255_255_255/3%),0_16px_34px_rgb(0_0_0/26%)]",
-                "[&_>_svg]:h-5 [&_>_svg]:w-5 [&_>_svg]:shrink-0",
-                "[&_>_svg]:stroke-[1.35] [&_>_svg]:text-[#c1beba]",
-                "[&_b]:font-bold [&_i]:font-semibold [&_i]:italic",
-                className ?? "",
-            ].join(" ")}
+        <button
+            type="button"
+            onClick={onClick}
+            className={`h-[46px] cursor-pointer border-0 px-4 text-sm sm:px-6 ${active ? "bg-(--w-foreground) font-medium text-(--w-background)" : "bg-transparent text-(--w-subtle)"}`}
         >
-            <b>B</b>
-            <i>I</i>
-            <b>H</b>
-            <LandingIcon name="align" />
-            <span className="landing-quote [font-family:var(--font-source-serif),Georgia,serif] text-[22px] text-[#c1beba]">
-                “
-            </span>
-            <span
-                className={[
-                    "landing-aiTool inline-flex h-9 shrink-0",
-                    "items-center gap-1.5 rounded-[9px] border",
-                    "border-[#bb783a] bg-[linear-gradient(130deg,#cd8741,#e2aa66)] px-3 font-medium",
-                    "text-[#20160e] shadow-[inset_0_1px_rgb(255_224_177/36%),0_7px_18px_rgb(0_0_0/24%)] [&_svg]:h-4 [&_svg]:w-4",
-                    "[&_svg]:stroke-[1.55]",
-                ].join(" ")}
-            >
-                AI
-                <LandingIcon name="sparkle" />
-            </span>
-        </div>
+            {children}
+        </button>
     );
 }
 
-function LandingIcon({ name }: { name: LandingIconName }) {
-    const commonProps = {
-        "aria-hidden": true,
-        fill: "none",
-        stroke: "currentColor",
-        strokeLinecap: "round" as const,
-        strokeLinejoin: "round" as const,
-        viewBox: "0 0 24 24",
-    };
-
-    switch (name) {
-        case "ai":
-            return (
-                <svg {...commonProps}>
-                    <rect x="4" y="4" width="16" height="16" rx="4" />
-                    <path d="M8.5 16 12 8l3.5 8M9.8 13h4.4M18 8v8" />
-                </svg>
-            );
-        case "align":
-            return (
-                <svg {...commonProps}>
-                    <path d="M5 7h14M5 12h14M5 17h10" />
-                </svg>
-            );
-        case "arrow":
-            return (
-                <svg {...commonProps}>
-                    <path d="M5 12h14M14 7l5 5-5 5" />
-                </svg>
-            );
-        case "bolt":
-            return (
-                <svg {...commonProps}>
-                    <path d="m13 2-8 12h7l-1 8 8-12h-7z" />
-                </svg>
-            );
-        case "cloud":
-            return (
-                <svg {...commonProps}>
-                    <path d="M7 18h10a4 4 0 0 0 .7-7.94A6 6 0 0 0 6.3 8.3 4.5 4.5 0 0 0 7 18Z" />
-                </svg>
-            );
-        case "document":
-            return (
-                <svg {...commonProps}>
-                    <rect x="5" y="3" width="14" height="18" rx="2" />
-                    <path d="M9 8h6M9 12h6M9 16h4" />
-                </svg>
-            );
-        case "download":
-            return (
-                <svg {...commonProps}>
-                    <rect x="4" y="3" width="16" height="18" rx="3" />
-                    <path d="M12 7v9M8.5 12.5 12 16l3.5-3.5" />
-                </svg>
-            );
-        case "folder":
-            return (
-                <svg {...commonProps}>
-                    <path d="M3 7.5h7l2-2h9v13H3z" />
-                    <path d="M3 7.5V6a2 2 0 0 1 2-2h5l2 2" />
-                </svg>
-            );
-        case "format":
-            return (
-                <svg {...commonProps}>
-                    <path d="M4 6h16M4 11h12M4 16h16M4 21h10" />
-                </svg>
-            );
-        case "lock":
-            return (
-                <svg {...commonProps}>
-                    <rect x="5" y="10" width="14" height="11" rx="2" />
-                    <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
-                </svg>
-            );
-        case "menu":
-            return (
-                <svg {...commonProps}>
-                    <path d="M5 7h14M5 12h14M5 17h14" />
-                </svg>
-            );
-        case "shield":
-            return (
-                <svg {...commonProps}>
-                    <path d="M12 3 19 6v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6z" />
-                </svg>
-            );
-        case "shield-check":
-            return (
-                <svg {...commonProps}>
-                    <path d="M12 2.5 20 6v5.5c0 4.8-3.2 8.3-8 10.5-4.8-2.2-8-5.7-8-10.5V6z" />
-                    <path d="m8.5 12 2.2 2.2 4.8-5" />
-                </svg>
-            );
-        case "sparkle":
-            return (
-                <svg {...commonProps}>
-                    <path d="m12 3 1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2zM18.5 13l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7z" />
-                </svg>
-            );
-        case "toolbar":
-            return (
-                <svg {...commonProps}>
-                    <rect x="3" y="5" width="18" height="14" rx="3" />
-                    <path d="M7 9h3M14 9h3M7 13h3M14 13h3" />
-                </svg>
-            );
-    }
+function ToolbarPreview() {
+    return (
+        <div
+            aria-hidden="true"
+            className="mb-[30px] inline-flex h-[46px] max-w-full items-center gap-4 border border-(--w-border) bg-(--w-surface-raised) px-3 sm:gap-[22px] sm:px-4"
+        >
+            <b className="text-[13px]">B</b>
+            <i className="font-display text-[13px]">I</i>
+            <b className="text-[13px]">H</b>
+            <span className="text-sm">≡</span>
+            <span className="font-display text-[19px]">“</span>
+            <span className="font-mono-label bg-(--w-foreground) px-2 py-1 text-[10px] tracking-[0.14em] text-(--w-background)">
+                AI
+            </span>
+        </div>
+    );
 }

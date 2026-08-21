@@ -1,6 +1,9 @@
 "use client";
-import SettingsSection from "./SettingsSection";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import { useTheme } from "~/components/layout/ThemeProvider";
 import {
     DAILY_AI_TOKEN_LIMIT,
@@ -11,14 +14,18 @@ import {
     MAX_DOCUMENTS_PER_USER,
 } from "~/lib/documentLimits";
 import { THEMES, type Theme } from "~/lib/theme";
-import AccountSettings from "./AccountSettings";
-import WritingAppearanceSettings from "./WritingAppearanceSettings";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useStatusMessage } from "~/components/layout/StatusMessageProvider";
 import { useHandleTRPCError } from "~/lib/useHandleTRPCError";
 import { authClient } from "~/server/better-auth/client";
 import { api } from "~/trpc/react";
+import AccountSettings from "./AccountSettings";
+import SettingsSection from "./SettingsSection";
+import WritingAppearanceSettings from "./WritingAppearanceSettings";
+
+const themeLabels: Record<Theme, string> = {
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+};
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
@@ -33,209 +40,224 @@ export default function SettingsPage() {
             setMessage("");
             showMessage("Thank you — your feedback was received.", true);
         },
-        onError: (error) => {
-            handleTRPCError({ error, router });
-        },
+        onError: (error) => handleTRPCError({ error, router }),
     });
-
-    const themeLabels: Record<Theme, string> = {
-        light: "Light",
-        dark: "Dark",
-        system: "System",
-    };
 
     if (!session?.user) {
         return (
-            <p className="mt-5 rounded-xl border border-(--w-border) bg-(--w-surface) px-4 py-3">
-                Please sign in from the Writely home page before going to the setting page
-            </p>
+            <main className="min-h-screen bg-(--w-background) px-5 py-20 text-center text-(--w-foreground)">
+                <p>
+                    Please sign in from the Writely home page before going to the settings
+                    page.
+                </p>
+                <Link
+                    href="/"
+                    className="font-mono-label mt-6 inline-block border-b border-(--w-border) py-1 text-[11px] tracking-[0.18em] uppercase"
+                >
+                    ← Back to Writely
+                </Link>
+            </main>
         );
     }
 
     return (
-        <main className="min-h-screen bg-(--w-background) px-6 py-10 text-(--w-foreground) sm:px-8 sm:py-14">
-            <article className="mx-auto max-w-3xl pb-8">
-                <header className="mt-4 border-b border-(--w-border-soft) pb-10">
-                    <div className="flex w-full items-center justify-between">
-                        <p className="text-xs font-medium tracking-[0.14em] text-(--w-subtle) uppercase">
-                            Writely beta
-                        </p>
-                        <Link
-                            href="/"
-                            className="text-sm text-(--w-muted) transition-colors hover:text-(--w-foreground)"
-                        >
-                            ← Back to Writely
-                        </Link>
-                    </div>
-                    <div>
-                        <h1 className="mt-3 text-4xl font-medium tracking-tight sm:text-5xl">
-                            Settings &amp; Help
-                        </h1>
-                        <p className="mt-4 max-w-xl text-base leading-8 text-(--w-muted)">
-                            Personalize Writely and find important information.
-                        </p>
-                    </div>
+        <main className="min-h-screen bg-(--w-background) text-(--w-foreground)">
+            <header className="flex items-center justify-between border-b border-(--w-border-soft) px-5 py-5 sm:px-10 sm:py-6">
+                <span className="font-mono-label text-[11px] tracking-[0.24em] text-(--w-subtle) uppercase">
+                    Writely beta
+                </span>
+                <Link
+                    href="/app"
+                    className="font-mono-label border-b border-(--w-border) py-1 text-[11px] tracking-[0.18em] uppercase hover:border-(--w-foreground)"
+                >
+                    ← Back to Writely
+                </Link>
+            </header>
+
+            <article className="mx-auto max-w-[960px] px-5 pb-24 sm:px-5 ">
+                <header className="border-b border-(--w-foreground) py-8 sm:pb-12">
+                    <h1 className="font-display text-[clamp(2.4rem,5vw,4rem)] leading-[1.04] font-light tracking-[-0.03em]">
+                        Settings &amp; Help
+                    </h1>
+                    <p className="mt-[22px] max-w-[40ch] text-base leading-[1.7] text-(--w-muted)">
+                        Personalize Writely and find important information.
+                    </p>
                 </header>
 
-                <div className="divide-y divide-(--w-border-soft)">
-                    <SettingsSection title="Theme">
-                        <p>Choose Light, Dark, or System.</p>
-                        <div className="mt-5">
-                            <fieldset>
-                                <legend className="sr-only">Choose a theme</legend>
-                                <div className="grid max-w-md grid-cols-3 gap-2 rounded-xl border border-(--w-border) bg-(--w-surface) p-1.5">
-                                    {THEMES.map((option) => (
-                                        <button
-                                            key={option}
-                                            type="button"
-                                            suppressHydrationWarning
-                                            aria-pressed={theme === option}
-                                            onClick={() => setTheme(option)}
-                                            className={`min-h-10 cursor-pointer rounded-lg px-3 text-sm font-medium transition-colors ${theme === option
-                                                    ? "bg-(--w-foreground) text-(--w-background)"
-                                                    : "text-(--w-muted) hover:bg-(--w-surface-raised) hover:text-(--w-foreground)"
-                                                }`}
-                                        >
-                                            {themeLabels[option]}
-                                        </button>
-                                    ))}
-                                </div>
-                            </fieldset>
-                        </div>
-                        <p className="mt-4 text-xs text-(--w-subtle)">
-                            System follows your device setting.
-                        </p>
-                    </SettingsSection>
-
-                    <SettingsSection title="Writing appearance">
-                        <p>Adjust how your writing looks inside the editor.</p>
-                        <WritingAppearanceSettings />
-                        <p className="mt-4 text-xs text-(--w-subtle)">
-                            These choices affect only the editor. Exported documents keep
-                            their normal document formatting.
-                        </p>
-                    </SettingsSection>
-
-                    <SettingsSection title="Autosave">
-                        <p>
-                            Writely saves while you type and shows Saving…, Saved, or Save
-                            failed.
-                        </p>
-                        <p className="mt-4">
-                            A temporary browser recovery copy helps protect recent writing
-                            when saving fails or the tab closes unexpectedly.
-                        </p>
-                    </SettingsSection>
-
-                    <SettingsSection title="AI usage">
-                        <ul className="list-disc space-y-1 pl-5">
-                            <li>
-                                {DAILY_AI_TOKEN_LIMIT.toLocaleString("en")} tokens each day
-                            </li>
-                            <li>
-                                Up to {MAX_AI_SELECTION_CHARACTERS.toLocaleString("en")}{" "}
-                                selected characters per request
-                            </li>
-                            <li>One request at a time</li>
-                            <li>Only selected text is sent to AI</li>
-                        </ul>
-                        <p className="mt-4">
-                            Failed or invalid responses do not reduce your Writely allowance.
-                        </p>
-                    </SettingsSection>
-
-                    <SettingsSection title="Language support">
-                        <p>
-                            Writely’s interface is in English. You can write and paste text in
-                            other languages, but Writely 2.0 officially guarantees support
-                            only for English.
-                        </p>
-                        <p className="mt-4">
-                            Emoji and decorative pictographs are not supported in document
-                            titles or writing. Normal punctuation, numbers, and useful symbols
-                            remain supported.
-                        </p>
-                    </SettingsSection>
-
-                    <SettingsSection title="Document limits">
-                        <ul className="list-disc space-y-1 pl-5">
-                            <li>
-                                Up to {MAX_DOCUMENTS_PER_USER.toLocaleString("en")} documents
-                            </li>
-                            <li>
-                                Up to {MAX_DOCUMENT_CHARACTERS.toLocaleString("en")} characters
-                                per document
-                            </li>
-                        </ul>
-                    </SettingsSection>
-
-                    <SettingsSection title="Export">
-                        <p>Export documents as TXT, Markdown, Word, or PDF.</p>
-                    </SettingsSection>
-
-                    <div id="feedback" className="scroll-mt-8">
-                        <SettingsSection title="Send feedback">
-                            <p>
-                                Tell us what is working well, what feels unclear, or what could
-                                make Writely better. Your feedback helps guide improvements
-                                during the beta.
-                            </p>
-                            <form
-                                onSubmit={(event) => {
-                                    event.preventDefault();
-
-                                    if (!session?.user || submitFeedback.isPending) {
-                                        return;
-                                    }
-
-                                    submitFeedback.mutate({ message });
-                                }}
-                                className="mt-5"
-                            >
-                                <label
-                                    htmlFor="feedback-message"
-                                    className="text-sm font-medium text-(--w-strong)"
+                <SettingsSection title="Theme">
+                    <p>
+                        Choose Light, Dark, or System. System follows your device setting.
+                    </p>
+                    <fieldset className="mt-5">
+                        <legend className="sr-only">Choose a theme</legend>
+                        <div className="flex w-fit border border-(--w-foreground)">
+                            {THEMES.map((option) => (
+                                <button
+                                    key={option}
+                                    type="button"
+                                    suppressHydrationWarning
+                                    aria-pressed={theme === option}
+                                    onClick={() => setTheme(option)}
+                                    className={`h-[46px] cursor-pointer border-0 px-4 text-sm sm:px-6 ${theme === option ? "bg-(--w-foreground) font-medium text-(--w-background)" : "bg-transparent text-(--w-subtle)"}`}
                                 >
-                                    What worked, or what should feel better?
-                                </label>
-                                <textarea
-                                    id="feedback-message"
-                                    value={message}
-                                    onChange={(event) => setMessage(event.target.value)}
-                                    minLength={10}
-                                    maxLength={2_000}
-                                    rows={6}
-                                    required
-                                    placeholder="Tell us about your experience…"
-                                    className={[
-                                        "mt-2 w-full resize-none rounded-xl",
-                                        "border border-(--w-border) bg-(--w-surface) px-3",
-                                        "py-3 text-sm leading-6 text-(--w-foreground)",
-                                        "ring-0 outline-none placeholder:text-(--w-subtle) focus:border-0",
-                                        "focus:border-(--w-strong) focus:ring-0 focus:outline-none",
-                                    ].join(" ")}
-                                />
-                                <div className="mt-2 flex items-center justify-between gap-4">
-                                    <span className="text-xs text-(--w-subtle)">
-                                        {message.length.toLocaleString()} / 2,000
-                                    </span>
-                                    <button
-                                        type="submit"
-                                        disabled={
-                                            submitFeedback.isPending || message.trim().length < 10
-                                        }
-                                        className="min-h-10 cursor-pointer rounded-lg bg-(--w-foreground) px-4 text-xs font-medium text-(--w-background) disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {submitFeedback.isPending ? "Sending…" : "Send feedback"}
-                                    </button>
-                                </div>
-                            </form>
-                        </SettingsSection>
-                    </div>
+                                    {themeLabels[option]}
+                                </button>
+                            ))}
+                        </div>
+                    </fieldset>
+                    <p className="font-mono-label mt-4 text-[10px] tracking-[0.14em] text-(--w-subtle) uppercase">
+                        {theme === "system"
+                            ? "Following your device setting"
+                            : "Applied across every screen"}
+                    </p>
+                </SettingsSection>
 
-                    <AccountSettings />
+                <SettingsSection title="Writing appearance">
+                    <p>
+                        Adjust how your writing looks inside the editor. These choices
+                        affect only the editor. Exported documents keep their normal
+                        document formatting.
+                    </p>
+                    <WritingAppearanceSettings />
+                </SettingsSection>
+
+                <SettingsSection title="Autosave">
+                    <p>
+                        Writely saves while you type and shows Saving…, Saved, or Save
+                        failed.
+                    </p>
+                    <p className="mt-4">
+                        A temporary browser recovery copy helps protect recent writing when
+                        saving fails or the tab closes unexpectedly.
+                    </p>
+                </SettingsSection>
+
+                <SettingsSection title="AI usage">
+                    <LimitRows
+                        rows={[
+                            ["Daily tokens", DAILY_AI_TOKEN_LIMIT.toLocaleString("en")],
+                            [
+                                "Selected characters per request",
+                                MAX_AI_SELECTION_CHARACTERS.toLocaleString("en"),
+                            ],
+                            ["Concurrent requests", "1"],
+                            ["Sent to AI", "Selected text only"],
+                        ]}
+                    />
+                    <p className="mt-[18px] text-sm leading-[1.7] text-(--w-subtle)">
+                        Failed or invalid responses do not reduce your Writely allowance.
+                    </p>
+                </SettingsSection>
+
+                <SettingsSection title="Language support">
+                    <p>
+                        Writely’s interface is in English. You can write and paste text in
+                        other languages, but Writely 2.0 officially guarantees support only
+                        for English.
+                    </p>
+                    <p className="mt-4">
+                        Emoji and decorative pictographs are not supported in document
+                        titles or writing. Normal punctuation, numbers, and useful symbols
+                        remain supported.
+                    </p>
+                </SettingsSection>
+
+                <SettingsSection title="Document limits">
+                    <LimitRows
+                        rows={[
+                            ["Documents", MAX_DOCUMENTS_PER_USER.toLocaleString("en")],
+                            [
+                                "Characters per document",
+                                MAX_DOCUMENT_CHARACTERS.toLocaleString("en"),
+                            ],
+                        ]}
+                    />
+                </SettingsSection>
+
+                <SettingsSection title="Export">
+                    <p>Export documents as TXT, Markdown, Word, or PDF.</p>
+                    <div className="mt-[18px] flex w-fit max-w-full overflow-x-auto border border-(--w-border)">
+                        {["TXT", "MD", "DOCX", "PDF"].map((format) => (
+                            <span
+                                key={format}
+                                className="font-mono-label border-r border-(--w-border) px-[18px] py-3 text-[11px] tracking-[0.14em] last:border-r-0"
+                            >
+                                {format}
+                            </span>
+                        ))}
+                    </div>
+                </SettingsSection>
+
+                <div id="feedback" className="scroll-mt-8">
+                    <SettingsSection title="Send feedback">
+                        <p>
+                            Tell us what is working well, what feels unclear, or what could
+                            make Writely better. Your feedback helps guide improvements during
+                            the beta.
+                        </p>
+                        <form
+                            onSubmit={(event) => {
+                                event.preventDefault();
+                                if (!submitFeedback.isPending)
+                                    submitFeedback.mutate({ message });
+                            }}
+                            className="mt-5"
+                        >
+                            <label
+                                htmlFor="feedback-message"
+                                className="font-mono-label block text-[10px] tracking-[0.16em] text-(--w-subtle) uppercase"
+                            >
+                                What worked, or what should feel better?
+                            </label>
+                            <textarea
+                                id="feedback-message"
+                                value={message}
+                                onChange={(event) => setMessage(event.target.value)}
+                                minLength={10}
+                                maxLength={2_000}
+                                rows={5}
+                                required
+                                placeholder="Tell us about your experience…"
+                                className="mt-2.5 w-full resize-none rounded-none border border-(--w-border) bg-(--w-background) p-3.5 text-sm leading-[1.7] text-(--w-foreground) outline-none placeholder:text-(--w-subtle) focus:border-(--w-foreground)"
+                            />
+                            <div className="mt-3 flex items-center justify-between gap-5">
+                                <span className="font-mono-label text-[11px]">
+                                    {message.length.toLocaleString()} / 2,000
+                                </span>
+                                <button
+                                    type="submit"
+                                    disabled={
+                                        submitFeedback.isPending || message.trim().length < 10
+                                    }
+                                    className="h-11 cursor-pointer bg-(--w-foreground) px-[22px] text-[13px] font-medium text-(--w-background) disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {submitFeedback.isPending ? "Sending…" : "Send feedback"}
+                                </button>
+                            </div>
+                        </form>
+                    </SettingsSection>
                 </div>
+
+                <AccountSettings />
             </article>
         </main>
+    );
+}
+
+function LimitRows({ rows }: { rows: string[][] }) {
+    return (
+        <dl className="border-t border-(--w-border-soft)">
+            {rows.map(([label, value]) => (
+                <div
+                    key={label}
+                    className="flex justify-between gap-5 border-b border-(--w-border-soft) py-3.5"
+                >
+                    <dt>{label}</dt>
+                    <dd className="font-mono-label text-right text-[13px] text-(--w-foreground)">
+                        {value}
+                    </dd>
+                </div>
+            ))}
+        </dl>
     );
 }

@@ -405,7 +405,7 @@ export const aiRouter = createTRPCRouter({
                                     content: message,
                                 },
                             ],
-                            model: "llama-3.3-70b-versatile",
+                            model: "qwen/qwen3.6-27b",
                             max_tokens: outputTokenLimit,
                         },
                         {
@@ -518,9 +518,7 @@ export const aiRouter = createTRPCRouter({
                     throw error;
                 }
 
-                if (process.env.NODE_ENV === "development") {
-                    console.error("AI request failed.");
-                }
+                console.error("AI request failed:", error);
 
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
@@ -541,10 +539,11 @@ export const aiRouter = createTRPCRouter({
                                 requestExpiresAt: null,
                             },
                         });
-                    } catch {
-                        if (process.env.NODE_ENV === "development") {
-                            console.error("AI request lease cleanup failed.");
-                        }
+                    } catch (cleanupError) {
+                        console.error(
+                            "AI request lease cleanup failed:",
+                            cleanupError,
+                        );
                     }
                 }
             }

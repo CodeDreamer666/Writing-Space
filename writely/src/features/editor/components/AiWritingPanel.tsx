@@ -37,37 +37,27 @@ type Props = {
 };
 
 const rewriteActions = [
-        {
-            action: "improveClarity",
-            label: "Improve clarity",
-            description: "Make the message easier to follow.",
-        },
-        {
-            action: "fixGrammar",
-            label: "Fix grammar",
-            description: "Correct grammar without changing your voice.",
-        },
-        {
-            action: "makeNatural",
-            label: "Make natural",
-            description: "Give the writing a more human flow.",
-        },
-        {
-            action: "makeStronger",
-            label: "Make stronger",
-            description: "Use clearer, more confident language.",
-        },
-        {
-            action: "makeConcise",
-            label: "Make more concise",
-            description: "Remove repetition and unnecessary wording.",
-        },
-        {
-            action: "improveFlow",
-            label: "Improve flow",
-            description: "Help selected sentences connect more smoothly.",
-        },
-    ];
+    {
+        action: "clarify",
+        label: "Clarify",
+        description: "Clearer meaning with less ambiguity.",
+    },
+    {
+        action: "makeNatural",
+        label: "Natural",
+        description: "Smoother, more human-sounding language.",
+    },
+    {
+        action: "strengthen",
+        label: "Strengthen",
+        description: "Sharper wording with more confidence.",
+    },
+    {
+        action: "tighten",
+        label: "Tighten",
+        description: "Fewer words, same meaning.",
+    },
+];
 
 export default function AiWritingPanel({
     docId,
@@ -85,11 +75,14 @@ export default function AiWritingPanel({
     const [result, setResult] = useState<AiResult | null>(null);
     const [lastAction, setLastAction] = useState<AiAction | null>(null);
     const [requestError, setRequestError] = useState("");
-    const [selectionText, setSelectionText] = useState("");
+    const [activeContext, setActiveContext] = useState<CapturedAiContext | null>(
+        null,
+    );
     const [mode, setMode] = useState(initialMode);
 
     const askAi = api.ai.askAi.useMutation();
-
+    
+    // Error handling issues
     const updateWritingMode = api.docs.updateWritingMode.useMutation({
         onSuccess: async (updatedDocument) => {
             utils.docs.getSelectedDoc.setData({ docId }, (currentDocument) =>
@@ -97,16 +90,31 @@ export default function AiWritingPanel({
                     ? { ...currentDocument, writingMode: updatedDocument.writingMode }
                     : currentDocument,
             );
-            await utils.docs.getUserDocs.invalidate();
         },
+
+        onError: (error) => {
+            handleTRPCError({ error, router });
+        },
+
+        onSettled: async () => {
+            await utils.invalidate();
+        }
     });
 
+    const selectionText = activeContext?.selectedText ?? "";
+
     const selectionWordCount = countWords(selectionText);
+
     const selectionCharacterCount = selectionText.length;
+
     const hasTarget = selectionCharacterCount > 0;
+
     const isSelectionOverLimit =
         selectionCharacterCount > MAX_AI_SELECTION_CHARACTERS;
-    
+
+    const isContextStale =
+        activeContext !== null && !isAiContextCurrent(editor, activeContext);
+
     const remainingPercentage = Math.round(
         (Math.min(DAILY_AI_TOKEN_LIMIT, Math.max(0, remainingTokens)) /
             DAILY_AI_TOKEN_LIMIT) *
@@ -114,48 +122,32 @@ export default function AiWritingPanel({
     );
 
     useEffect(() => {
-        const updateSelection = () => {
-            const { from, to } = editor.state.selection;
-            setSelectionText(editor.state.doc.textBetween(from, to, "\n\n"));
-            setRequestError("");
-        };
-
-        updateSelection();
-        editor.on("selectionUpdate", updateSelection);
-
-        return () => {
-            editor.off("selectionUpdate", updateSelection);
-        };
-    }, [editor]);
-
-    const changeWritingMode = (nextMode: WritingMode) => {
-        if (updateWritingMode.isPending || nextMode === mode) {
+        if (!isOpen) {
             return;
         }
 
-        const previousMode = mode;
-        setMode(nextMode);
-        updateWritingMode.mutate(
-            { docId, writingMode: nextMode },
-            {
-                onError: (error) => {
-                    setMode(previousMode);
-                    handleTRPCError({ error, router });
-                },
-            },
-        );
-    };
+        setActiveContext(captureAiContext(editor));
+        setRequestError("");
+    }, [isOpen, editor]);
+
 
     const runAction = (action: AiAction) => {
         if (askAi.isPending || !aiEnabled) {
             return;
         }
 
-        const context = captureAiContext(editor);
-        const target = context.selectedText;
+        const context = activeContext;
+        const target = context?.selectedText;
 
-        if (!target?.trim()) {
+        if (!context || !target?.trim()) {
             setRequestError("Select the text you want Writely AI to work on.");
+            return;
+        }
+
+        if (!isAiContextCurrent(editor, context)) {
+            setRequestError(
+                "Your selection changed. Select the text again before continuing.",
+            );
             return;
         }
 
@@ -217,7 +209,7 @@ export default function AiWritingPanel({
                 onClick={onClose}
                 aria-label="Close AI panel"
                 tabIndex={-1}
-                className={`fixed inset-0 z-40 cursor-default bg-black/55 backdrop-blur-[2px] transition-opacity duration-300 ease-out motion-reduce:transition-none ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
+                className={`fixed inset-0 z-40 cursor-default bg-black/80 transition-opacity duration-300 ease-out motion-reduce:transition-none ${isOpen ? "opacity-100" : "pointer-events-none opacity-0"
                     }`}
             />
 
@@ -227,15 +219,15 @@ export default function AiWritingPanel({
                 aria-labelledby="ai-panel-title"
                 aria-hidden={!isOpen}
                 inert={!isOpen}
-                className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(100%,420px)] transform-gpu flex-col overflow-hidden border-l border-(--w-border) bg-(--w-surface)/98 shadow-[-24px_0_80px_rgba(0,0,0,0.48)] backdrop-blur-xl transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none ${isOpen ? "translate-x-0" : "pointer-events-none translate-x-full"
+                className={`fixed inset-y-0 right-0 z-50 flex h-dvh w-[min(100%,440px)] transform-gpu flex-col overflow-hidden border-l border-(--w-foreground) bg-(--w-background) transition-transform duration-300 ease-out will-change-transform motion-reduce:transition-none ${isOpen ? "translate-x-0" : "pointer-events-none translate-x-full"
                     }`}
             >
                 <div className="flex h-full min-h-0 flex-col">
-                    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-(--w-border-soft) px-4 py-4">
+                    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-(--w-foreground) px-6 py-5">
                         <div>
                             <p
                                 id="ai-panel-title"
-                                className="text-[11px] font-medium tracking-widest text-(--w-subtle) uppercase"
+                                className="font-mono-label text-[10px] tracking-[0.22em] uppercase"
                             >
                                 AI writing panel
                             </p>
@@ -250,18 +242,18 @@ export default function AiWritingPanel({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-(--w-muted) transition-colors hover:bg-(--w-border-soft) hover:text-(--w-foreground)"
+                            className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-(--w-muted) hover:text-(--w-foreground)"
                             aria-label="Close AI panel"
                         >
                             <span className="text-lg leading-none">×</span>
                         </button>
                     </div>
 
-                    <div className="ai-panel-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
-                        <div>
+                    <div className="ai-panel-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain">
+                        <div className="border-b border-(--w-border-soft) px-6 py-[22px]">
                             <label
                                 htmlFor="writing-mode"
-                                className="mb-2 block text-[11px] font-medium tracking-widest text-(--w-subtle) uppercase"
+                                className="font-mono-label mb-3 block text-[10px] tracking-[0.2em] text-(--w-subtle) uppercase"
                             >
                                 Writing mode
                             </label>
@@ -270,12 +262,12 @@ export default function AiWritingPanel({
                                 value={mode}
                                 disabled={updateWritingMode.isPending}
                                 onChange={(event) =>
-                                    changeWritingMode(event.target.value as WritingMode)
+                                    updateWritingMode.mutate({ docId, writingMode: event.target.value as WritingMode })
                                 }
                                 className={[
-                                    "h-11 w-full cursor-pointer rounded-lg",
-                                    "border border-(--w-border-soft) bg-(--w-background) px-3",
-                                    "text-sm text-(--w-strong) outline-none hover:border-(--w-border)",
+                                    "h-[46px] w-full cursor-pointer rounded-none",
+                                    "border border-(--w-foreground) bg-(--w-background) px-3.5",
+                                    "text-sm text-(--w-strong) outline-none",
                                     "disabled:cursor-wait disabled:opacity-60",
                                 ].join(" ")}
                             >
@@ -285,23 +277,18 @@ export default function AiWritingPanel({
                                     </option>
                                 ))}
                             </select>
-                            <p className="mt-2 text-xs leading-relaxed text-(--w-subtle)">
+                            <p className="mt-3 text-xs leading-[1.7] text-(--w-subtle)">
                                 Controls how AI adapts its suggestions across your documents.
                             </p>
                         </div>
 
-                        <p className="text-xs leading-relaxed text-(--w-muted)">
-                            Only your selected text is sent to the AI provider when you choose
-                            an action.
-                        </p>
-
                         {aiEnabled ? (
-                            <div className="rounded-xl border border-(--w-border) bg-(--w-surface-raised) px-3.5 py-3">
+                            <div className="border-b border-(--w-border-soft) px-6 py-5">
                                 <div className="flex items-center justify-between gap-4 text-xs">
-                                    <span className="font-medium text-(--w-strong)">
+                                    <span className="font-mono-label text-[10px] tracking-[0.18em] text-(--w-subtle) uppercase">
                                         AI usage today
                                     </span>
-                                    <span className="text-(--w-muted)">
+                                    <span className="font-mono-label text-[11px] text-(--w-foreground)">
                                         {remainingPercentage}% left
                                     </span>
                                 </div>
@@ -311,14 +298,14 @@ export default function AiWritingPanel({
                                     aria-valuemin={0}
                                     aria-valuemax={100}
                                     aria-valuenow={remainingPercentage}
-                                    className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-(--w-border)"
+                                    className="mt-3 h-0.5 overflow-hidden bg-(--w-border-soft)"
                                 >
                                     <div
-                                        className="h-full rounded-full bg-(--w-foreground)"
+                                        className="h-full bg-(--w-foreground)"
                                         style={{ width: `${remainingPercentage}%` }}
                                     />
                                 </div>
-                                <p className="mt-2 text-[11px] text-(--w-subtle)">
+                                <p className="font-mono-label mt-2.5 text-[10px] tracking-[0.14em] text-(--w-subtle) uppercase">
                                     Resets tomorrow
                                 </p>
                             </div>
@@ -344,34 +331,44 @@ export default function AiWritingPanel({
                             </p>
                         )}
 
-                        <section>
-                            <p className="mb-2 text-[11px] font-medium tracking-widest text-(--w-subtle) uppercase">
-                                Selected text
+                        {hasTarget && isContextStale && (
+                            <p
+                                role="alert"
+                                className="rounded-lg border border-(--w-border) bg-(--w-surface-raised) px-3 py-2 text-xs leading-relaxed text-(--w-muted)"
+                            >
+                                The source text changed. Select it again before continuing.
                             </p>
-                            <div className="flex flex-col gap-2">
+                        )}
+
+                        <section className="pt-5">
+                            <p className="font-mono-label mb-1 pb-3 px-6 text-[10px] tracking-[0.2em] text-(--w-subtle) uppercase">
+                                Actions
+                            </p>
+                            <div className="flex flex-col border-t border-(--w-border-soft)">
                                 {rewriteActions.map(({ action, label, description }) => (
                                     <button
                                         key={action}
-                                        onClick={() => runAction(action as "improveClarity" | "fixGrammar" | "makeNatural" | "makeStronger" | "makeConcise" | "improveFlow")}
+                                        onClick={() => runAction(action as AiAction)}
                                         disabled={
                                             askAi.isPending ||
                                             !hasTarget ||
                                             isSelectionOverLimit ||
+                                            isContextStale ||
                                             !aiEnabled
                                         }
                                         className={[
-                                            "group flex cursor-pointer items-center",
-                                            "justify-between rounded-xl border border-(--w-border-soft)",
-                                            "bg-(--w-background) px-3.5 py-3 text-left",
-                                            "transition-colors duration-200 hover:border-(--w-border) hover:bg-(--w-surface-raised)",
+                                            "group flex cursor-pointer items-center justify-between",
+                                            "border-0 border-b border-(--w-border-soft)",
+                                            "bg-(--w-background) px-6 py-4 text-left",
+                                            "hover:bg-(--w-foreground) hover:text-(--w-background)",
                                             "disabled:cursor-not-allowed disabled:opacity-50",
                                         ].join(" ")}
                                     >
                                         <span className="min-w-0">
-                                            <span className="block text-sm font-medium text-(--w-strong)">
+                                            <span className="block text-sm font-medium text-inherit">
                                                 {label}
                                             </span>
-                                            <span className="mt-1.5 block text-xs leading-5 text-(--w-muted)">
+                                            <span className="mt-1 block text-xs leading-[1.5] opacity-60">
                                                 {description}
                                             </span>
                                         </span>
@@ -383,10 +380,7 @@ export default function AiWritingPanel({
                             </div>
                         </section>
 
-                        <section
-                            className="min-h-32 rounded-xl border border-(--w-border-soft) bg-(--w-surface-raised) p-4"
-                            aria-live="polite"
-                        >
+                        <section className="min-h-40 p-6" aria-live="polite">
                             {askAi.isPending ? (
                                 <div className="flex h-24 items-center justify-center gap-1.5">
                                     <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-(--w-muted)" />
@@ -400,7 +394,10 @@ export default function AiWritingPanel({
                                         <button
                                             onClick={() => lastAction && runAction(lastAction)}
                                             disabled={
-                                                !hasTarget || isSelectionOverLimit || !aiEnabled
+                                                !hasTarget ||
+                                                isSelectionOverLimit ||
+                                                isContextStale ||
+                                                !aiEnabled
                                             }
                                             className="mt-3 cursor-pointer rounded-lg border border-(--w-border) px-3 py-2 text-xs font-medium text-(--w-strong) hover:bg-(--w-border-soft) disabled:cursor-not-allowed disabled:opacity-40"
                                         >

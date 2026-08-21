@@ -55,8 +55,8 @@ export const WRITING_EDITOR_WIDTH_PIXELS: Record<WritingEditorWidth, number> = {
 };
 
 export const WRITING_FONT_FAMILY_VALUES: Record<WritingFontFamily, string> = {
-  serif: "var(--font-source-serif), Georgia, serif",
-  sans: "var(--font-inter), ui-sans-serif, system-ui, sans-serif",
+  serif: "var(--font-newsreader), Georgia, serif",
+  sans: "var(--font-archivo), ui-sans-serif, system-ui, sans-serif",
   accessible:
     "var(--font-atkinson-hyperlegible), ui-sans-serif, system-ui, sans-serif",
 };

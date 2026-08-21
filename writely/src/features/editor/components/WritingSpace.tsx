@@ -38,11 +38,11 @@ const formats: Array<{
 }> = [
         {
             format: "txt",
-            label: "TXT"
+            label: "TXT",
         },
         {
             format: "md",
-            label: "Markdown"
+            label: "Markdown",
         },
         {
             format: "docx",
@@ -189,8 +189,8 @@ function EditorExperience({
 
         onError: (error) => {
             handleTRPCError({ error, router });
-        }
-    })
+        },
+    });
 
     const handleValidatedTitleChange = (nextTitle: string) => {
         if (
@@ -238,148 +238,128 @@ function EditorExperience({
     return (
         <div className="min-h-screen bg-(--w-background) text-(--w-foreground) transition-colors duration-300">
             <div className="w-full">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setIsAiOpen(false);
-                        setIsMenuOpen(true);
-                    }}
-                    aria-label="Open document menu"
-                    aria-expanded={isMenuOpen}
-                    aria-controls="editor-sidebar"
-                    className={[
-                        "fixed top-4 left-4 z-30",
-                        "flex size-10 cursor-pointer items-center",
-                        "justify-center rounded-lg text-(--w-muted) hover:bg-(--w-surface-raised)",
-                        "hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--w-muted)",
-                        "sm:top-5 sm:left-6",
-                    ].join(" ")}
-                >
-                    <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        aria-hidden="true"
+                <header className="fixed inset-x-0 top-0 z-30 flex h-[71px] items-center justify-between border-b border-(--w-border-soft) bg-(--w-background) px-5 sm:px-7">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setIsAiOpen(false);
+                            setIsMenuOpen(true);
+                        }}
+                        aria-label="Open document menu"
+                        aria-expanded={isMenuOpen}
+                        aria-controls="editor-sidebar"
+                        className="flex size-[34px] cursor-pointer flex-col justify-center gap-1 border-0 bg-transparent p-0"
                     >
-                        <path d="M4 7h16M4 12h16M4 17h16" />
-                    </svg>
-                </button>
-
-                <p
-                    role="status"
-                    className={`fixed top-6 right-4 z-30 max-w-40 truncate text-xs sm:top-7 sm:right-6 ${saveStatus === "error" ? "text-[#C96F5B]" : "text-(--w-subtle)"
-                        }`}
-                >
-                    {getSaveStatusLabel(saveStatus)}
-                </p>
+                        <span className="h-px w-full bg-current" />
+                        <span className="h-px w-full bg-current" />
+                        <span className="h-px w-full bg-current" />
+                    </button>
+                    <p
+                        role="status"
+                        className={`font-mono-label max-w-44 truncate text-[10px] tracking-[0.2em] uppercase ${saveStatus === "error" ? "text-(--w-foreground)" : "text-(--w-subtle)"}`}
+                    >
+                        {getSaveStatusLabel(saveStatus)}
+                    </p>
+                </header>
 
                 <div
                     onClick={() => setIsMenuOpen(false)}
                     aria-label="Close document menu"
-                    className={`fixed inset-0 z-40 cursor-default bg-black/45 transition-opacity duration-210 ease-out ${isMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
+                    className={`fixed inset-0 z-40 cursor-default bg-black/80 transition-opacity duration-210 ease-out ${isMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
                 />
 
                 <aside
                     id="editor-sidebar"
                     aria-label="Document menu"
                     aria-hidden={!isMenuOpen}
-                    className={`fixed inset-y-0 left-0 z-50 flex w-[min(84vw,300px)] flex-col overflow-y-auto border-r border-(--w-border) bg-(--w-surface) px-4 py-5 shadow-2xl transition-transform duration-210 ease-out ${isMenuOpen ? "translate-x-0" : "pointer-events-none -translate-x-full"
+                    className={`fixed inset-y-0 left-0 z-50 flex w-[min(88vw,320px)] flex-col overflow-y-auto border-r border-(--w-foreground) bg-(--w-background) transition-transform duration-210 ease-out ${isMenuOpen
+                            ? "translate-x-0"
+                            : "pointer-events-none -translate-x-full"
                         }`}
                 >
-                    <div className="flex shrink-0 items-center justify-between gap-3 px-2">
-                        <p className="text-[11px] font-medium tracking-widest text-(--w-subtle) uppercase">
+                    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-(--w-border-soft) px-6 py-5">
+                        <p className="font-mono-label text-[10px] tracking-[0.24em] text-(--w-subtle) uppercase">
                             Writely beta
                         </p>
                         <button
                             type="button"
                             onClick={() => setIsMenuOpen(false)}
                             aria-label="Close document menu"
-                            className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-(--w-muted) hover:bg-(--w-surface-raised) hover:text-(--w-foreground)"
+                            className="cursor-pointer border-0 bg-transparent p-0 text-base text-(--w-muted) hover:text-(--w-foreground)"
                         >
                             ×
                         </button>
                     </div>
 
-                    <div className="mt-6 shrink-0 px-2">
+                    <section className="shrink-0 border-b border-(--w-border-soft) px-6 py-7">
                         <label
                             htmlFor="title"
-                            className="mb-1.5 text-[11px] font-medium tracking-widest text-(--w-subtle) uppercase"
+                            className="font-mono-label mb-[18px] block text-[10px] tracking-[0.2em] text-(--w-subtle) uppercase"
                         >
                             Draft title
                         </label>
                         <input
                             id="title"
                             value={title}
-                            onChange={(event) => handleValidatedTitleChange(event.target.value)}
+                            onChange={(event) =>
+                                handleValidatedTitleChange(event.target.value)
+                            }
                             placeholder="New Draft"
                             aria-label="Draft title"
                             maxLength={200}
                             disabled={saveStatus === "recovery"}
-                            className={[
-                                "min-h-10 w-full appearance-none border-0!",
-                                "bg-transparent px-0 py-1 text-left",
-                                "text-base leading-6 text-(--w-foreground) shadow-none!",
-                                "ring-0! outline-none! placeholder:text-(--w-placeholder) focus:border-0!",
-                                "focus:shadow-none! focus:ring-0! focus:outline-none! disabled:cursor-not-allowed",
-                                "disabled:opacity-60",
-                            ].join(" ")}
+                            className="font-display w-full appearance-none bg-transparent px-0 pb-2 text-2xl leading-[1.1] font-normal tracking-[-0.02em] text-(--w-foreground) outline-none placeholder:text-(--w-placeholder) disabled:opacity-60"
                         />
-                    </div>
+                    </section>
 
                     <div aria-hidden="true" className="min-h-10 flex-1" />
 
                     <section
                         aria-labelledby="writing-statistics-heading"
-                        className="shrink-0 px-2 pb-5"
+                        className="shrink-0 border-b border-(--w-border-soft) px-6 py-7"
                     >
                         <h2
                             id="writing-statistics-heading"
-                            className="text-[11px] font-medium tracking-widest text-(--w-subtle) uppercase"
+                            className="font-mono-label text-[10px] tracking-[0.2em] text-(--w-subtle) uppercase"
                         >
                             Writing statistics
                         </h2>
-                        <dl className="mt-3 space-y-2 text-sm">
+                        <dl className="mt-5 space-y-3.5 text-sm">
                             <div className="flex items-center justify-between gap-4">
                                 <dt className="text-(--w-muted)">Words</dt>
-                                <dd className="font-medium text-(--w-strong) tabular-nums">
+                                <dd className="font-mono-label text-sm tabular-nums">
                                     {wordCount.toLocaleString("en")}
                                 </dd>
                             </div>
                             <div className="flex items-center justify-between gap-4">
                                 <dt className="text-(--w-muted)">Characters</dt>
-                                <dd className="font-medium text-(--w-strong) tabular-nums">
+                                <dd className="font-mono-label text-sm tabular-nums">
                                     {characterCount.toLocaleString("en")}
                                 </dd>
                             </div>
                             <div className="flex items-center justify-between gap-4">
                                 <dt className="text-(--w-muted)">Reading time</dt>
-                                <dd className="text-right font-medium text-(--w-strong)">
+                                <dd className="font-mono-label text-right text-sm">
                                     {readingTime(wordCount)}
                                 </dd>
                             </div>
                         </dl>
                     </section>
 
-                    <section className="flex flex-col gap-2">
+                    <section className="flex flex-col border-t border-(--w-border-soft)">
                         <button
                             type="button"
                             onClick={() => {
-                                setIsExportOpen(true)
+                                setIsExportOpen(true);
                             }}
                             className={[
-                                "flex min-h-11 w-full cursor-pointer",
-                                "items-center gap-2.5 rounded-lg border",
-                                "border-(--w-border) bg-(--w-border-soft) px-3 text-left",
-                                "text-sm font-medium text-(--w-strong) transition-colors",
-                                "hover:bg-(--w-surface-raised) hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2",
-                                "focus-visible:outline-(--w-muted)",
+                                "h-[58px] w-full cursor-pointer border-0 border-b border-(--w-border-soft)",
+                                "bg-transparent px-6 text-left text-sm font-medium",
+                                "hover:bg-(--w-foreground) hover:text-(--w-background)",
                             ].join(" ")}
                         >
                             <svg
+                                className="mr-2.5 inline"
                                 width="15"
                                 height="15"
                                 viewBox="0 0 24 24"
@@ -399,12 +379,8 @@ function EditorExperience({
                         <Link
                             href="/app"
                             className={[
-                                "flex min-h-11 w-full cursor-pointer",
-                                "items-center gap-2.5 rounded-lg border",
-                                "border-(--w-border) bg-(--w-border-soft) px-3 text-left",
-                                "text-sm font-medium text-(--w-strong) transition-colors",
-                                "hover:bg-(--w-surface-raised) hover:text-(--w-foreground) focus-visible:outline-2 focus-visible:outline-offset-2",
-                                "focus-visible:outline-(--w-muted)",
+                                "flex h-[58px] w-full cursor-pointer items-center bg-transparent px-6 text-left",
+                                "text-sm text-(--w-muted) hover:bg-(--w-surface-raised) hover:text-(--w-foreground)",
                             ].join(" ")}
                         >
                             <svg
@@ -427,7 +403,7 @@ function EditorExperience({
 
                 <main
                     data-writely-editor
-                    className="min-w-0 px-5 pt-24 pb-16 sm:px-8 sm:pt-28 lg:px-12"
+                    className="writely-editor min-w-0 px-5 pt-[118px] pb-32 sm:px-8 sm:pt-[132px] sm:pb-40"
                 >
                     <div
                         className="mx-auto w-full"
@@ -480,7 +456,7 @@ function EditorExperience({
                 />
 
                 {isExportOpen && (
-                    <section className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+                    <section className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-5">
                         <div
                             aria-label="Close export dialog"
                             onClick={() => setIsExportOpen(false)}
@@ -491,16 +467,16 @@ function EditorExperience({
                             role="dialog"
                             aria-modal="true"
                             aria-labelledby="export-title"
-                            className="relative w-full max-w-md rounded-2xl border border-(--w-border) bg-(--w-surface) p-5 shadow-2xl sm:p-6"
+                            className="relative w-full max-w-[480px] border border-(--w-foreground) bg-(--w-background)"
                         >
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-start justify-between gap-5 px-[26px] pt-[26px] pb-[22px]">
                                 <div>
-                                    <p className="text-[11px] font-medium tracking-widest text-(--w-subtle) uppercase">
+                                    <p className="font-mono-label text-[10px] tracking-[0.2em] text-(--w-subtle) uppercase">
                                         Current document
                                     </p>
                                     <h2
                                         id="export-title"
-                                        className="mt-2 text-xl font-medium text-(--w-foreground)"
+                                        className="font-display mt-3 text-2xl font-normal text-(--w-foreground)"
                                     >
                                         Export your writing
                                     </h2>
@@ -510,13 +486,13 @@ function EditorExperience({
                                     autoFocus
                                     onClick={() => setIsExportOpen(false)}
                                     aria-label="Close export dialog"
-                                    className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-(--w-muted) hover:bg-(--w-surface-raised) hover:text-(--w-foreground)"
+                                    className="cursor-pointer border-0 bg-transparent p-0 text-base text-(--w-muted) hover:text-(--w-foreground)"
                                 >
                                     ×
                                 </button>
                             </div>
 
-                            <ul className="mt-5 grid grid-cols-2 gap-2">
+                            <ul className="grid grid-cols-2 border-t border-(--w-border-soft)">
                                 {formats.map(({ format, label }) => (
                                     <li className="flex w-full" key={format}>
                                         <button
@@ -524,10 +500,9 @@ function EditorExperience({
                                             disabled={exportDocument.isPending}
                                             onClick={() => exportDocument.mutate({ docId, format })}
                                             className={[
-                                                "cursor-pointer w-full rounded-xl border border-(--w-border)",
-                                                "bg-(--w-background) px-4 py-4 text-left",
-                                                "transition-colors block text-sm font-medium",
-                                                "text-(--w-foreground) hover:bg-(--w-surface-raised) disabled:cursor-wait disabled:opacity-60"
+                                                "block h-[68px] w-full cursor-pointer border-0 border-r border-b border-(--w-border-soft)",
+                                                "bg-(--w-background) px-[22px] text-left text-sm font-medium",
+                                                "text-(--w-foreground) hover:bg-(--w-foreground) hover:text-(--w-background) disabled:cursor-wait disabled:opacity-60",
                                             ].join(" ")}
                                         >
                                             {label}
@@ -536,10 +511,11 @@ function EditorExperience({
                                 ))}
                             </ul>
 
-                            <p className="mt-4 text-xs leading-5 text-(--w-subtle)">
-                                Headings, lists, bold, italic, and line breaks are preserved where the
-                                format supports them. PDF uses embedded Unicode-compatible fonts. Writely 2.0 guarantees
-                                reliable PDF export for English only.
+                            <p className="px-[26px] pt-[18px] pb-6 text-xs leading-[1.7] text-(--w-subtle)">
+                                Headings, lists, bold, italic, and line breaks are preserved
+                                where the format supports them. PDF uses embedded
+                                Unicode-compatible fonts. Writely 2.0 guarantees reliable PDF
+                                export for English only.
                             </p>
                         </section>
                     </section>
