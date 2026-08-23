@@ -1,34 +1,16 @@
 "use client";
-
 import { useSyncExternalStore } from "react";
+import readWritingAppearance from "~/lib/readWritingAppearance";
+import storeWritingAppearance from "~/lib/storeWritingAppearance";
+import subscribeWritingAppearance from "~/hooks/subscribeWritingAppearance";
 import {
   DEFAULT_WRITING_APPEARANCE,
-  readWritingAppearance,
-  storeWritingAppearance,
-  WRITING_APPEARANCE_CHANGE_EVENT,
-  WRITING_APPEARANCE_STORAGE_KEY,
   type WritingAppearance,
 } from "~/lib/writingAppearance";
 
-function subscribe(onStoreChange: () => void) {
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === WRITING_APPEARANCE_STORAGE_KEY) {
-      onStoreChange();
-    }
-  };
-
-  window.addEventListener("storage", handleStorage);
-  window.addEventListener(WRITING_APPEARANCE_CHANGE_EVENT, onStoreChange);
-
-  return () => {
-    window.removeEventListener("storage", handleStorage);
-    window.removeEventListener(WRITING_APPEARANCE_CHANGE_EVENT, onStoreChange);
-  };
-}
-
-export function useWritingAppearance() {
+export default function useWritingAppearance() {
   const appearance = useSyncExternalStore(
-    subscribe,
+    subscribeWritingAppearance,
     readWritingAppearance,
     () => DEFAULT_WRITING_APPEARANCE,
   );

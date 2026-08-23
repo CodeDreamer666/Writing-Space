@@ -1,62 +1,64 @@
 import { Extension } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
-import { countUnsupportedPictographs } from "~/lib/writingLanguage";
+import countUnsupportedPictographs from "~/lib/countUnsupportedPictographs";
 
 type Options = {
-  limit: number;
-  onLimitExceeded: () => void;
-  onUnsupportedPictograph: () => void;
+    limit: number;
+    onLimitExceeded: () => void;
+    onUnsupportedPictograph: () => void;
 };
 
-export const DocumentCharacterLimit = Extension.create<Options>({
-  name: "documentCharacterLimit",
+const DocumentCharacterLimit = Extension.create<Options>({
+    name: "documentCharacterLimit",
 
-  addOptions() {
-    return {
-      limit: 50_000,
-      onLimitExceeded: () => undefined,
-      onUnsupportedPictograph: () => undefined,
-    };
-  },
+    addOptions() {
+        return {
+            limit: 50_000,
+            onLimitExceeded: () => undefined,
+            onUnsupportedPictograph: () => undefined,
+        };
+    },
 
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        filterTransaction: (transaction, state) => {
-          if (!transaction.docChanged) {
-            return true;
-          }
+    addProseMirrorPlugins() {
+        return [
+            new Plugin({
+                filterTransaction: (transaction, state) => {
+                    if (!transaction.docChanged) {
+                        return true;
+                    }
 
-          const currentLength = state.doc.textContent.length;
-          const nextLength = transaction.doc.textContent.length;
-          const isHydratingSavedContent =
-            transaction.getMeta("preventUpdate") === true;
-          const currentPictographCount = countUnsupportedPictographs(
-            state.doc.textContent,
-          );
-          const nextPictographCount = countUnsupportedPictographs(
-            transaction.doc.textContent,
-          );
-          const isWithinLimit =
-            nextLength <= this.options.limit || nextLength <= currentLength;
+                    const currentLength = state.doc.textContent.length;
+                    const nextLength = transaction.doc.textContent.length;
+                    const isHydratingSavedContent =
+                        transaction.getMeta("preventUpdate") === true;
+                    const currentPictographCount = countUnsupportedPictographs(
+                        state.doc.textContent,
+                    );
+                    const nextPictographCount = countUnsupportedPictographs(
+                        transaction.doc.textContent,
+                    );
+                    const isWithinLimit =
+                        nextLength <= this.options.limit || nextLength <= currentLength;
 
-          if (isHydratingSavedContent) {
-            return true;
-          }
+                    if (isHydratingSavedContent) {
+                        return true;
+                    }
 
-          if (nextPictographCount > currentPictographCount) {
-            this.options.onUnsupportedPictograph();
-            return false;
-          }
+                    if (nextPictographCount > currentPictographCount) {
+                        this.options.onUnsupportedPictograph();
+                        return false;
+                    }
 
-          if (isWithinLimit) {
-            return true;
-          }
+                    if (isWithinLimit) {
+                        return true;
+                    }
 
-          this.options.onLimitExceeded();
-          return false;
-        },
-      }),
-    ];
-  },
+                    this.options.onLimitExceeded();
+                    return false;
+                },
+            }),
+        ];
+    },
 });
+
+export default DocumentCharacterLimit;
