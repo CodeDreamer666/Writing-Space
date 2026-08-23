@@ -19,9 +19,6 @@ export default function Hero() {
         </p>
         <div className="mt-11 flex flex-wrap items-center gap-5">
           <StartWritingButton>Start writing</StartWritingButton>
-          <span className="font-mono-label text-[11px] tracking-[0.14em] text-(--w-subtle) uppercase">
-            Free during beta · Autosaved
-          </span>
         </div>
       </div>
       <div className="flex items-center justify-center bg-(--w-surface) px-5 py-12 sm:px-10 sm:py-14">

@@ -17,6 +17,7 @@ import isWritingMode from "~/features/editor/utils/isWritingMode";
 import useWritingAppearance from "~/hooks/useWritingAppearance";
 import useHandleTRPCError from "~/trpc/useHandleTRPCError";
 import countUnsupportedPictographs from "~/lib/countUnsupportedPictographs";
+import { MAX_DOCUMENT_TITLE_LENGTH } from "~/lib/documentLimits";
 import {
     WRITING_EDITOR_WIDTH_PIXELS,
     WRITING_FONT_FAMILY_VALUES,
@@ -78,6 +79,7 @@ export default function EditorExperience({
 
     const {
         discardRecovery,
+        getPendingDraft,
         handleTitleChange,
         isHydrated,
         openSavedVersion,
@@ -97,6 +99,44 @@ export default function EditorExperience({
     useEffect(() => {
         editor.setEditable(saveStatus !== "recovery");
     }, [editor, saveStatus]);
+
+    const createDoc = api.docs.createDoc.useMutation();
+    const saveDoc = api.docs.saveDoc.useMutation();
+    const utils = api.useUtils();
+    const [isForkingConflict, setIsForkingConflict] = useState(false);
+
+    // A conflicted document can never save again on this version, so give the
+    // user a way to keep the text instead of choosing between two losses.
+    const handleSaveAsNewDocument = async () => {
+        if (isForkingConflict) {
+            return;
+        }
+
+        setIsForkingConflict(true);
+
+        try {
+            const draft = getPendingDraft();
+            const created = await createDoc.mutateAsync(undefined);
+
+            await saveDoc.mutateAsync({
+                docId: created.id,
+                title: `${draft.title} (recovered)`.slice(0, MAX_DOCUMENT_TITLE_LENGTH),
+                content: draft.content,
+                version: created.version,
+            });
+
+            await utils.docs.getUserDocs.invalidate();
+            showMessage(
+                "Your recovered writing was saved as a new document.",
+                true,
+            );
+            router.push(`/app/${created.id}`);
+        } catch (error) {
+            handleTRPCError({ error, router });
+        } finally {
+            setIsForkingConflict(false);
+        }
+    };
 
     useEffect(() => {
         const updateCharacterCount = () => {
@@ -343,6 +383,10 @@ export default function EditorExperience({
                         <section className="relative">
                             <SaveStatusNotice
                                 status={saveStatus}
+                                isSavingAsNewDocument={isForkingConflict}
+                                onSaveAsNewDocument={() =>
+                                    void handleSaveAsNewDocument()
+                                }
                                 onRetry={() => void savePendingChanges()}
                                 onOpenSavedVersion={openSavedVersion}
                                 onRestoreRecovery={restoreRecovery}

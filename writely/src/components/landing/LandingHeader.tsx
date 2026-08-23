@@ -7,9 +7,6 @@ export default function LandingHeader() {
         <span className="font-mono-label text-[13px] tracking-[0.34em] uppercase">
           Writely
         </span>
-        <span className="font-mono-label text-[10px] tracking-[0.2em] text-(--w-subtle) uppercase">
-          beta
-        </span>
       </div>
       <StartWritingButton variant="header">Start writing</StartWritingButton>
     </header>

@@ -9,9 +9,6 @@ export default function FinalCallToAction() {
       <div className="mt-12">
         <StartWritingButton>Start writing</StartWritingButton>
       </div>
-      <p className="font-mono-label mt-[26px] text-[11px] tracking-[0.14em] uppercase">
-        Free during beta · Autosaved automatically
-      </p>
     </section>
   );
 }

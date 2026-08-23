@@ -3,6 +3,8 @@ import type { SaveStatus } from "~/features/editor/hooks/useDocumentAutosave";
 
 type Props = {
     status: SaveStatus;
+    isSavingAsNewDocument: boolean;
+    onSaveAsNewDocument: () => void;
     onRetry: () => void;
     onOpenSavedVersion: () => void;
     onRestoreRecovery: () => void;
@@ -11,6 +13,8 @@ type Props = {
 
 export default function SaveStatusNotice({
     status,
+    isSavingAsNewDocument,
+    onSaveAsNewDocument,
     onRetry,
     onOpenSavedVersion,
     onRestoreRecovery,
@@ -117,18 +121,38 @@ export default function SaveStatusNotice({
                     </button>
                 </div>
             ) : (
-                <button
-                    type="button"
-                    onClick={isConflict ? () => setIsConfirmingDiscard(true) : onRetry}
-                    className={[
-                        "min-h-11 shrink-0 cursor-pointer rounded-lg",
-                        "border border-[#8D5A4E] px-3 text-xs",
-                        "font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F]",
-                        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]",
-                    ].join(" ")}
-                >
-                    {isConflict ? "View saved version" : "Retry save"}
-                </button>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                    <button
+                        type="button"
+                        onClick={isConflict ? () => setIsConfirmingDiscard(true) : onRetry}
+                        className={[
+                            "min-h-11 shrink-0 cursor-pointer rounded-lg",
+                            "border border-[#8D5A4E] px-3 text-xs",
+                            "font-medium text-[#F8DDD6] transition-colors hover:bg-[#3A241F]",
+                            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]",
+                        ].join(" ")}
+                    >
+                        {isConflict ? "View saved version" : "Retry save"}
+                    </button>
+                    {isConflict ? (
+                        <button
+                            type="button"
+                            onClick={onSaveAsNewDocument}
+                            disabled={isSavingAsNewDocument}
+                            className={[
+                                "min-h-11 shrink-0 cursor-pointer rounded-lg bg-[#F1C6BA]",
+                                "px-3 text-xs font-medium text-[#211713]",
+                                "transition-colors hover:bg-[#F8DDD6] focus-visible:outline-2",
+                                "focus-visible:outline-offset-2 focus-visible:outline-[#F1C6BA]",
+                                "disabled:cursor-not-allowed disabled:opacity-60",
+                            ].join(" ")}
+                        >
+                            {isSavingAsNewDocument
+                                ? "Saving…"
+                                : "Save as new document"}
+                        </button>
+                    ) : null}
+                </div>
             )}
         </aside>
     );

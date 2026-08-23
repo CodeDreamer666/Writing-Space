@@ -193,7 +193,7 @@ export default protectedProcedure
                                 content: message,
                             },
                         ],
-                        model: "qwen/qwen3.6-27b",
+                        model: "openai/gpt-oss-120b",
                         max_tokens: outputTokenLimit,
                     },
                     {

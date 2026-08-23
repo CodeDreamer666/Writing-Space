@@ -6,7 +6,6 @@ import { useState } from "react";
 import useStatusMessage from "~/hooks/useStatusMessage";
 import useTheme from "~/hooks/useTheme";
 import {
-    DAILY_AI_TOKEN_LIMIT,
     MAX_AI_SELECTION_CHARACTERS,
 } from "~/lib/aiLimits";
 import {
@@ -135,7 +134,7 @@ export default function SettingsPageContent() {
                 <SettingsSection title="AI usage">
                     <LimitRows
                         rows={[
-                            ["Daily tokens", DAILY_AI_TOKEN_LIMIT.toLocaleString("en")],
+                            ["Daily allowance", "Generous everyday use"],
                             [
                                 "Selected characters per request",
                                 MAX_AI_SELECTION_CHARACTERS.toLocaleString("en"),
@@ -145,7 +144,8 @@ export default function SettingsPageContent() {
                         ]}
                     />
                     <p className="mt-[18px] text-sm leading-[1.7] text-(--w-subtle)">
-                        Failed or invalid responses do not reduce your Writely allowance.
+                        Everyday writing sessions comfortably fit within your Writely
+                        allowance, and failed or invalid responses do not reduce it.
                     </p>
                 </SettingsSection>
 

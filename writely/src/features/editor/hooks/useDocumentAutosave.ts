@@ -7,6 +7,7 @@ import type { RouterOutputs } from "~/trpc/routerTypes";
 import { DEFAULT_TITLE } from "../utils/editorContent/constants";
 import countWords from "../utils/editorContent/countWords";
 import isEditorContent from "../utils/editorContent/isEditorContent";
+import archiveDiscardedDraft from "../utils/localDraft/archiveDiscardedDraft";
 import canSafelyAutosaveDraft from "../utils/localDraft/canSafelyAutosaveDraft";
 import clearLocalDraft from "../utils/localDraft/clearLocalDraft";
 import readLocalDraft from "../utils/localDraft/readLocalDraft";
@@ -99,13 +100,23 @@ export default function useDocumentAutosave({
             return;
         }
 
-        writeLocalDraft({
+        const persisted = writeLocalDraft({
             docId,
             title: titleRef.current,
             content: editor.getJSON(),
             baseVersion: baseVersionRef.current,
             savedAt: new Date().toISOString(),
         });
+
+        // Browser storage is the last line of defence. If it is unavailable the
+        // user has to know their writing only exists on the server.
+        if (!persisted) {
+            setSaveStatus((current) =>
+                current === "conflict" || current === "recovery"
+                    ? current
+                    : "error",
+            );
+        }
     }, [docId, editor]);
 
     const scheduleLocalDraft = useCallback(() => {
@@ -416,10 +427,42 @@ export default function useDocumentAutosave({
             event.returnValue = "";
         };
 
+        // Mobile browsers can discard a backgrounded tab without ever firing
+        // beforeunload, so persist on every lifecycle signal available.
+        const handlePageHide = () => {
+            persistCurrentDraft();
+        };
+
+        const handleVisibilityChange = () => {
+            if (window.document.visibilityState === "hidden") {
+                persistCurrentDraft();
+            }
+        };
+
+        // A save that failed while offline should retry itself once the
+        // connection is back, without waiting for the next keystroke.
+        const handleOnline = () => {
+            if (dirtyRef.current) {
+                void saveLatestRef.current();
+            }
+        };
+
         window.addEventListener("beforeunload", handleBeforeUnload);
+        window.addEventListener("pagehide", handlePageHide);
+        window.document.addEventListener(
+            "visibilitychange",
+            handleVisibilityChange,
+        );
+        window.addEventListener("online", handleOnline);
 
         return () => {
             window.removeEventListener("beforeunload", handleBeforeUnload);
+            window.removeEventListener("pagehide", handlePageHide);
+            window.document.removeEventListener(
+                "visibilitychange",
+                handleVisibilityChange,
+            );
+            window.removeEventListener("online", handleOnline);
         };
     }, [persistCurrentDraft]);
 
@@ -454,6 +497,7 @@ export default function useDocumentAutosave({
             clearTimeout(saveTimerRef.current);
         }
 
+        archiveDiscardedDraft(docId);
         clearLocalDraft(docId);
         window.location.reload();
     };
@@ -483,12 +527,19 @@ export default function useDocumentAutosave({
     };
 
     const discardRecovery = () => {
+        archiveDiscardedDraft(docId);
         clearLocalDraft(docId);
         setSaveStatus("saved");
     };
 
+    const getPendingDraft = () => ({
+        title: titleRef.current.trim() || DEFAULT_TITLE,
+        content: editor.getJSON(),
+    });
+
     return {
         discardRecovery,
+        getPendingDraft,
         handleTitleChange,
         isHydrated,
         openSavedVersion,
