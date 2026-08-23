@@ -55,12 +55,16 @@ These preferences change the writing experience without changing exported docume
 
 ### Autosave and recovery
 
-- Automatic saving after changes
+- Automatic saving after changes, with failed saves retried automatically
 - Visible unsaved, saving, saved, failed, recovery, and conflict states
-- A temporary browser recovery copy for recent unsaved writing
+- A temporary browser recovery copy for recent unsaved writing, refreshed on tab close, tab hide, and mobile backgrounding
 - Explicit restore-or-discard choices when a recovery copy differs from the saved document
+- Discarding a recovery copy archives it in the browser rather than deleting it outright
+- A pending save retries by itself when the connection returns
+- A visible failure state when browser storage is unavailable, so the writer knows only the server copy is protecting them
 - Version-conflict protection for documents edited in multiple tabs
 - A stale tab cannot silently overwrite a newer saved version
+- Conflicted writing can be kept with "Save as new document" instead of choosing between two losses
 
 Browser recovery copies expire after 30 days. The database remains the authoritative saved copy.
 
@@ -70,12 +74,10 @@ AI is optional and can be disabled globally with `AI_ENABLED="false"` without di
 
 Available rewrite actions:
 
-- Improve clarity
-- Fix grammar
-- Make natural
-- Make stronger
-- Make more concise
-- Improve flow
+- Clarify — clearer meaning with less ambiguity
+- Natural — smoother, more human-sounding language
+- Strengthen — sharper wording with more confidence
+- Tighten — fewer words, same meaning
 
 AI behaviour and limits:
 
@@ -84,13 +86,13 @@ AI behaviour and limits:
 - The selected document must belong to the authenticated user
 - The writer compares the original and improved versions before accepting or keeping the original
 - Supported formatting is preserved when an accepted rewrite replaces the selection
-- Maximum selection size: 1,500 characters
-- Daily allowance: 8,000 provider tokens per account, reset by UTC date
+- Maximum selection size: 1,500 characters per request
+- A generous daily allowance per account, reset by UTC date
 - One AI request can run at a time per account
 - Failed, invalid, rejected, or over-limit responses do not reduce the allowance
 - The remaining-allowance meter updates after successful requests
 
-Writely currently uses Groq with `llama-3.3-70b-versatile`. The database records daily token usage and request-lock metadata, not selected text, prompts, or AI responses.
+Writely currently uses Groq with `openai/gpt-oss-120b`. Responses that arrive with a leading reasoning block are tolerated: the final JSON object is extracted before validation. The database records daily token usage and request-lock metadata, not selected text, prompts, or AI responses.
 
 ### Export
 
@@ -105,7 +107,7 @@ Empty documents can be exported as valid files. Rich exports preserve headings, 
 
 ### Settings and feedback
 
-The authenticated Settings & Help page includes theme and writing-appearance controls, current product limits, autosave and language guidance, a feedback form, sign out, and account deletion.
+The authenticated Settings & Help page includes theme and writing-appearance controls, current product limits, autosave and language guidance, a feedback form, sign out, and account deletion. AI usage is described in plain terms (daily allowance, selected characters per request, concurrent requests, and what is sent to the AI) rather than raw token counts.
 
 Feedback is trimmed and validated on the server:
 
@@ -127,7 +129,7 @@ Feedback is trimmed and validated on the server:
 
 ## Technology
 
-- Next.js 16 and React 19
+- Next.js 16 (Turbopack) and React 19
 - TypeScript
 - Tailwind CSS 4
 - tRPC and TanStack Query
@@ -137,7 +139,7 @@ Feedback is trimmed and validated on the server:
 - Groq SDK
 - `docx` for Word exports
 - `pdfmake` for PDF exports
-- Vitest and jsdom
+- Vitest and jsdom (configured; no test files are checked in yet)
 
 ## Local development
 
@@ -224,15 +226,24 @@ Open [http://localhost:3000](http://localhost:3000).
 ```text
 src/
   app/                         Landing, workspace, editor, settings, and API routes
-  components/                  Shared status, theme, loading, and error UI
-  features/docs/               Document-creation browser state
-  features/editor/             Editor, autosave, recovery, AI, and export UI
-  hooks/                       Writing-appearance browser behaviour
+  components/documents/        Document list, creation, and deletion UI
+  components/editor/           Editor shell, toolbar, AI panel, and save notices
+  components/landing/          Public landing page sections
+  components/providers/        Theme and status-message providers
+  components/settings/         Settings & Help page UI
+  components/shared/           Loading and error UI
+  contexts/                    Theme and status-message contexts
+  features/documents/          Pre-authentication draft handoff
+  features/editor/             Autosave, local drafts, AI context, and export helpers
+  hooks/                       Theme and writing-appearance browser behaviour
   lib/                         Limits, validation, themes, and utilities
-  server/ai/                   AI instructions and response requirements
-  server/api/routers/          Authenticated tRPC procedures
+  types/                       Shared AI and writing-mode types
+  server/ai/                   AI prompts, response parsing, and sanitisation
+  server/procedures/           Authenticated tRPC procedures, one file each
+  server/routers/              Router composition (account, docs, ai, feedback)
   server/better-auth/          Authentication configuration
   server/documents/            TXT, Markdown, Word, and PDF generation
+  trpc/                        Client, query client, and error handling
 prisma/
   migrations/                  Database migrations
   schema.prisma                PostgreSQL data model
@@ -243,13 +254,14 @@ prisma/
 Before handing off or deploying a change, run:
 
 ```bash
-npm test
 npm run check
 npm run format:check
 npm run build
 ```
 
-The production build applies database migrations, so use a deliberate test or deployment database. For release verification, also test the real authenticated journey: Google sign-in, document creation, autosave and recovery, multi-tab conflict handling, all six AI actions, all four export formats, feedback submission, sign out, and account deletion in a disposable account.
+`npm test` is wired up but the repository currently ships no test files, so it passes trivially.
+
+The production build applies database migrations, so use a deliberate test or deployment database. For release verification, also test the real authenticated journey: Google sign-in, document creation, autosave and recovery, multi-tab conflict handling, all four AI actions, all four export formats, feedback submission, sign out, and account deletion in a disposable account.
 
 ## Current product boundaries
 
