@@ -55,90 +55,16 @@ export const WRITING_EDITOR_WIDTH_PIXELS: Record<WritingEditorWidth, number> = {
 };
 
 export const WRITING_FONT_FAMILY_VALUES: Record<WritingFontFamily, string> = {
-  serif: "var(--font-source-serif), Georgia, serif",
-  sans: "var(--font-inter), ui-sans-serif, system-ui, sans-serif",
+  serif: "var(--font-newsreader), Georgia, serif",
+  sans: "var(--font-archivo), ui-sans-serif, system-ui, sans-serif",
   accessible:
     "var(--font-atkinson-hyperlegible), ui-sans-serif, system-ui, sans-serif",
 };
 
-let currentAppearance = DEFAULT_WRITING_APPEARANCE;
-let lastStoredValue: string | null | undefined;
-
-function includesValue<T extends string>(
-  values: readonly T[],
-  value: unknown,
-): value is T {
-  return typeof value === "string" && values.includes(value as T);
-}
-
-function parseWritingAppearance(value: unknown): WritingAppearance {
-  if (!value || typeof value !== "object") {
-    return DEFAULT_WRITING_APPEARANCE;
-  }
-
-  const candidate = value as Partial<WritingAppearance>;
-
-  return {
-    fontFamily: includesValue(WRITING_FONT_FAMILIES, candidate.fontFamily)
-      ? candidate.fontFamily
-      : DEFAULT_WRITING_APPEARANCE.fontFamily,
-    textSize: includesValue(WRITING_TEXT_SIZES, candidate.textSize)
-      ? candidate.textSize
-      : DEFAULT_WRITING_APPEARANCE.textSize,
-    lineSpacing: includesValue(WRITING_LINE_SPACINGS, candidate.lineSpacing)
-      ? candidate.lineSpacing
-      : DEFAULT_WRITING_APPEARANCE.lineSpacing,
-    editorWidth: includesValue(WRITING_EDITOR_WIDTHS, candidate.editorWidth)
-      ? candidate.editorWidth
-      : DEFAULT_WRITING_APPEARANCE.editorWidth,
-  };
-}
-
-export function readWritingAppearance(): WritingAppearance {
-  if (typeof window === "undefined") {
-    return DEFAULT_WRITING_APPEARANCE;
-  }
-
-  let storedValue: string | null;
-
-  try {
-    storedValue = window.localStorage.getItem(WRITING_APPEARANCE_STORAGE_KEY);
-  } catch {
-    return currentAppearance;
-  }
-
-  if (storedValue === lastStoredValue) {
-    return currentAppearance;
-  }
-
-  lastStoredValue = storedValue;
-
-  if (!storedValue) {
-    currentAppearance = DEFAULT_WRITING_APPEARANCE;
-    return currentAppearance;
-  }
-
-  try {
-    currentAppearance = parseWritingAppearance(JSON.parse(storedValue));
-  } catch {
-    currentAppearance = DEFAULT_WRITING_APPEARANCE;
-  }
-
-  return currentAppearance;
-}
-
-export function storeWritingAppearance(appearance: WritingAppearance) {
-  currentAppearance = appearance;
-  lastStoredValue = JSON.stringify(appearance);
-
-  try {
-    window.localStorage.setItem(
-      WRITING_APPEARANCE_STORAGE_KEY,
-      lastStoredValue,
-    );
-  } catch {
-    // The current tab still receives the change event when storage is blocked.
-  }
-
-  window.dispatchEvent(new Event(WRITING_APPEARANCE_CHANGE_EVENT));
-}
+export const writingAppearanceState: {
+  currentAppearance: WritingAppearance;
+  lastStoredValue: string | null | undefined;
+} = {
+  currentAppearance: DEFAULT_WRITING_APPEARANCE,
+  lastStoredValue: undefined,
+};

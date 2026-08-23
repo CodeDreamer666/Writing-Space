@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import WritingSpace from "~/features/editor/components/WritingSpace";
-import { getSession } from "~/server/better-auth/server";
+import WritingSpace from "~/components/editor/WritingSpace";
+import getSession from "~/server/better-auth/server";
 
 export default async function DocumentPage() {
   const session = await getSession();

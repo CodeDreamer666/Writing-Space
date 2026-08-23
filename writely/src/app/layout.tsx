@@ -1,9 +1,16 @@
 import "~/styles/globals.css";
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible, Inter, Source_Serif_4 } from "next/font/google";
-import StatusMessageProvider from "~/components/layout/StatusMessageProvider";
-import ThemeProvider from "~/components/layout/ThemeProvider";
-import { TRPCReactProvider } from "~/trpc/react";
+import {
+    Archivo,
+    Atkinson_Hyperlegible,
+    IBM_Plex_Mono,
+    Inter,
+    Newsreader,
+    Source_Serif_4,
+} from "next/font/google";
+import StatusMessageProvider from "~/components/providers/StatusMessageProvider";
+import ThemeProvider from "~/components/providers/ThemeProvider";
+import TRPCReactProvider from "~/components/providers/TRPCReactProvider";
 
 const inter = Inter({
     subsets: ["latin"],
@@ -21,6 +28,25 @@ const atkinsonHyperlegible = Atkinson_Hyperlegible({
     subsets: ["latin"],
     weight: ["400", "700"],
     variable: "--font-atkinson-hyperlegible",
+    display: "swap",
+});
+
+const archivo = Archivo({
+    subsets: ["latin"],
+    variable: "--font-archivo",
+    display: "swap",
+});
+
+const newsreader = Newsreader({
+    subsets: ["latin"],
+    variable: "--font-newsreader",
+    display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+    subsets: ["latin"],
+    weight: ["400", "500"],
+    variable: "--font-ibm-plex-mono",
     display: "swap",
 });
 
@@ -54,12 +80,12 @@ export default function RootLayout({
             lang="en"
             data-theme="dark"
             suppressHydrationWarning
-            className={`${inter.variable} ${sourceSerif.variable} ${atkinsonHyperlegible.variable}`}
+            className={`${inter.variable} ${sourceSerif.variable} ${atkinsonHyperlegible.variable} ${archivo.variable} ${newsreader.variable} ${ibmPlexMono.variable}`}
         >
             <head>
                 <script dangerouslySetInnerHTML={{ __html: themeScript }} />
             </head>
-            <body className={inter.className}>
+            <body className={archivo.className}>
                 <ThemeProvider>
                     <StatusMessageProvider>
                         <TRPCReactProvider>{children}</TRPCReactProvider>

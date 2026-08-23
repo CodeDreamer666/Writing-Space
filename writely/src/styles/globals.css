@@ -9,31 +9,31 @@
 
 :root,
 :root[data-theme="dark"] {
-  --w-background: #0b0d10;
-  --w-surface: #10151b;
-  --w-surface-raised: #161b22;
-  --w-border: #2a313c;
-  --w-border-soft: #1e2530;
-  --w-foreground: #f5f5f7;
-  --w-strong: #e5e7ea;
-  --w-muted: #aeb4be;
-  --w-subtle: #6b7280;
-  --w-placeholder: #4a5363;
-  --w-selection: #3a4657;
+  --w-background: #000000;
+  --w-surface: #0a0a0a;
+  --w-surface-raised: #171717;
+  --w-border: #454545;
+  --w-border-soft: #282828;
+  --w-foreground: #ffffff;
+  --w-strong: #ffffff;
+  --w-muted: #b8b8b8;
+  --w-subtle: #8f8f8f;
+  --w-placeholder: #737373;
+  --w-selection: #ffffff;
 }
 
 :root[data-theme="light"] {
-  --w-background: #f7f6f2;
-  --w-surface: #ffffff;
-  --w-surface-raised: #efeee9;
-  --w-border: #d7d5ce;
-  --w-border-soft: #e6e4de;
-  --w-foreground: #1c2025;
-  --w-strong: #30363d;
-  --w-muted: #606872;
-  --w-subtle: #7a828c;
-  --w-placeholder: #9aa0a8;
-  --w-selection: #cbd5e1;
+  --w-background: #ffffff;
+  --w-surface: #fafafa;
+  --w-surface-raised: #f4f4f4;
+  --w-border: #c8c8c8;
+  --w-border-soft: #e5e5e5;
+  --w-foreground: #000000;
+  --w-strong: #000000;
+  --w-muted: #4d4d4d;
+  --w-subtle: #6b6b6b;
+  --w-placeholder: #767676;
+  --w-selection: #000000;
 }
 
 @keyframes blink {
@@ -61,6 +61,8 @@
 
 body {
   @apply flex flex-col;
+  font-family: var(--font-archivo), Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 .ProseMirror {
@@ -128,12 +130,29 @@ body {
 }
 
 body:has([data-writely-landing-page]) {
-  background: #050606;
+  background: var(--w-background);
 }
 
 ::selection {
   background: var(--w-selection);
-  color: var(--w-foreground);
+  color: var(--w-background);
+}
+
+.font-display {
+  font-family: var(--font-newsreader), Georgia, serif;
+}
+
+.font-mono-label {
+  font-family: var(--font-ibm-plex-mono), monospace;
+}
+
+.writely-editor .ProseMirror {
+  min-height: 55vh;
+  font-family: inherit;
+}
+
+.writely-editor .ProseMirror p {
+  margin: 0 0 24px;
 }
 
 :where(button, a, input, textarea, select):focus-visible {

@@ -1,10 +1,8 @@
 export const AI_ACTIONS = [
-  "improveClarity",
-  "fixGrammar",
+  "clarify",
   "makeNatural",
-  "makeStronger",
-  "makeConcise",
-  "improveFlow",
+  "strengthen",
+  "tighten",
 ] as const;
 
 export type AiAction = (typeof AI_ACTIONS)[number];
