@@ -39,12 +39,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 7.8.0
- * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
+ * Prisma Client JS version: 7.9.1
+ * Query Engine version: e922089b7d7502aff4249d5da3420f6fa55fc6ad
  */
 Prisma.prismaVersion = {
-  client: "7.8.0",
-  engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a"
+  client: "7.9.1",
+  engine: "e922089b7d7502aff4249d5da3420f6fa55fc6ad"
 }
 
 Prisma.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
@@ -209,8 +209,8 @@ exports.Prisma.ModelName = {
  */
 const config = {
   "previewFeatures": [],
-  "clientVersion": "7.8.0",
-  "engineVersion": "3c6e192761c0362d496ed980de936e2f3cebcd3a",
+  "clientVersion": "7.9.1",
+  "engineVersion": "e922089b7d7502aff4249d5da3420f6fa55fc6ad",
   "activeProvider": "postgresql",
   "inlineSchema": "// Prisma schema for Better Auth\n// learn more: https://better-auth.com/docs/concepts/database\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\n// NOTE: When using mysql or sqlserver, uncomment the //@db.Text annotations in model Account below\n// Further reading:\n// https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel Document {\n  id          String    @id @default(uuid())\n  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId      String\n  content     Json?\n  title       String    @default(\"New Draft\")\n  writingMode String    @default(\"Clear\")\n  version     Int       @default(0)\n  deletedAt   DateTime?\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @default(now()) @updatedAt\n\n  @@index([userId, deletedAt, updatedAt])\n}\n\nmodel User {\n  id                    String         @id\n  name                  String //@db.Text\n  email                 String\n  emailVerified         Boolean        @default(false)\n  leaveReminderDisabled Boolean        @default(false)\n  writingModePreference String         @default(\"Clear\")\n  image                 String? //@db.Text\n  createdAt             DateTime       @default(now())\n  updatedAt             DateTime       @default(now()) @updatedAt\n  sessions              Session[]\n  documents             Document[]\n  aiDailyUsage          AiDailyUsage[]\n  feedback              Feedback[]\n  accounts              Account[]\n\n  @@unique([email])\n  @@map(\"user\")\n}\n\nmodel AiDailyUsage {\n  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId           String\n  usageDate        DateTime  @db.Date\n  tokensUsed       Int       @default(0)\n  requestId        String?\n  requestExpiresAt DateTime?\n\n  @@id([userId, usageDate])\n}\n\nmodel Feedback {\n  id        String   @id @default(uuid())\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n  userId    String\n  message   String\n  createdAt DateTime @default(now())\n\n  @@index([userId, createdAt])\n}\n\nmodel Session {\n  id        String   @id\n  expiresAt DateTime\n  token     String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  ipAddress String? //@db.Text\n  userAgent String? //@db.Text\n  userId    String\n  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([token])\n  @@map(\"session\")\n}\n\nmodel Account {\n  id                    String    @id\n  accountId             String //@db.Text\n  providerId            String //@db.Text\n  userId                String\n  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)\n  accessToken           String? //@db.Text\n  refreshToken          String? //@db.Text\n  idToken               String? //@db.Text\n  accessTokenExpiresAt  DateTime?\n  refreshTokenExpiresAt DateTime?\n  scope                 String? //@db.Text\n  password              String? //@db.Text\n  createdAt             DateTime  @default(now())\n  updatedAt             DateTime  @updatedAt\n\n  @@map(\"account\")\n}\n\nmodel Verification {\n  id         String   @id\n  identifier String //@db.Text\n  value      String //@db.Text\n  expiresAt  DateTime\n  createdAt  DateTime @default(now())\n  updatedAt  DateTime @default(now()) @updatedAt\n\n  @@map(\"verification\")\n}\n"
 }

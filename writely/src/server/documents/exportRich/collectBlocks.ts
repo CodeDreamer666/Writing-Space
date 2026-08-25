@@ -18,11 +18,9 @@ export default function collectBlocks(content: JSONContent): ContentBlock[] {
   }
 
   if (content.type === "bulletList" || content.type === "orderedList") {
-    const start = Number(content.attrs?.start ?? 1);
-
-    return (content.content ?? []).map((item, index) => ({
+    return (content.content ?? []).map((item) => ({
       kind: "list",
-      marker: content.type === "orderedList" ? `${start + index}.` : "•",
+      listType: content.type === "orderedList" ? "ordered" : "bullet",
       runs: collectRuns(item),
     }));
   }

@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import clearAllLocalDrafts from "~/features/editor/utils/localDraft/clearAllLocalDrafts";
 import authClient from "~/server/better-auth/client";
 import api from "~/trpc/api";
 import useHandleTRPCError from "~/trpc/useHandleTRPCError";
@@ -14,12 +15,9 @@ export default function AccountSettings() {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  if (!session?.user) {
-    return null;
-  }
-
   const deleteAccount = api.account.deleteAccount.useMutation({
     onSuccess: () => {
+      clearAllLocalDrafts();
       setIsConfirmingDelete(false);
       router.replace("/");
     },
@@ -28,6 +26,10 @@ export default function AccountSettings() {
       handleTRPCError({ error, router });
     },
   });
+
+  if (!session?.user) {
+    return null;
+  }
 
   return (
     <section className="grid gap-5 py-9 sm:py-11 md:grid-cols-[200px_minmax(0,1fr)] md:gap-10">

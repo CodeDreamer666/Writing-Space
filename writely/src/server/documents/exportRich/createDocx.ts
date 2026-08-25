@@ -1,5 +1,13 @@
 import type { JSONContent } from "@tiptap/core";
-import { BorderStyle, Document, HeadingLevel, Paragraph, TextRun } from "docx";
+import {
+  AlignmentType,
+  BorderStyle,
+  Document,
+  HeadingLevel,
+  LevelFormat,
+  Paragraph,
+  TextRun,
+} from "docx";
 import collectBlocks from "./collectBlocks";
 
 export default function createDocx(content: JSONContent, title: string) {
@@ -14,10 +22,6 @@ export default function createDocx(content: JSONContent, title: string) {
         }),
     );
 
-    if (block.marker) {
-      children.unshift(new TextRun({ text: `${block.marker} ` }));
-    }
-
     const heading =
       block.kind === "heading"
         ? block.level === 1
@@ -30,6 +34,14 @@ export default function createDocx(content: JSONContent, title: string) {
     return new Paragraph({
       children,
       heading,
+      bullet:
+        block.kind === "list" && block.listType === "bullet"
+          ? { level: 0 }
+          : undefined,
+      numbering:
+        block.kind === "list" && block.listType === "ordered"
+          ? { reference: "writely-ordered-list", level: 0 }
+          : undefined,
       indent: block.kind === "blockquote" ? { left: 360 } : undefined,
       border:
         block.kind === "blockquote"
@@ -49,6 +61,26 @@ export default function createDocx(content: JSONContent, title: string) {
   return new Document({
     creator: "Writely",
     title,
+    numbering: {
+      config: [
+        {
+          reference: "writely-ordered-list",
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.DECIMAL,
+              text: "%1.",
+              alignment: AlignmentType.START,
+              style: {
+                paragraph: {
+                  indent: { left: 720, hanging: 360 },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    },
     sections: [{ children: paragraphs }],
   });
 }

@@ -5,10 +5,27 @@
  */
 import "./src/env.js";
 
+const scriptSources =
+  process.env.NODE_ENV === "development"
+    ? "'self' 'unsafe-inline' 'unsafe-eval'"
+    : "'self' 'unsafe-inline'";
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
-    value: "base-uri 'self'; frame-ancestors 'none'; object-src 'none'",
+    value: [
+      "default-src 'self'",
+      `script-src ${scriptSources}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' ws: wss:",
+      "worker-src 'self' blob:",
+      "form-action 'self'",
+      "base-uri 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+    ].join("; "),
   },
   {
     key: "Permissions-Policy",
@@ -22,6 +39,8 @@ const securityHeaders = [
 
 /** @type {import("next").NextConfig} */
 const config = {
+  agentRules: false,
+  poweredByHeader: false,
   async headers() {
     return [
       {

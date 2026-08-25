@@ -206,10 +206,6 @@ export default protectedProcedure
             let usableCompletion = readUsableCompletion(completion);
             let rewrite = parseRewriteResponse(usableCompletion?.content ?? null);
 
-            console.log("Completion ", completion);
-            console.log("Usable Completion ", usableCompletion);
-            console.log("Rewrite ", rewrite);
-
             if (!usableCompletion || !rewrite) {
                 const retryMessage = `${userMessage}\n\n${getAiRetryInstruction()}`;
                 completion = await createCompletion(retryMessage);

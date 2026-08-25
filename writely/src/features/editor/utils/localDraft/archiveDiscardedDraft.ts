@@ -7,19 +7,19 @@ import readLocalDraft from "./readLocalDraft";
  * the text can still be recovered from browser storage.
  */
 export default function archiveDiscardedDraft(docId: string) {
-  const draft = readLocalDraft(docId);
-  if (!draft) return false;
-  try {
-    window.localStorage.setItem(
-      `${DISCARDED_DRAFT_PREFIX}${docId}`,
-      JSON.stringify({
-        ...draft,
-        schemaVersion: LOCAL_DRAFT_SCHEMA_VERSION,
-        discardedAt: new Date().toISOString(),
-      }),
-    );
-    return true;
-  } catch {
-    return false;
-  }
+    const draft = readLocalDraft(docId);
+    if (!draft) return false;
+    try {
+        window.localStorage.setItem(
+            `${DISCARDED_DRAFT_PREFIX}${docId}`,
+            JSON.stringify({
+                ...draft,
+                schemaVersion: LOCAL_DRAFT_SCHEMA_VERSION,
+                discardedAt: new Date().toISOString(),
+            }),
+        );
+        return true;
+    } catch {
+        return false;
+    }
 }

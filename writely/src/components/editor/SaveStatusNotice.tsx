@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { SaveStatus } from "~/features/editor/hooks/useDocumentAutosave";
+import type { SaveStatus } from "~/features/editor/hooks/useDocumentSave";
 
 type Props = {
     status: SaveStatus;

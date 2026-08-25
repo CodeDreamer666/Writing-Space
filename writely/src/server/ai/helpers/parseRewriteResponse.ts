@@ -1,8 +1,8 @@
 import sanitizeRichText from "./sanitizeRichText";
 import hasRichTextContent from "./hasRichTextContent";
 import normalizeRichText from "./normalizeRichText";
+import type { z } from "../support";
 import {
-    z,
     rewriteResponseSchema,
     containsUnsupportedPictographs,
 } from "../support";

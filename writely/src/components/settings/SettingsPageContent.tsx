@@ -17,6 +17,7 @@ import useHandleTRPCError from "~/trpc/useHandleTRPCError";
 import authClient from "~/server/better-auth/client";
 import api from "~/trpc/api";
 import AccountSettings from "~/components/settings/AccountSettings";
+import Loading from "~/components/shared/Loading";
 import SettingsSection from "~/components/settings/SettingsSection";
 import WritingAppearanceSettings from "~/components/settings/WritingAppearanceSettings";
 
@@ -31,7 +32,7 @@ export default function SettingsPageContent() {
     const { showMessage } = useStatusMessage();
     const router = useRouter();
     const handleTRPCError = useHandleTRPCError();
-    const { data: session } = authClient.useSession();
+    const { data: session, isPending: isSessionLoading } = authClient.useSession();
     const [message, setMessage] = useState("");
 
     const submitFeedback = api.feedback.submit.useMutation({
@@ -41,6 +42,10 @@ export default function SettingsPageContent() {
         },
         onError: (error) => handleTRPCError({ error, router }),
     });
+
+    if (isSessionLoading) {
+        return <Loading />;
+    }
 
     if (!session?.user) {
         return (
@@ -120,10 +125,10 @@ export default function SettingsPageContent() {
                     <WritingAppearanceSettings />
                 </SettingsSection>
 
-                <SettingsSection title="Autosave">
+                <SettingsSection title="Saving">
                     <p>
-                        Writely saves while you type and shows Saving…, Saved, or Save
-                        failed.
+                        Save your current draft from the document sidebar. Writely shows
+                        when changes are unsaved, saving, saved, or need your attention.
                     </p>
                     <p className="mt-4">
                         A temporary browser recovery copy helps protect recent writing when
@@ -198,7 +203,11 @@ export default function SettingsPageContent() {
                         <form
                             onSubmit={(event) => {
                                 event.preventDefault();
-                                if (!submitFeedback.isPending)
+                                if (
+                                    !submitFeedback.isPending &&
+                                    message.trim().length >= 10 &&
+                                    message.length <= 2_000
+                                )
                                     submitFeedback.mutate({ message });
                             }}
                             className="mt-5"
@@ -212,7 +221,9 @@ export default function SettingsPageContent() {
                             <textarea
                                 id="feedback-message"
                                 value={message}
-                                onChange={(event) => setMessage(event.target.value)}
+                                onChange={(event) =>
+                                    setMessage(event.target.value.slice(0, 2_000))
+                                }
                                 minLength={10}
                                 maxLength={2_000}
                                 rows={5}
@@ -227,7 +238,9 @@ export default function SettingsPageContent() {
                                 <button
                                     type="submit"
                                     disabled={
-                                        submitFeedback.isPending || message.trim().length < 10
+                                        submitFeedback.isPending ||
+                                        message.trim().length < 10 ||
+                                        message.length > 2_000
                                     }
                                     className="h-11 cursor-pointer bg-(--w-foreground) px-[22px] text-[13px] font-medium text-(--w-background) disabled:cursor-not-allowed disabled:opacity-50"
                                 >

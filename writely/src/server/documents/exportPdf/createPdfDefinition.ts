@@ -11,6 +11,8 @@ export default function createPdfDefinition(
   const documentTitle = title.trim() || "Untitled draft";
 
   return {
+    tagged: true,
+    displayTitle: true,
     info: {
       title: documentTitle,
       author: "Writely",

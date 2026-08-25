@@ -7,6 +7,6 @@ export type StyledRun = {
 export type ContentBlock = {
   kind: "paragraph" | "heading" | "list" | "blockquote";
   level?: number;
-  marker?: string;
+  listType?: "bullet" | "ordered";
   runs: StyledRun[];
 };

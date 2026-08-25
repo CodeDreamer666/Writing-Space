@@ -1,6 +1,6 @@
 # Writely
 
-Writely is a calm writing workspace for drafting, formatting, refining, and exporting documents. It combines automatic saving and browser recovery with optional AI assistance that works only on text the writer selects.
+Writely is a calm writing workspace for drafting, formatting, refining, and exporting documents. It combines deliberate manual saving and browser recovery with optional AI assistance that works only on text the writer selects.
 
 Writely 2.0 has an English interface and officially guarantees writing and export support for English. Other languages can be entered, but are not part of the current support guarantee.
 
@@ -53,20 +53,22 @@ Editor-only appearance preferences are stored in the browser and include:
 
 These preferences change the writing experience without changing exported document formatting.
 
-### Autosave and recovery
+### Manual save and recovery
 
-- Automatic saving after changes, with failed saves retried automatically
+- A manual save action in the editor sidebar keeps writers in control of when a document is committed
 - Visible unsaved, saving, saved, failed, recovery, and conflict states
 - A temporary browser recovery copy for recent unsaved writing, refreshed on tab close, tab hide, and mobile backgrounding
 - Explicit restore-or-discard choices when a recovery copy differs from the saved document
 - Discarding a recovery copy archives it in the browser rather than deleting it outright
-- A pending save retries by itself when the connection returns
+- Failed saves require an explicit retry and never silently retry when the connection returns
 - A visible failure state when browser storage is unavailable, so the writer knows only the server copy is protecting them
 - Version-conflict protection for documents edited in multiple tabs
 - A stale tab cannot silently overwrite a newer saved version
 - Conflicted writing can be kept with "Save as new document" instead of choosing between two losses
 
 Browser recovery copies expire after 30 days. The database remains the authoritative saved copy.
+
+Autosave was removed because unresolved reliability issues meant Writely could not honestly guarantee that every change had been persisted. Shipping autosave despite those issues would break the product promise and destroy writer trust by presenting uncertain saves as safe. Writely therefore uses explicit manual saving unless and until autosave can meet that reliability standard.
 
 ### Writely AI
 
@@ -107,7 +109,7 @@ Empty documents can be exported as valid files. Rich exports preserve headings, 
 
 ### Settings and feedback
 
-The authenticated Settings & Help page includes theme and writing-appearance controls, current product limits, autosave and language guidance, a feedback form, sign out, and account deletion. AI usage is described in plain terms (daily allowance, selected characters per request, concurrent requests, and what is sent to the AI) rather than raw token counts.
+The authenticated Settings & Help page includes theme and writing-appearance controls, current product limits, saving and language guidance, a feedback form, sign out, and account deletion. AI usage is described in plain terms (daily allowance, selected characters per request, concurrent requests, and what is sent to the AI) rather than raw token counts.
 
 Feedback is trimmed and validated on the server:
 
@@ -234,7 +236,7 @@ src/
   components/shared/           Loading and error UI
   contexts/                    Theme and status-message contexts
   features/documents/          Pre-authentication draft handoff
-  features/editor/             Autosave, local drafts, AI context, and export helpers
+  features/editor/             Manual saving, local drafts, AI context, and export helpers
   hooks/                       Theme and writing-appearance browser behaviour
   lib/                         Limits, validation, themes, and utilities
   types/                       Shared AI and writing-mode types
@@ -261,7 +263,7 @@ npm run build
 
 `npm test` is wired up but the repository currently ships no test files, so it passes trivially.
 
-The production build applies database migrations, so use a deliberate test or deployment database. For release verification, also test the real authenticated journey: Google sign-in, document creation, autosave and recovery, multi-tab conflict handling, all four AI actions, all four export formats, feedback submission, sign out, and account deletion in a disposable account.
+The production build applies database migrations, so use a deliberate test or deployment database. For release verification, also test the real authenticated journey: Google sign-in, document creation, manual saving and recovery, multi-tab conflict handling, all four AI actions, all four export formats, feedback submission, sign out, and account deletion in a disposable account.
 
 ## Current product boundaries
 

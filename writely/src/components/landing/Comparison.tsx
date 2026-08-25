@@ -18,7 +18,7 @@ const comparisonRows = [
 ];
 
 const trustItems = [
-  { title: "Safe as you write", body: "Autosave and browser recovery" },
+  { title: "You control the draft", body: "Manual save and browser recovery" },
   { title: "Private by design", body: "AI receives selected text only" },
   { title: "Yours to take", body: "Export whenever you need" },
 ];

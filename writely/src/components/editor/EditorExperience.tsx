@@ -8,9 +8,8 @@ import Loading from "~/components/shared/Loading";
 import SaveStatusNotice from "~/components/editor/SaveStatusNotice";
 import TiptapMenuBar from "~/components/editor/TiptapMenuBar";
 import useStatusMessage from "~/hooks/useStatusMessage";
-import useDocumentAutosave, {
-    type SaveStatus,
-} from "~/features/editor/hooks/useDocumentAutosave";
+import useDocumentSave from "~/features/editor/hooks/useDocumentSave";
+import getSaveStatusLabel from "~/features/editor/hooks/getSaveStatusLabel";
 import readingTime from "~/features/editor/utils/editorContent/readingTime";
 import downloadExport from "~/features/editor/utils/exportDownload/downloadExport";
 import isWritingMode from "~/features/editor/utils/isWritingMode";
@@ -84,9 +83,9 @@ export default function EditorExperience({
         isHydrated,
         openSavedVersion,
         restoreRecovery,
-        savePendingChanges,
+        saveDocument,
         saveStatus,
-    } = useDocumentAutosave({
+    } = useDocumentSave({
         docId,
         document,
         editor,
@@ -162,6 +161,10 @@ export default function EditorExperience({
     });
 
     const handleValidatedTitleChange = (nextTitle: string) => {
+        if (nextTitle.length > MAX_DOCUMENT_TITLE_LENGTH) {
+            return;
+        }
+
         if (
             countUnsupportedPictographs(nextTitle) >
             countUnsupportedPictographs(title)
@@ -175,30 +178,6 @@ export default function EditorExperience({
 
         handleTitleChange(nextTitle);
     };
-
-    function getSaveStatusLabel(status: SaveStatus) {
-        if (status === "error") {
-            return "Save failed";
-        }
-
-        if (status === "saved") {
-            return "Saved";
-        }
-
-        if (status === "conflict") {
-            return "Resolve conflict";
-        }
-
-        if (status === "recovery") {
-            return "Recovery available";
-        }
-
-        if (status === "unsaved") {
-            return "Unsaved changes";
-        }
-
-        return "Saving now…";
-    }
 
     if (!isHydrated) {
         return <Loading />;
@@ -319,16 +298,68 @@ export default function EditorExperience({
                         <button
                             type="button"
                             onClick={() => {
+                                if (
+                                    saveStatus === "conflict" ||
+                                    saveStatus === "recovery"
+                                ) {
+                                    setIsMenuOpen(false);
+                                    return;
+                                }
+
+                                void saveDocument();
+                            }}
+                            disabled={
+                                saveStatus === "saved" ||
+                                saveStatus === "saving"
+                            }
+                            className={[
+                                "flex h-[58px] w-full cursor-pointer items-center border-0 border-b border-(--w-border-soft)",
+                                "bg-transparent px-6 text-left text-sm font-medium text-(--w-foreground)",
+                                "hover:bg-(--w-foreground) hover:text-(--w-background)",
+                                "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-(--w-foreground)",
+                            ].join(" ")}
+                        >
+                            <svg
+                                className="mr-2.5 shrink-0"
+                                width="15"
+                                height="15"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M5 3h12l2 2v16H5z" />
+                                <path d="M8 3v6h8V3" />
+                                <path d="M8 21v-7h8v7" />
+                            </svg>
+                            {saveStatus === "saving"
+                                ? "Saving…"
+                                : saveStatus === "saved"
+                                  ? "Saved"
+                                  : saveStatus === "error"
+                                    ? "Retry save"
+                                    : saveStatus === "conflict"
+                                      ? "Resolve conflict"
+                                      : saveStatus === "recovery"
+                                        ? "Review recovery"
+                                        : "Save changes"}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
                                 setIsExportOpen(true);
                             }}
                             className={[
-                                "h-[58px] w-full cursor-pointer border-0 border-b border-(--w-border-soft)",
-                                "bg-transparent px-6 text-left text-sm font-medium",
+                                "flex h-[58px] w-full cursor-pointer items-center border-0 border-b border-(--w-border-soft)",
+                                "bg-transparent px-6 text-left text-sm font-medium text-(--w-foreground)",
                                 "hover:bg-(--w-foreground) hover:text-(--w-background)",
                             ].join(" ")}
                         >
                             <svg
-                                className="mr-2.5 inline"
+                                className="mr-2.5 shrink-0"
                                 width="15"
                                 height="15"
                                 viewBox="0 0 24 24"
@@ -348,11 +379,13 @@ export default function EditorExperience({
                         <Link
                             href="/app"
                             className={[
-                                "flex h-[58px] w-full cursor-pointer items-center bg-transparent px-6 text-left",
-                                "text-sm text-(--w-muted) hover:bg-(--w-surface-raised) hover:text-(--w-foreground)",
+                                "flex h-[58px] w-full cursor-pointer items-center border-b border-(--w-border-soft)",
+                                "bg-transparent px-6 text-left text-sm font-medium text-(--w-foreground)",
+                                "hover:bg-(--w-foreground) hover:text-(--w-background)",
                             ].join(" ")}
                         >
                             <svg
+                                className="mr-2.5 shrink-0"
                                 width="15"
                                 height="15"
                                 viewBox="0 0 24 24"
@@ -387,7 +420,7 @@ export default function EditorExperience({
                                 onSaveAsNewDocument={() =>
                                     void handleSaveAsNewDocument()
                                 }
-                                onRetry={() => void savePendingChanges()}
+                                onRetry={() => void saveDocument()}
                                 onOpenSavedVersion={openSavedVersion}
                                 onRestoreRecovery={restoreRecovery}
                                 onDiscardRecovery={discardRecovery}

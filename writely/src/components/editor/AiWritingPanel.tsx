@@ -81,9 +81,15 @@ export default function AiWritingPanel({
 
   const askAi = api.ai.askAi.useMutation();
 
-  // Error handling issues
   const updateWritingMode = api.docs.updateWritingMode.useMutation({
+    onMutate: ({ writingMode }) => {
+      const previousMode = mode;
+      setMode(writingMode);
+      return { previousMode };
+    },
+
     onSuccess: async (updatedDocument) => {
+      setMode(updatedDocument.writingMode);
       utils.docs.getSelectedDoc.setData({ docId }, (currentDocument) =>
         currentDocument
           ? { ...currentDocument, writingMode: updatedDocument.writingMode }
@@ -91,12 +97,9 @@ export default function AiWritingPanel({
       );
     },
 
-    onError: (error) => {
+    onError: (error, _input, context) => {
+      setMode(context?.previousMode ?? initialMode);
       handleTRPCError({ error, router });
-    },
-
-    onSettled: async () => {
-      await utils.invalidate();
     },
   });
 
@@ -125,8 +128,12 @@ export default function AiWritingPanel({
       return;
     }
 
-    setActiveContext(captureAiContext(editor));
-    setRequestError("");
+    const frameId = window.requestAnimationFrame(() => {
+      setActiveContext(captureAiContext(editor));
+      setRequestError("");
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
   }, [isOpen, editor]);
 
   const runAction = (action: AiAction) => {

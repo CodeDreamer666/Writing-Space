@@ -51,7 +51,7 @@ export const anyHtmlTagPattern = /<[^>]*>/g;
 export const blockHtmlTagPattern =
     /<\s*\/?\s*(?:p|h[1-6]|ul|ol|li|blockquote|br)\b[^>]*>/gi;
 export const allowedRichTextTagPattern =
-    /^<\s*(\/?)\s*(p|h[1-3]|ul|ol|li|strong|em|br)\s*\/?\s*>$/i;
+    /^<\s*(\/?)\s*(p|h[1-3]|ul|ol|li|blockquote|strong|em|br)\s*\/?\s*>$/i;
 
 export {
     TRPCError,
